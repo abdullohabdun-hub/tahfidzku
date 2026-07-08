@@ -20,13 +20,14 @@ TahfidzKu adalah aplikasi web *Software as a Service* (SaaS) multitenan yang dir
 * **Admin Lembaga (Tenant):** Mengelola master data Ustadz, Santri, dan pembagian kelas/halaqoh di lembaga masing-masing.
 * **Ustadz (Muhaffizh):** Pengguna utama aplikasi. Melakukan pencatatan setoran hafalan (Ziyadah/Murojaah) harian melalui perangkat *mobile*.
 * **Wali Santri:** Mengakses *dashboard* ringan bergaya grafik (lingkaran 30 Juz) untuk memantau progres hafalan anak secara *real-time*.
-
+* **Santri/Peserta Dewasa:** Memiliki akses masuk (login) mandiri ke aplikasi untuk melaporkan aktivitas murojaah secara proaktif, tanpa harus menunggu jadwal setoran tatap muka/panggilan video mingguan dengan Ustadz.
 ## 3. Ruang Lingkup Fitur Minimum Viable Product (MVP)
 
 **Modul Autentikasi & Multitenan**
 
 * Pendaftaran lembaga mandiri via *Landing Page* dengan pembuatan `tenant_id` otomatis.
 * Sistem *Login* berbasis *Role-Based Access Control* (RBAC).
+* Autentikasi Simpel: Mengingat rentang usia hingga 60 tahun, login peserta sebaiknya menggunakan sistem yang minim hambatan (seperti *Magic Link* ke email atau OTP WhatsApp) untuk menghindari kerumitan lupa password.
 * Isolasi data ketat: Data lembaga A dipastikan tidak bocor ke lembaga B pada level *database*.
 
 **Modul Manajemen Data (Admin Lembaga)**
@@ -42,6 +43,15 @@ TahfidzKu adalah aplikasi web *Software as a Service* (SaaS) multitenan yang dir
 * Pemilihan Surah dan rentang Ayat.
 * Tombol penilaian kualitas bacaan (Lancar, Mengulang, Terbata-bata).
 * Kolom input teks opsional untuk catatan tajwid/makhraj.
+* Tab atau notifikasi khusus untuk membaca laporan mandiri dari peserta didik sebelum jadwal setoran mingguan dimulai.
+
+**Modul Dashboard Santri (Pelaporan Mandiri)**
+
+* Form pelaporan murojaah mandiri dengan antarmuka *mobile-first* yang sangat sederhana.
+* Pilihan cepat untuk Jenis Setoran (Ziyadah, Murojaah, Sabqi, Manzil), Surah, dan Rentang Ayat.
+* Tombol penilaian kualitas bacaan secara mandiri (Lancar, Mengulang, Terbata-bata).
+* Kolom input teks opsional untuk catatan tajwid/makhraj.
+* Riwayat Laporan: Lini masa (*timeline*) sederhana yang menunjukkan laporan yang sudah dikirim sebelumnya untuk memotivasi peserta.
 
 **Modul Laporan (Wali Santri & Lembaga)**
 
@@ -76,6 +86,7 @@ Sistem dibangun dalam satu ekosistem terpadu (*monorepo*) untuk menjamin *type-s
 
 * Pembuatan sketsa kasar (*wireframe*) untuk *form* setoran Ustadz agar interaksinya secepat mungkin.
 * Pendefinisian skema *database* relasional di Drizzle (Tabel: `tenants`, `users`, `santri`, `setoran`).
+* Penambahan tabel khusus `laporan_murojaah` yang berelasi dengan `santri_id` dan `tenant_id` untuk menampung pelaporan mandiri.
 
 **Fase 2: Pengembangan Frontend (UI/UX)**
 

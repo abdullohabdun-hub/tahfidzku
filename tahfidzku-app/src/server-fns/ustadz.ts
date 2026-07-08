@@ -1,0 +1,165 @@
+// src/server-fns/ustadz.ts
+// Server Functions untuk modul Ustadz — dijalankan di server, dipanggil dari React
+
+import { createServerFn } from '@tanstack/react-start'
+import { eq, and, desc } from 'drizzle-orm'
+import { db } from '../db'
+import { setoran } from '../db/schema'
+import { getAuthSession, requireRole } from '../middleware/auth.middleware'
+import { createSetoranSchema, updateSetoranSchema } from '../lib/validators'
+import { success, handleError, type ApiResponse } from '../lib/response'
+import { AuthenticationError, ForbiddenError } from '../lib/errors'
+
+// ═══════════════════════════════════════════════════════
+// 1. INPUT SETORAN BARU
+// ═══════════════════════════════════════════════════════
+export const createSetoran = createServerFn({ method: 'POST' })
+  .validator(createSetoranSchema)
+  .handler(async ({ data }) => {
+    try {
+      // ── Auth: siapa yang memanggil? ──
+      const session = await getAuthSession()
+      if (!session) throw new AuthenticationError()
+      requireRole(session, 'ustadz')
+
+      // ── Kunci Multi-Tenant ──
+      // tenantId & ustadzId SELALU dari session, TIDAK PERNAH dari client
+      const tenantId = session.user.tenantId
+
+      // ── Insert ke database ──
+      const [result] = await db
+        .insert(setoran)
+        .values({
+          tenantId,
+          santriId: data.santriId,
+          ustadzId: session.user.id,
+          jenis: data.jenis,
+          surah: data.surah,
+          ayatAwal: data.ayatAwal,
+          ayatAkhir: data.ayatAkhir,
+          kualitas: data.kualitas,
+          catatan: data.catatan ?? null,
+        })
+        .returning()
+
+      return success(result, 'Setoran berhasil disimpan')
+    } catch (err) {
+      return handleError(err)
+    }
+  })
+
+// ═══════════════════════════════════════════════════════
+// 2. EDIT SETORAN
+// ═══════════════════════════════════════════════════════
+export const updateSetoran = createServerFn({ method: 'POST' })
+  .validator(updateSetoranSchema)
+  .handler(async ({ data }) => {
+    try {
+      const session = await getAuthSession()
+      if (!session) throw new AuthenticationError()
+      requireRole(session, 'ustadz')
+
+      const tenantId = session.user.tenantId
+
+      // Update HANYA jika setoran milik tenant yang sama DAN milik ustadz ini
+      const [result] = await db
+        .update(setoran)
+        .set({
+          santriId: data.santriId,
+          jenis: data.jenis,
+          surah: data.surah,
+          ayatAwal: data.ayatAwal,
+          ayatAkhir: data.ayatAkhir,
+          kualitas: data.kualitas,
+          catatan: data.catatan ?? null,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(setoran.id, data.id),
+            eq(setoran.tenantId, tenantId),       // ← Kunci tenant
+            eq(setoran.ustadzId, session.user.id), // ← Hanya pemilik
+          ),
+        )
+        .returning()
+
+      if (!result) {
+        return handleError(new ForbiddenError('Setoran tidak ditemukan atau bukan milik Anda'))
+      }
+
+      return success(result, 'Setoran berhasil diperbarui')
+    } catch (err) {
+      return handleError(err)
+    }
+  })
+
+// ═══════════════════════════════════════════════════════
+// 3. RIWAYAT SETORAN (List)
+// ═══════════════════════════════════════════════════════
+export const getSetoranRiwayat = createServerFn({ method: 'GET' }).handler(
+  async () => {
+    try {
+      const session = await getAuthSession()
+      if (!session) throw new AuthenticationError()
+      requireRole(session, 'ustadz')
+
+      const tenantId = session.user.tenantId
+
+      // Ambil setoran HANYA dari tenant & ustadz yang login
+      const results = await db
+        .select()
+        .from(setoran)
+        .where(
+          and(
+            eq(setoran.tenantId, tenantId),
+            eq(setoran.ustadzId, session.user.id),
+          ),
+        )
+        .orderBy(desc(setoran.createdAt))
+        .limit(50)
+
+      return success(results, 'Riwayat setoran berhasil dimuat')
+    } catch (err) {
+      return handleError(err)
+    }
+  },
+)
+
+// ═══════════════════════════════════════════════════════
+// 4. DASHBOARD USTADZ (Statistik ringkas)
+// ═══════════════════════════════════════════════════════
+export const getUstadzDashboard = createServerFn({ method: 'GET' }).handler(
+  async () => {
+    try {
+      const session = await getAuthSession()
+      if (!session) throw new AuthenticationError()
+      requireRole(session, 'ustadz')
+
+      const tenantId = session.user.tenantId
+
+      // Hitung total setoran hari ini dari ustadz ini
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+
+      const setoranHariIni = await db
+        .select()
+        .from(setoran)
+        .where(
+          and(
+            eq(setoran.tenantId, tenantId),
+            eq(setoran.ustadzId, session.user.id),
+          ),
+        )
+
+      return success(
+        {
+          totalSetoran: setoranHariIni.length,
+          namaUstadz: session.user.nama,
+        },
+        'Dashboard berhasil dimuat',
+      )
+    } catch (err) {
+      return handleError(err)
+    }
+  },
+)
