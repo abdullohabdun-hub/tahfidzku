@@ -3,6 +3,7 @@ import { checkAuth } from '../server-fns/auth'
 import { BookOpen, Shield, Smartphone, ArrowRight, CheckCircle2 } from "lucide-react"
 import { Button, buttonVariants } from "../components/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
+import { cn } from "../lib/utils"
 
 export const Route = createFileRoute('/')({
   beforeLoad: async () => {
@@ -42,10 +43,10 @@ function Page() {
             <a href="#keunggulan" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Keunggulan</a>
           </nav>
           <div className="flex items-center gap-4">
-            <Link to="/login" className={buttonVariants({ variant: "ghost", className: "hidden sm:inline-flex" })}>
+            <Link to="/login" className={cn(buttonVariants({ variant: "ghost", className: "hidden sm:inline-flex" }))}>
               Masuk
             </Link>
-            <Link to="/login" className={buttonVariants({ className: "bg-emerald-600 hover:bg-emerald-700" })}>
+            <Link to="/login" className={cn(buttonVariants({ className: "bg-emerald-600 hover:bg-emerald-700 text-white" }))}>
               Daftarkan Lembaga
             </Link>
           </div>
@@ -69,7 +70,7 @@ function Page() {
               Tingkatkan efisiensi lembaga tahfidz Anda dengan sistem murni logika database tanpa kompleksitas. Fokus pada hafalan santri, biarkan kami yang mengurus datanya. 100% Gratis.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link to="/login" className={buttonVariants({ size: "lg", className: "w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 h-12 px-8 text-base" })}>
+              <Link to="/login" className={cn(buttonVariants({ size: "lg", className: "w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white h-12 px-8 text-base" }))}>
                 Gunakan Secara Gratis <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
               <Button size="lg" variant="outline" className="w-full sm:w-auto h-12 px-8 text-base border-slate-300">
@@ -146,7 +147,7 @@ function Page() {
                     </div>
                   ))}
                 </div>
-                <Link to="/login" className={buttonVariants({ className: "mt-8 bg-emerald-600 hover:bg-emerald-700" })}>
+                <Link to="/login" className={cn(buttonVariants({ className: "mt-8 bg-emerald-600 hover:bg-emerald-700 text-white" }))}>
                   Gunakan Sekarang
                 </Link>
               </div>
