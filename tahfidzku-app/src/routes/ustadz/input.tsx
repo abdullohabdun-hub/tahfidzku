@@ -4,7 +4,7 @@ import { Check, ChevronDown, Loader2, Info } from 'lucide-react'
 import { getSantriList, getLastSetoran, createSetoran } from '../../server-fns/ustadz'
 import { getSurahByJuz, getAyatRangeInJuz, getTotalHalamanJuz, getNextAyat, SURAH_LIST, PAGES_DATA } from '../../lib/quranMapper'
 
-export const Route = createFileRoute('/ustadz/input-setoran')({
+export const Route = createFileRoute('/ustadz/input')({
   component: InputSetoranPage,
 })
 
