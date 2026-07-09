@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, Link } from "@tanstack/react-router"
 import { Card, CardContent } from "../../components/ui/card"
 import { Users, BookOpen, Clock, Edit } from "lucide-react"
 
@@ -75,9 +75,12 @@ function UstadzDashboard() {
                       <p className="text-xs text-slate-500">Target: Al-Mulk (1-30)</p>
                     </div>
                   </div>
-                  <button className="bg-emerald-50 text-emerald-700 font-semibold px-3 py-1.5 rounded-lg text-xs hover:bg-emerald-100">
+                  <Link 
+                    to="/ustadz/input-setoran"
+                    className="bg-emerald-50 text-emerald-700 font-semibold px-3 py-1.5 rounded-lg text-xs hover:bg-emerald-100"
+                  >
                     Input
-                  </button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>

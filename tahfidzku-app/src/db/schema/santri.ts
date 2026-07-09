@@ -12,5 +12,7 @@ export const santri = pgTable('santri', {
   nama: varchar('nama', { length: 255 }).notNull(),
   kelasId: uuid('kelas_id'),  // FK ke tabel kelas (akan di-reference setelah kelas dibuat)
   targetJuz: integer('target_juz').notNull().default(30),
+  juzProgress: integer('juz_progress').array().default([]), // Juz yang sudah diselesaikan (contoh: [30, 29])
+  hafalanAwal: integer('hafalan_awal').default(0), // Jumlah juz hafalan sebelum masuk sistem
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 })

@@ -7,8 +7,12 @@ import { db } from '../db'
 import { setoran } from '../db/schema'
 import { getAuthSession, requireRole } from '../middleware/auth.middleware'
 import { createSetoranSchema, updateSetoranSchema } from '../lib/validators'
-import { success, handleError, type ApiResponse } from '../lib/response'
+import { success, handleError } from '../lib/response'
 import { AuthenticationError, ForbiddenError } from '../lib/errors'
+
+import { getPageInfo } from '../lib/quranMapper'
+import { santri } from '../db/schema/santri'
+import { z } from 'zod'
 
 // ═══════════════════════════════════════════════════════
 // 1. INPUT SETORAN BARU
@@ -26,6 +30,24 @@ export const createSetoran = createServerFn({ method: 'POST' })
       // tenantId & ustadzId SELALU dari session, TIDAK PERNAH dari client
       const tenantId = session.user.tenantId
 
+      // ── Auto-populate Surah/Ayat untuk Sabqi/Manzil ──
+      let finalSurah = data.surah
+      let finalAyatAwal = data.ayatAwal
+      let finalAyatAkhir = data.ayatAkhir
+
+      if (data.jenis !== 'ziyadah' && data.halamanAwal && data.halamanAkhir) {
+        const pageAwal = getPageInfo(data.halamanAwal)
+        const pageAkhir = getPageInfo(data.halamanAkhir)
+
+        if (pageAwal && pageAkhir && pageAwal.surahs.length > 0 && pageAkhir.surahs.length > 0) {
+           const firstSurah = pageAwal.surahs[0]
+           const lastSurah = pageAkhir.surahs[pageAkhir.surahs.length - 1]
+           finalSurah = firstSurah.nama !== lastSurah.nama ? `${firstSurah.nama} - ${lastSurah.nama}` : firstSurah.nama
+           finalAyatAwal = firstSurah.ayatAwal
+           finalAyatAkhir = lastSurah.ayatAkhir
+        }
+      }
+
       // ── Insert ke database ──
       const [result] = await db
         .insert(setoran)
@@ -34,15 +56,60 @@ export const createSetoran = createServerFn({ method: 'POST' })
           santriId: data.santriId,
           ustadzId: session.user.id,
           jenis: data.jenis,
-          surah: data.surah,
-          ayatAwal: data.ayatAwal,
-          ayatAkhir: data.ayatAkhir,
+          juz: data.juz ?? null,
+          halamanAwal: data.halamanAwal ?? null,
+          halamanAkhir: data.halamanAkhir ?? null,
+          surah: finalSurah,
+          ayatAwal: finalAyatAwal,
+          ayatAkhir: finalAyatAkhir,
           kualitas: data.kualitas,
           catatan: data.catatan ?? null,
         })
         .returning()
 
       return success(result, 'Setoran berhasil disimpan')
+    } catch (err) {
+      return handleError(err)
+    }
+  })
+
+// ═══════════════════════════════════════════════════════
+// 1.1 GET SANTRI LIST
+// ═══════════════════════════════════════════════════════
+export const getSantriList = createServerFn({ method: 'GET' }).handler(async () => {
+  try {
+    const session = await getAuthSession()
+    if (!session) throw new AuthenticationError()
+    requireRole(session, 'ustadz')
+
+    const tenantId = session.user.tenantId
+    const results = await db.select().from(santri).where(eq(santri.tenantId, tenantId)).orderBy(santri.nama)
+    return success(results, 'Data santri berhasil dimuat')
+  } catch (err) {
+    return handleError(err)
+  }
+})
+
+// ═══════════════════════════════════════════════════════
+// 1.2 GET LAST SETORAN (Rekam Jejak)
+// ═══════════════════════════════════════════════════════
+export const getLastSetoran = createServerFn({ method: 'GET' })
+  .validator(z.object({ santriId: z.string().uuid(), jenis: z.enum(['ziyadah', 'sabqi', 'manzil']) }))
+  .handler(async ({ data }) => {
+    try {
+      const session = await getAuthSession()
+      if (!session) throw new AuthenticationError()
+      requireRole(session, 'ustadz')
+
+      const tenantId = session.user.tenantId
+      const [result] = await db
+        .select()
+        .from(setoran)
+        .where(and(eq(setoran.tenantId, tenantId), eq(setoran.santriId, data.santriId), eq(setoran.jenis, data.jenis)))
+        .orderBy(desc(setoran.createdAt))
+        .limit(1)
+
+      return success(result ?? null, 'Data setoran terakhir berhasil dimuat')
     } catch (err) {
       return handleError(err)
     }

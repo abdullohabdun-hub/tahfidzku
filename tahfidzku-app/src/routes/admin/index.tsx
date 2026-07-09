@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { Users, UserSquare2, CheckCircle2, TrendingUp, Settings, Database, PlusCircle } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Users, UserSquare2, CheckCircle2, TrendingUp, Settings, Database, PlusCircle, Loader2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card"
+import { getAdminDashboardStats } from "../../server-fns/admin"
 
 export const Route = createFileRoute('/admin/')({
   component: Dashboard,
@@ -9,35 +11,72 @@ export const Route = createFileRoute('/admin/')({
 function Dashboard() {
   const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
   
+  const [statsData, setStatsData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const res = await getAdminDashboardStats()
+        if (res.success && res.data) {
+          setStatsData(res.data)
+        }
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchStats()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-12 text-emerald-600 min-h-[50vh]">
+        <Loader2 className="animate-spin w-8 h-8" />
+      </div>
+    )
+  }
+
   const stats = [
     {
       title: "Total Santri",
-      value: "142",
+      value: statsData?.totalSantri || "0",
       icon: <Users className="h-5 w-5 text-emerald-600" />,
-      description: "Santri aktif bulan ini",
+      description: "Santri aktif terdaftar",
     },
     {
       title: "Total Ustadz",
-      value: "12",
+      value: statsData?.totalUstadz || "0",
       icon: <UserSquare2 className="h-5 w-5 text-blue-600" />,
-      description: "Muhaffizh terdaftar",
+      description: "Muhaffizh pengajar",
     },
     {
       title: "Setoran Hari Ini",
-      value: "86",
+      value: statsData?.totalSetoranHariIni || "0",
       icon: <CheckCircle2 className="h-5 w-5 text-purple-600" />,
       description: "Telah menyetor hafalan",
     },
     {
-      title: "Rata-rata Kelancaran",
-      value: "85%",
+      title: "Status Sistem",
+      value: "Aktif",
       icon: <TrendingUp className="h-5 w-5 text-amber-600" />,
-      description: "Kualitas bacaan santri",
+      description: "Semua sistem berjalan lancar",
     }
   ]
 
+  const formatRelativeTime = (dateStr: string) => {
+    const rtf = new Intl.RelativeTimeFormat('id', { numeric: 'auto' })
+    const diffInMs = new Date(dateStr).getTime() - new Date().getTime()
+    const diffInMins = Math.round(diffInMs / (1000 * 60))
+    if (diffInMins > -60) return rtf.format(diffInMins, 'minute')
+    const diffInHours = Math.round(diffInMins / 60)
+    if (diffInHours > -24) return rtf.format(diffInHours, 'hour')
+    return new Date(dateStr).toLocaleDateString('id-ID')
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-900">Ahlan wa Sahlan, Administrator!</h2>
@@ -99,14 +138,13 @@ function Dashboard() {
         ))}
       </div>
 
-      {/* Placeholder for Timeline/Charts */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-4 border-slate-200 shadow-sm">
           <CardHeader>
             <CardTitle>Grafik Setoran Mingguan</CardTitle>
           </CardHeader>
           <CardContent className="h-72 flex items-center justify-center bg-slate-50 rounded-md m-6 mt-0 border border-slate-100 border-dashed">
-            <p className="text-slate-400">Area Grafik (Chart.js / Recharts)</p>
+            <p className="text-slate-400">Pembaruan Data Grafik Segera Hadir</p>
           </CardContent>
         </Card>
         <Card className="col-span-3 border-slate-200 shadow-sm">
@@ -115,29 +153,37 @@ function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {[
-                { name: "Ahmad Fulan", surah: "Al-Mulk: 1-10", time: "10 menit yang lalu", status: "Lancar" },
-                { name: "Budi Santoso", surah: "An-Naba: 1-40", time: "25 menit yang lalu", status: "Mengulang" },
-                { name: "Siti Aminah", surah: "Al-Baqarah: 140-145", time: "1 jam yang lalu", status: "Lancar" },
-                { name: "Zaid Abdullah", surah: "Yasin: 1-20", time: "2 jam yang lalu", status: "Terbata-bata" },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center justify-between border-b border-slate-100 last:border-0 pb-4 last:pb-0">
-                  <div>
-                    <p className="font-medium text-sm text-slate-900">{item.name}</p>
-                    <p className="text-xs text-slate-500">{item.surah}</p>
-                  </div>
-                  <div className="text-right">
-                    <span className={`inline-block px-2 py-1 rounded text-[10px] font-medium mb-1
-                      ${item.status === 'Lancar' ? 'bg-emerald-100 text-emerald-700' : 
-                        item.status === 'Mengulang' ? 'bg-amber-100 text-amber-700' : 
-                        'bg-red-100 text-red-700'}
-                    `}>
-                      {item.status}
-                    </span>
-                    <p className="text-[10px] text-slate-400">{item.time}</p>
-                  </div>
-                </div>
-              ))}
+              {statsData?.recentSetoran?.length === 0 ? (
+                <p className="text-slate-500 text-sm italic text-center py-4">Belum ada setoran masuk.</p>
+              ) : (
+                statsData?.recentSetoran?.map((item: any, i: number) => {
+                  let infoTarget = ''
+                  if (item.jenis === 'ziyadah') {
+                    infoTarget = `${item.surah || ''}: ${item.ayatAwal || ''}-${item.ayatAkhir || ''}`
+                  } else {
+                    infoTarget = `Juz ${item.juz || ''} Hal ${item.halamanAwal || ''}-${item.halamanAkhir || ''}`
+                  }
+
+                  return (
+                    <div key={i} className="flex items-center justify-between border-b border-slate-100 last:border-0 pb-4 last:pb-0">
+                      <div>
+                        <p className="font-medium text-sm text-slate-900">{item.santriNama}</p>
+                        <p className="text-xs text-slate-500 capitalize">{item.jenis} • {infoTarget}</p>
+                      </div>
+                      <div className="text-right">
+                        <span className={`inline-block px-2 py-1 rounded text-[10px] font-medium mb-1 capitalize
+                          ${item.kualitas === 'lancar' ? 'bg-emerald-100 text-emerald-700' : 
+                            item.kualitas === 'mengulang' ? 'bg-amber-100 text-amber-700' : 
+                            'bg-red-100 text-red-700'}
+                        `}>
+                          {item.kualitas}
+                        </span>
+                        <p className="text-[10px] text-slate-400">{formatRelativeTime(item.createdAt)}</p>
+                      </div>
+                    </div>
+                  )
+                })
+              )}
             </div>
           </CardContent>
         </Card>

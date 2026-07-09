@@ -8,33 +8,51 @@ export const createSetoranSchema = z
   .object({
     santriId: z.string().uuid('ID Santri tidak valid'),
     jenis: z.enum(['ziyadah', 'sabqi', 'manzil'], {
-      errorMap: () => ({ message: 'Jenis setoran harus: ziyadah, sabqi, atau manzil' }),
+      message: 'Jenis setoran harus: ziyadah, sabqi, atau manzil',
     }),
+    juz: z.number({ message: 'Juz harus berupa angka' }).int().positive().max(30, 'Juz maksimal 30').optional(),
+    halamanAwal: z.number().int().positive().max(604).optional(),
+    halamanAkhir: z.number().int().positive().max(604).optional(),
     surah: z
       .string()
-      .min(1, 'Nama surah wajib diisi')
-      .max(50, 'Nama surah terlalu panjang'),
+      .max(100, 'Nama surah terlalu panjang')
+      .optional(),
     ayatAwal: z
-      .number({ invalid_type_error: 'Ayat awal harus berupa angka' })
-      .int('Ayat awal harus bilangan bulat')
-      .positive('Ayat awal harus positif')
-      .max(286, 'Ayat awal maksimal 286'),
+      .number({ message: 'Ayat awal harus berupa angka' })
+      .int()
+      .positive()
+      .max(286)
+      .optional(),
     ayatAkhir: z
-      .number({ invalid_type_error: 'Ayat akhir harus berupa angka' })
-      .int('Ayat akhir harus bilangan bulat')
-      .positive('Ayat akhir harus positif')
-      .max(286, 'Ayat akhir maksimal 286'),
+      .number({ message: 'Ayat akhir harus berupa angka' })
+      .int()
+      .positive()
+      .max(286)
+      .optional(),
     kualitas: z.enum(['lancar', 'mengulang', 'terbata'], {
-      errorMap: () => ({ message: 'Kualitas harus: lancar, mengulang, atau terbata' }),
+      message: 'Kualitas harus: lancar, mengulang, atau terbata',
     }),
     catatan: z
       .string()
       .max(500, 'Catatan maksimal 500 karakter')
       .optional(),
   })
-  .refine((data) => data.ayatAkhir >= data.ayatAwal, {
-    message: 'Ayat akhir tidak boleh kurang dari ayat awal',
-    path: ['ayatAkhir'],
+  .superRefine((data, ctx) => {
+    if (data.jenis === 'ziyadah') {
+      if (!data.surah) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Surah wajib diisi untuk Ziyadah', path: ['surah'] });
+      if (!data.ayatAwal) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Ayat awal wajib diisi untuk Ziyadah', path: ['ayatAwal'] });
+      if (!data.ayatAkhir) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Ayat akhir wajib diisi untuk Ziyadah', path: ['ayatAkhir'] });
+      if (data.ayatAwal && data.ayatAkhir && data.ayatAkhir < data.ayatAwal) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Ayat akhir tidak boleh kurang dari ayat awal', path: ['ayatAkhir'] });
+      }
+    } else {
+      if (!data.juz) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Juz wajib diisi untuk Sabqi/Manzil', path: ['juz'] });
+      if (!data.halamanAwal) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Halaman awal wajib diisi untuk Sabqi/Manzil', path: ['halamanAwal'] });
+      if (!data.halamanAkhir) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Halaman akhir wajib diisi untuk Sabqi/Manzil', path: ['halamanAkhir'] });
+      if (data.halamanAwal && data.halamanAkhir && data.halamanAkhir < data.halamanAwal) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Halaman akhir tidak boleh kurang dari halaman awal', path: ['halamanAkhir'] });
+      }
+    }
   })
 
 export type CreateSetoranInput = z.infer<typeof createSetoranSchema>
@@ -50,24 +68,24 @@ export type UpdateSetoranInput = z.infer<typeof updateSetoranSchema>
 export const createLaporanSchema = z
   .object({
     jenis: z.enum(['ziyadah', 'sabqi', 'manzil'], {
-      errorMap: () => ({ message: 'Jenis setoran harus: ziyadah, sabqi, atau manzil' }),
+      message: 'Jenis setoran harus: ziyadah, sabqi, atau manzil',
     }),
     surah: z
       .string()
       .min(1, 'Nama surah wajib diisi')
       .max(50, 'Nama surah terlalu panjang'),
     ayatAwal: z
-      .number({ invalid_type_error: 'Ayat awal harus berupa angka' })
+      .number({ message: 'Ayat awal harus berupa angka' })
       .int()
       .positive()
       .max(286),
     ayatAkhir: z
-      .number({ invalid_type_error: 'Ayat akhir harus berupa angka' })
+      .number({ message: 'Ayat akhir harus berupa angka' })
       .int()
       .positive()
       .max(286),
     kualitasMandiri: z.enum(['lancar', 'mengulang', 'terbata'], {
-      errorMap: () => ({ message: 'Kualitas harus: lancar, mengulang, atau terbata' }),
+      message: 'Kualitas harus: lancar, mengulang, atau terbata',
     }),
     catatan: z
       .string()
