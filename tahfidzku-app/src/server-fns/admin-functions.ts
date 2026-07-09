@@ -111,10 +111,12 @@ export const getSantriList = createServerFn({ method: 'GET' }).handler(
           batasHafalanSurah: santri.batasHafalanSurah,
           batasHafalanAyat: santri.batasHafalanAyat,
           tipe: santri.tipe,
+          username: users.email,
           createdAt: santri.createdAt,
         })
         .from(santri)
         .leftJoin(kelas, eq(santri.kelasId, kelas.id))
+        .leftJoin(users, eq(users.santriId, santri.id))
         .where(eq(santri.tenantId, session.user.tenantId))
         .orderBy(desc(santri.createdAt))
 

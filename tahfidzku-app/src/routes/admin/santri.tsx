@@ -301,7 +301,17 @@ function DataSantriPage() {
                     </td>
                     <td className="p-4">
                       {s.tipe === 'dewasa' 
-                        ? <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-md text-xs font-medium">Dewasa / Online</span>
+                        ? (
+                          <div>
+                            <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-md text-xs font-medium">Dewasa / Online</span>
+                            {s.username && (
+                              <div className="mt-2 text-[10px] text-slate-500 font-mono bg-slate-50 p-1.5 rounded border border-slate-200 w-max leading-tight">
+                                U: {s.username}<br/>
+                                P: 123456
+                              </div>
+                            )}
+                          </div>
+                        )
                         : <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded-md text-xs font-medium">Reguler (Anak)</span>
                       }
                     </td>
