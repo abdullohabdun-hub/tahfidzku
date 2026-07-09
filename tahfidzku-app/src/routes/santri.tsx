@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, Link, useLocation } from "@tanstack/react-router"
-import { Home, PencilLine, User, Award, BookOpen } from "lucide-react"
+import { Home, PencilLine, User, Award, BookOpen, LogOut } from "lucide-react"
+import { logout } from "../server-fns/auth"
 
 export const Route = createFileRoute('/santri')({
   component: SantriLayout,
@@ -7,6 +8,11 @@ export const Route = createFileRoute('/santri')({
 
 function SantriLayout() {
   const location = useLocation()
+
+  const handleLogout = async () => {
+    await logout()
+    window.location.href = '/login'
+  }
 
   const navItems = [
     { name: "Beranda", path: "/santri", icon: <Home className="w-7 h-7" /> },
@@ -19,13 +25,16 @@ function SantriLayout() {
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 pb-20 md:pb-0">
       
       {/* Top Header (Logo) */}
-      <header className="bg-white border-b border-slate-200 p-4 sticky top-0 z-50 flex items-center justify-center shadow-sm">
+      <header className="bg-white border-b border-slate-200 p-4 sticky top-0 z-50 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-2">
           <div className="bg-emerald-600 p-1.5 rounded-md">
             <BookOpen className="h-5 w-5 text-white" />
           </div>
           <span className="font-bold text-lg text-emerald-950 tracking-tight">TahfidzKu Santri</span>
         </div>
+        <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors md:hidden">
+          <LogOut className="w-5 h-5" />
+        </button>
       </header>
 
       {/* Main Content */}
@@ -83,6 +92,12 @@ function SantriLayout() {
               </Link>
             )
           })}
+        </div>
+        <div className="p-4 border-t border-slate-100">
+          <button onClick={handleLogout} className="w-full flex items-center px-3 py-2.5 justify-start text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg font-medium transition-colors">
+            <LogOut className="w-5 h-5 mr-3" />
+            Keluar
+          </button>
         </div>
       </aside>
       

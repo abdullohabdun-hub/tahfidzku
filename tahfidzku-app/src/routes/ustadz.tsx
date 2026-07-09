@@ -1,5 +1,8 @@
 import { createFileRoute, Outlet, Link, useLocation } from "@tanstack/react-router"
-import { Home, PlusCircle, History, User, Award, Clock } from "lucide-react"
+import { Home, PlusCircle, History, User, Award, Clock, LogOut } from "lucide-react"
+import { useState, useEffect } from "react"
+import { checkAuth, logout } from "../server-fns/auth"
+import { getTenantInfo } from "../server-fns/admin-settings"
 
 export const Route = createFileRoute('/ustadz')({
   component: UstadzLayout,
@@ -7,6 +10,27 @@ export const Route = createFileRoute('/ustadz')({
 
 function UstadzLayout() {
   const location = useLocation()
+  const [user, setUser] = useState<any>(null)
+  const [tenantName, setTenantName] = useState('Memuat...')
+
+  useEffect(() => {
+    async function loadProfile() {
+      const auth = await checkAuth()
+      if (auth) {
+        setUser(auth)
+        const tenantRes = await getTenantInfo()
+        if (tenantRes.success && tenantRes.data) {
+          setTenantName(tenantRes.data.namaLembaga)
+        }
+      }
+    }
+    loadProfile()
+  }, [])
+
+  const handleLogout = async () => {
+    await logout()
+    window.location.href = '/login'
+  }
 
   const navItems = [
     { name: "Beranda", path: "/ustadz", icon: <Home className="w-6 h-6" /> },
@@ -23,11 +47,16 @@ function UstadzLayout() {
       {/* Simple Top Header */}
       <header className="bg-white border-b border-slate-200 p-4 sticky top-0 z-50 flex justify-between items-center shadow-sm">
         <div>
-          <h1 className="font-bold text-lg text-emerald-950 leading-tight">Halaqoh Utsman</h1>
-          <p className="text-xs text-slate-500">Ustadz Ahmad</p>
+          <h1 className="font-bold text-lg text-emerald-950 leading-tight">{tenantName}</h1>
+          <p className="text-xs text-slate-500">Ustadz {user?.nama || "..."}</p>
         </div>
-        <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold border border-emerald-200">
-          UA
+        <div className="flex gap-3 items-center">
+          <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold border border-emerald-200 uppercase">
+            {user?.nama ? user.nama.substring(0, 2) : "US"}
+          </div>
+          <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors">
+            <LogOut className="w-5 h-5" />
+          </button>
         </div>
       </header>
 

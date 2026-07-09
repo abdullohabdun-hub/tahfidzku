@@ -2,7 +2,7 @@ import { createFileRoute, Outlet, Link, useLocation } from "@tanstack/react-rout
 import { BookOpen, Users, UserSquare2, Home, Settings, LogOut, Menu } from "lucide-react"
 import { useState, useEffect } from "react"
 import { Button } from "../components/ui/button"
-import { checkAuth } from "../server-fns/auth"
+import { checkAuth, logout } from "../server-fns/auth"
 import { getTenantInfo } from "../server-fns/admin-settings"
 
 export const Route = createFileRoute('/admin')({
@@ -28,6 +28,11 @@ function AdminLayout() {
     }
     loadProfile()
   }, [])
+
+  const handleLogout = async () => {
+    await logout()
+    window.location.href = '/login'
+  }
 
   const navItems = [
     { name: "Dashboard", path: "/admin", icon: <Home className="w-5 h-5" /> },
@@ -92,7 +97,7 @@ function AdminLayout() {
         </div>
 
         <div className="p-4 border-t border-slate-100">
-          <Button variant="ghost" className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50">
+          <Button variant="ghost" onClick={handleLogout} className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50">
             <LogOut className="w-5 h-5 mr-3" />
             Keluar
           </Button>
