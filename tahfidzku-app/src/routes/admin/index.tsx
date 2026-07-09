@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, Link } from "@tanstack/react-router"
 import { useState, useEffect } from "react"
 import { Users, UserSquare2, CheckCircle2, TrendingUp, Settings, Database, PlusCircle, Loader2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card"
@@ -90,30 +90,30 @@ function Dashboard() {
       {/* Quick Menu Widget */}
       <section>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition-colors shadow-sm">
+          <Link to="/admin/santri" className="bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition-colors shadow-sm">
             <div className="w-10 h-10 bg-emerald-200 text-emerald-700 rounded-full flex items-center justify-center shrink-0">
               <PlusCircle className="w-5 h-5" />
             </div>
             <span className="font-semibold text-emerald-900 text-sm">Tambah Santri</span>
-          </div>
-          <div className="bg-blue-50 hover:bg-blue-100 border border-blue-100 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition-colors shadow-sm">
+          </Link>
+          <Link to="/admin/ustadz" className="bg-blue-50 hover:bg-blue-100 border border-blue-100 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition-colors shadow-sm">
             <div className="w-10 h-10 bg-blue-200 text-blue-700 rounded-full flex items-center justify-center shrink-0">
               <UserSquare2 className="w-5 h-5" />
             </div>
             <span className="font-semibold text-blue-900 text-sm">Kelola Ustadz</span>
-          </div>
-          <div className="bg-amber-50 hover:bg-amber-100 border border-amber-100 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition-colors shadow-sm">
+          </Link>
+          <Link to="/admin/laporan" className="bg-amber-50 hover:bg-amber-100 border border-amber-100 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition-colors shadow-sm">
             <div className="w-10 h-10 bg-amber-200 text-amber-700 rounded-full flex items-center justify-center shrink-0">
               <Database className="w-5 h-5" />
             </div>
             <span className="font-semibold text-amber-900 text-sm">Laporan Bulanan</span>
-          </div>
-          <div className="bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition-colors shadow-sm">
+          </Link>
+          <Link to="/admin/pengaturan" className="bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition-colors shadow-sm">
             <div className="w-10 h-10 bg-slate-300 text-slate-700 rounded-full flex items-center justify-center shrink-0">
               <Settings className="w-5 h-5" />
             </div>
             <span className="font-semibold text-slate-900 text-sm">Pengaturan Web</span>
-          </div>
+          </Link>
         </div>
       </section>
 

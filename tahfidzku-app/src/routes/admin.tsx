@@ -13,6 +13,7 @@ function AdminLayout() {
 
   const navItems = [
     { name: "Dashboard", path: "/admin", icon: <Home className="w-5 h-5" /> },
+    { name: "Laporan Bulanan", path: "/admin/laporan", icon: <BookOpen className="w-5 h-5" /> },
     { name: "Data Ustadz", path: "/admin/ustadz", icon: <UserSquare2 className="w-5 h-5" /> },
     { name: "Data Santri", path: "/admin/santri", icon: <Users className="w-5 h-5" /> },
     { name: "Kelas / Halaqoh", path: "/admin/kelas", icon: <BookOpen className="w-5 h-5" /> },

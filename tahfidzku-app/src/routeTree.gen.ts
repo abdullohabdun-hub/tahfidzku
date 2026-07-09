@@ -25,6 +25,8 @@ import { Route as UstadzProfilRouteImport } from './routes/ustadz/profil'
 import { Route as UstadzInputRouteImport } from './routes/ustadz/input'
 import { Route as AdminUstadzRouteImport } from './routes/admin/ustadz'
 import { Route as AdminSantriRouteImport } from './routes/admin/santri'
+import { Route as AdminPengaturanRouteImport } from './routes/admin/pengaturan'
+import { Route as AdminLaporanRouteImport } from './routes/admin/laporan'
 import { Route as AdminKelasRouteImport } from './routes/admin/kelas'
 
 const WaliRoute = WaliRouteImport.update({
@@ -107,6 +109,16 @@ const AdminSantriRoute = AdminSantriRouteImport.update({
   path: '/santri',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminPengaturanRoute = AdminPengaturanRouteImport.update({
+  id: '/pengaturan',
+  path: '/pengaturan',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLaporanRoute = AdminLaporanRouteImport.update({
+  id: '/laporan',
+  path: '/laporan',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminKelasRoute = AdminKelasRouteImport.update({
   id: '/kelas',
   path: '/kelas',
@@ -121,6 +133,8 @@ export interface FileRoutesByFullPath {
   '/ustadz': typeof UstadzRouteWithChildren
   '/wali': typeof WaliRouteWithChildren
   '/admin/kelas': typeof AdminKelasRoute
+  '/admin/laporan': typeof AdminLaporanRoute
+  '/admin/pengaturan': typeof AdminPengaturanRoute
   '/admin/santri': typeof AdminSantriRoute
   '/admin/ustadz': typeof AdminUstadzRoute
   '/ustadz/input': typeof UstadzInputRoute
@@ -136,6 +150,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/admin/kelas': typeof AdminKelasRoute
+  '/admin/laporan': typeof AdminLaporanRoute
+  '/admin/pengaturan': typeof AdminPengaturanRoute
   '/admin/santri': typeof AdminSantriRoute
   '/admin/ustadz': typeof AdminUstadzRoute
   '/ustadz/input': typeof UstadzInputRoute
@@ -156,6 +172,8 @@ export interface FileRoutesById {
   '/ustadz': typeof UstadzRouteWithChildren
   '/wali': typeof WaliRouteWithChildren
   '/admin/kelas': typeof AdminKelasRoute
+  '/admin/laporan': typeof AdminLaporanRoute
+  '/admin/pengaturan': typeof AdminPengaturanRoute
   '/admin/santri': typeof AdminSantriRoute
   '/admin/ustadz': typeof AdminUstadzRoute
   '/ustadz/input': typeof UstadzInputRoute
@@ -177,6 +195,8 @@ export interface FileRouteTypes {
     | '/ustadz'
     | '/wali'
     | '/admin/kelas'
+    | '/admin/laporan'
+    | '/admin/pengaturan'
     | '/admin/santri'
     | '/admin/ustadz'
     | '/ustadz/input'
@@ -192,6 +212,8 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/admin/kelas'
+    | '/admin/laporan'
+    | '/admin/pengaturan'
     | '/admin/santri'
     | '/admin/ustadz'
     | '/ustadz/input'
@@ -211,6 +233,8 @@ export interface FileRouteTypes {
     | '/ustadz'
     | '/wali'
     | '/admin/kelas'
+    | '/admin/laporan'
+    | '/admin/pengaturan'
     | '/admin/santri'
     | '/admin/ustadz'
     | '/ustadz/input'
@@ -346,6 +370,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSantriRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/pengaturan': {
+      id: '/admin/pengaturan'
+      path: '/pengaturan'
+      fullPath: '/admin/pengaturan'
+      preLoaderRoute: typeof AdminPengaturanRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/laporan': {
+      id: '/admin/laporan'
+      path: '/laporan'
+      fullPath: '/admin/laporan'
+      preLoaderRoute: typeof AdminLaporanRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/kelas': {
       id: '/admin/kelas'
       path: '/kelas'
@@ -358,6 +396,8 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminKelasRoute: typeof AdminKelasRoute
+  AdminLaporanRoute: typeof AdminLaporanRoute
+  AdminPengaturanRoute: typeof AdminPengaturanRoute
   AdminSantriRoute: typeof AdminSantriRoute
   AdminUstadzRoute: typeof AdminUstadzRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -365,6 +405,8 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminKelasRoute: AdminKelasRoute,
+  AdminLaporanRoute: AdminLaporanRoute,
+  AdminPengaturanRoute: AdminPengaturanRoute,
   AdminSantriRoute: AdminSantriRoute,
   AdminUstadzRoute: AdminUstadzRoute,
   AdminIndexRoute: AdminIndexRoute,
