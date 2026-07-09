@@ -3,6 +3,6 @@
 
 export { tenants } from './tenants'
 export { users, roleEnum } from './users'
-export { santri } from './santri'
+export { santri, tipeSantriEnum } from './santri'
 export { setoran, jenisSetoranEnum, kualitasEnum } from './setoran'
 export { kelas } from './kelas'

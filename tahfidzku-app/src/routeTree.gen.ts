@@ -22,7 +22,9 @@ import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as UstadzUjianRouteImport } from './routes/ustadz/ujian'
 import { Route as UstadzRiwayatRouteImport } from './routes/ustadz/riwayat'
 import { Route as UstadzProfilRouteImport } from './routes/ustadz/profil'
+import { Route as UstadzPantauRouteImport } from './routes/ustadz/pantau'
 import { Route as UstadzInputRouteImport } from './routes/ustadz/input'
+import { Route as SantriInputRouteImport } from './routes/santri/input'
 import { Route as AdminUstadzRouteImport } from './routes/admin/ustadz'
 import { Route as AdminSantriRouteImport } from './routes/admin/santri'
 import { Route as AdminPengaturanRouteImport } from './routes/admin/pengaturan'
@@ -94,10 +96,20 @@ const UstadzProfilRoute = UstadzProfilRouteImport.update({
   path: '/profil',
   getParentRoute: () => UstadzRoute,
 } as any)
+const UstadzPantauRoute = UstadzPantauRouteImport.update({
+  id: '/pantau',
+  path: '/pantau',
+  getParentRoute: () => UstadzRoute,
+} as any)
 const UstadzInputRoute = UstadzInputRouteImport.update({
   id: '/input',
   path: '/input',
   getParentRoute: () => UstadzRoute,
+} as any)
+const SantriInputRoute = SantriInputRouteImport.update({
+  id: '/input',
+  path: '/input',
+  getParentRoute: () => SantriRoute,
 } as any)
 const AdminUstadzRoute = AdminUstadzRouteImport.update({
   id: '/ustadz',
@@ -137,7 +149,9 @@ export interface FileRoutesByFullPath {
   '/admin/pengaturan': typeof AdminPengaturanRoute
   '/admin/santri': typeof AdminSantriRoute
   '/admin/ustadz': typeof AdminUstadzRoute
+  '/santri/input': typeof SantriInputRoute
   '/ustadz/input': typeof UstadzInputRoute
+  '/ustadz/pantau': typeof UstadzPantauRoute
   '/ustadz/profil': typeof UstadzProfilRoute
   '/ustadz/riwayat': typeof UstadzRiwayatRoute
   '/ustadz/ujian': typeof UstadzUjianRoute
@@ -154,7 +168,9 @@ export interface FileRoutesByTo {
   '/admin/pengaturan': typeof AdminPengaturanRoute
   '/admin/santri': typeof AdminSantriRoute
   '/admin/ustadz': typeof AdminUstadzRoute
+  '/santri/input': typeof SantriInputRoute
   '/ustadz/input': typeof UstadzInputRoute
+  '/ustadz/pantau': typeof UstadzPantauRoute
   '/ustadz/profil': typeof UstadzProfilRoute
   '/ustadz/riwayat': typeof UstadzRiwayatRoute
   '/ustadz/ujian': typeof UstadzUjianRoute
@@ -176,7 +192,9 @@ export interface FileRoutesById {
   '/admin/pengaturan': typeof AdminPengaturanRoute
   '/admin/santri': typeof AdminSantriRoute
   '/admin/ustadz': typeof AdminUstadzRoute
+  '/santri/input': typeof SantriInputRoute
   '/ustadz/input': typeof UstadzInputRoute
+  '/ustadz/pantau': typeof UstadzPantauRoute
   '/ustadz/profil': typeof UstadzProfilRoute
   '/ustadz/riwayat': typeof UstadzRiwayatRoute
   '/ustadz/ujian': typeof UstadzUjianRoute
@@ -199,7 +217,9 @@ export interface FileRouteTypes {
     | '/admin/pengaturan'
     | '/admin/santri'
     | '/admin/ustadz'
+    | '/santri/input'
     | '/ustadz/input'
+    | '/ustadz/pantau'
     | '/ustadz/profil'
     | '/ustadz/riwayat'
     | '/ustadz/ujian'
@@ -216,7 +236,9 @@ export interface FileRouteTypes {
     | '/admin/pengaturan'
     | '/admin/santri'
     | '/admin/ustadz'
+    | '/santri/input'
     | '/ustadz/input'
+    | '/ustadz/pantau'
     | '/ustadz/profil'
     | '/ustadz/riwayat'
     | '/ustadz/ujian'
@@ -237,7 +259,9 @@ export interface FileRouteTypes {
     | '/admin/pengaturan'
     | '/admin/santri'
     | '/admin/ustadz'
+    | '/santri/input'
     | '/ustadz/input'
+    | '/ustadz/pantau'
     | '/ustadz/profil'
     | '/ustadz/riwayat'
     | '/ustadz/ujian'
@@ -349,12 +373,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UstadzProfilRouteImport
       parentRoute: typeof UstadzRoute
     }
+    '/ustadz/pantau': {
+      id: '/ustadz/pantau'
+      path: '/pantau'
+      fullPath: '/ustadz/pantau'
+      preLoaderRoute: typeof UstadzPantauRouteImport
+      parentRoute: typeof UstadzRoute
+    }
     '/ustadz/input': {
       id: '/ustadz/input'
       path: '/input'
       fullPath: '/ustadz/input'
       preLoaderRoute: typeof UstadzInputRouteImport
       parentRoute: typeof UstadzRoute
+    }
+    '/santri/input': {
+      id: '/santri/input'
+      path: '/input'
+      fullPath: '/santri/input'
+      preLoaderRoute: typeof SantriInputRouteImport
+      parentRoute: typeof SantriRoute
     }
     '/admin/ustadz': {
       id: '/admin/ustadz'
@@ -415,10 +453,12 @@ const AdminRouteChildren: AdminRouteChildren = {
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface SantriRouteChildren {
+  SantriInputRoute: typeof SantriInputRoute
   SantriIndexRoute: typeof SantriIndexRoute
 }
 
 const SantriRouteChildren: SantriRouteChildren = {
+  SantriInputRoute: SantriInputRoute,
   SantriIndexRoute: SantriIndexRoute,
 }
 
@@ -427,6 +467,7 @@ const SantriRouteWithChildren =
 
 interface UstadzRouteChildren {
   UstadzInputRoute: typeof UstadzInputRoute
+  UstadzPantauRoute: typeof UstadzPantauRoute
   UstadzProfilRoute: typeof UstadzProfilRoute
   UstadzRiwayatRoute: typeof UstadzRiwayatRoute
   UstadzUjianRoute: typeof UstadzUjianRoute
@@ -435,6 +476,7 @@ interface UstadzRouteChildren {
 
 const UstadzRouteChildren: UstadzRouteChildren = {
   UstadzInputRoute: UstadzInputRoute,
+  UstadzPantauRoute: UstadzPantauRoute,
   UstadzProfilRoute: UstadzProfilRoute,
   UstadzRiwayatRoute: UstadzRiwayatRoute,
   UstadzUjianRoute: UstadzUjianRoute,

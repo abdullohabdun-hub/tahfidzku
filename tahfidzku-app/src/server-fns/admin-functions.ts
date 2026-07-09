@@ -106,6 +106,7 @@ export const getSantriList = createServerFn({ method: 'GET' }).handler(
           targetJuz: santri.targetJuz,
           kelasId: santri.kelasId,
           kelasNama: kelas.nama,
+          tipe: santri.tipe,
           createdAt: santri.createdAt,
         })
         .from(santri)
@@ -125,7 +126,8 @@ export const createSantri = createServerFn({ method: 'POST' })
     const schema = z.object({
       nama: z.string().min(1, 'Nama santri wajib diisi'),
       targetJuz: z.number().min(1).max(30),
-      kelasId: z.string().optional()
+      kelasId: z.string().optional(),
+      tipe: z.enum(['reguler', 'dewasa']).default('dewasa')
     })
     return schema.parse(data)
   })
@@ -140,23 +142,25 @@ export const createSantri = createServerFn({ method: 'POST' })
         nama: data.nama,
         targetJuz: data.targetJuz,
         kelasId: data.kelasId || null,
-      }).returning({ id: santri.id, nama: santri.nama })
+        tipe: data.tipe,
+      }).returning({ id: santri.id, nama: santri.nama, tipe: santri.tipe })
 
-      // Sesuai persetujuan di Plan, pembuatan Akun Santri (User) 
-      // untuk login mandiri akan otomatis dibuat menggunakan ID unik atau format nama.
-      // Username: santri_[id_pendek], Password default: 123456
-      const username = `santri_${newSantri[0].id.substring(0,6)}`
-      
-      await db.insert(users).values({
-        tenantId: session.user.tenantId,
-        nama: data.nama,
-        email: username,
-        passwordHash: '123456', // Default PIN
-        role: 'santri',
-        santriId: newSantri[0].id
-      })
+      // Jika Santri Dewasa, otomatis buatkan akun login mandiri
+      if (data.tipe === 'dewasa') {
+        const username = `santri_${newSantri[0].id.substring(0,6)}`
+        
+        await db.insert(users).values({
+          tenantId: session.user.tenantId,
+          nama: data.nama,
+          email: username,
+          passwordHash: '123456', // Default PIN
+          role: 'santri',
+          santriId: newSantri[0].id
+        })
+        return success(newSantri[0], 'Berhasil menambahkan Santri Dewasa dan Akun Login Default')
+      }
 
-      return success(newSantri[0], 'Berhasil menambahkan Santri dan Akun Login Default')
+      return success(newSantri[0], 'Berhasil menambahkan Santri Reguler')
     } catch (err) {
       return handleError(err)
     }

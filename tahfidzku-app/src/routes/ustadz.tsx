@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, Link, useLocation } from "@tanstack/react-router"
-import { Home, PlusCircle, History, User, Award } from "lucide-react"
+import { Home, PlusCircle, History, User, Award, Clock } from "lucide-react"
 
 export const Route = createFileRoute('/ustadz')({
   component: UstadzLayout,
@@ -11,6 +11,7 @@ function UstadzLayout() {
   const navItems = [
     { name: "Beranda", path: "/ustadz", icon: <Home className="w-6 h-6" /> },
     { name: "Input", path: "/ustadz/input", icon: <PlusCircle className="w-6 h-6" /> },
+    { name: "Pantau Murojaah", path: "/ustadz/pantau", icon: <Clock className="w-6 h-6" /> },
     { name: "Ujian", path: "/ustadz/ujian", icon: <Award className="w-6 h-6" /> },
     { name: "Riwayat", path: "/ustadz/riwayat", icon: <History className="w-6 h-6" /> },
     { name: "Profil", path: "/ustadz/profil", icon: <User className="w-6 h-6" /> },

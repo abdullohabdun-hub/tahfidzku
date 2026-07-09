@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, Link, useLocation } from "@tanstack/react-router"
-import { Home, PencilLine, User, Award } from "lucide-react"
+import { Home, PencilLine, User, Award, BookOpen } from "lucide-react"
 
 export const Route = createFileRoute('/santri')({
   component: SantriLayout,
@@ -16,41 +16,80 @@ function SantriLayout() {
   ]
 
   return (
-    <div className="min-h-[100dvh] bg-slate-50 flex flex-col font-sans text-slate-900 pb-[76px]">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 pb-20 md:pb-0">
       
-      {/* Top Header */}
-      <header className="bg-emerald-700 text-white p-5 sticky top-0 z-50 flex justify-between items-center shadow-md rounded-b-2xl">
-        <div>
-          <h1 className="font-bold text-xl leading-tight">Ahlan, Bapak Fulan!</h1>
-          <p className="text-sm text-emerald-100 mt-1">Tetap Semangat Murojaah Hari Ini 💪</p>
+      {/* Top Header (Logo) */}
+      <header className="bg-white border-b border-slate-200 p-4 sticky top-0 z-50 flex items-center justify-center shadow-sm">
+        <div className="flex items-center gap-2">
+          <div className="bg-emerald-600 p-1.5 rounded-md">
+            <BookOpen className="h-5 w-5 text-white" />
+          </div>
+          <span className="font-bold text-lg text-emerald-950 tracking-tight">TahfidzKu Santri</span>
         </div>
       </header>
 
-      {/* Main Content Area (Scrollable) */}
-      <main className="flex-1 overflow-y-auto">
+      {/* Main Content */}
+      <main className="flex-1 w-full max-w-md mx-auto p-4 md:p-6">
         <Outlet />
       </main>
 
-      {/* Bottom Navigation Bar (Mobile) - Larger for older people */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 pb-safe z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-        <div className="flex justify-around items-center h-[76px]">
+      {/* Bottom Navigation (Mobile) */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around items-center h-16 z-50 px-2 pb-safe shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)]">
+        {navItems.map((item) => {
+          const isActive = location.pathname === item.path
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors ${
+                isActive ? "text-emerald-600" : "text-slate-500 hover:text-emerald-500"
+              }`}
+            >
+              <div className={`${isActive ? "scale-110 transition-transform" : ""}`}>
+                {item.icon}
+              </div>
+              <span className={`text-[10px] font-medium ${isActive ? "font-bold" : ""}`}>
+                {item.name}
+              </span>
+            </Link>
+          )
+        })}
+      </nav>
+
+      {/* Desktop Sidebar (Optional, if viewed on PC) */}
+      <aside className="hidden md:flex fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-200 flex-col z-40">
+        <div className="p-6 flex items-center gap-2 border-b border-slate-100">
+          <div className="bg-emerald-600 p-1.5 rounded-md">
+            <BookOpen className="h-5 w-5 text-white" />
+          </div>
+          <span className="font-bold text-xl tracking-tight text-emerald-950">TahfidzKu</span>
+        </div>
+        <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path
             return (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-col items-center justify-center w-full h-full space-y-1.5 transition-colors
-                  ${isActive ? "text-emerald-600" : "text-slate-400 hover:text-slate-600"}
+                className={`
+                  flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-colors
+                  ${isActive ? "bg-emerald-50 text-emerald-700" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}
                 `}
               >
-                {item.icon}
-                <span className="text-xs font-bold">{item.name}</span>
+                <div className={`${isActive ? "text-emerald-600" : "text-slate-400"}`}>
+                  {item.icon}
+                </div>
+                {item.name}
               </Link>
             )
           })}
         </div>
-      </nav>
+      </aside>
+      
+      {/* Desktop Main Content Spacer */}
+      <div className="hidden md:block md:pl-64 flex-1">
+        {/* The Outlet is already rendered above in max-w-md, we can just center it for desktop too */}
+      </div>
 
     </div>
   )

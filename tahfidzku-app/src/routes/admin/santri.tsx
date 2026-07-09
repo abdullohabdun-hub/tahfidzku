@@ -18,6 +18,7 @@ function DataSantriPage() {
   const [nama, setNama] = useState('')
   const [targetJuz, setTargetJuz] = useState<number>(30)
   const [kelasId, setKelasId] = useState('')
+  const [tipe, setTipe] = useState<'reguler' | 'dewasa'>('dewasa')
   const [submitting, setSubmitting] = useState(false)
 
   async function loadData() {
@@ -42,14 +43,15 @@ function DataSantriPage() {
       data: { 
         nama, 
         targetJuz: Number(targetJuz), 
-        kelasId: kelasId ? kelasId : undefined 
+        kelasId: kelasId ? kelasId : undefined,
+        tipe
       } 
     })
     
     if (res.success) {
-      alert('Berhasil menambah santri')
+      alert(res.message || 'Berhasil menambah santri')
       setShowForm(false)
-      setNama(''); setTargetJuz(30); setKelasId('')
+      setNama(''); setTargetJuz(30); setKelasId(''); setTipe('dewasa')
       loadData()
     } else {
       alert(res.error?.message || 'Gagal')
@@ -101,6 +103,22 @@ function DataSantriPage() {
                 ))}
               </select>
             </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Tipe Santri</label>
+              <div className="flex gap-4 items-center mt-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" name="tipe" value="reguler" checked={tipe === 'reguler'} onChange={() => setTipe('reguler')} className="w-4 h-4 text-emerald-600 focus:ring-emerald-500" />
+                  <span className="text-sm">Santri Reguler (Anak)</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" name="tipe" value="dewasa" checked={tipe === 'dewasa'} onChange={() => setTipe('dewasa')} className="w-4 h-4 text-emerald-600 focus:ring-emerald-500" />
+                  <span className="text-sm">Santri Dewasa (Online)</span>
+                </label>
+              </div>
+              <p className="text-xs text-slate-500 mt-2">
+                {tipe === 'dewasa' ? 'Santri Dewasa akan dibuatkan akun untuk login mandiri dan input Murojaah.' : 'Santri Reguler terhubung ke akun Wali Santri (Orang Tua).'}
+              </p>
+            </div>
             <div className="flex gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Batal</Button>
               <Button type="submit" disabled={submitting} className="bg-emerald-600 hover:bg-emerald-700">
@@ -120,6 +138,7 @@ function DataSantriPage() {
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
                 <th className="p-4 font-semibold text-slate-600">Nama Santri</th>
+                <th className="p-4 font-semibold text-slate-600">Tipe</th>
                 <th className="p-4 font-semibold text-slate-600">Kelas</th>
                 <th className="p-4 font-semibold text-slate-600">Target</th>
                 <th className="p-4 font-semibold text-slate-600 text-right">Aksi</th>
@@ -138,6 +157,12 @@ function DataSantriPage() {
                         <Users className="w-4 h-4" />
                       </div>
                       {s.nama}
+                    </td>
+                    <td className="p-4">
+                      {s.tipe === 'dewasa' 
+                        ? <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-md text-xs font-medium">Dewasa / Online</span>
+                        : <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded-md text-xs font-medium">Reguler (Anak)</span>
+                      }
                     </td>
                     <td className="p-4 text-slate-600">
                       {s.kelasNama ? <span className="bg-slate-100 px-2 py-1 rounded-md text-xs">{s.kelasNama}</span> : <span className="text-slate-400 italic text-xs">Belum ada kelas</span>}

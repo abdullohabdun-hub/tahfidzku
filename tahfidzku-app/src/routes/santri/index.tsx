@@ -1,95 +1,158 @@
-import { createFileRoute } from "@tanstack/react-router"
-import { CheckCircle2, Clock, Edit } from "lucide-react"
+import { createFileRoute } from '@tanstack/react-router'
+import { getSantriDashboardData } from '../../server-fns/santri-functions'
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
+import { Flame, Target, BookOpen, Clock, ChevronRight } from 'lucide-react'
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
+import { Link } from '@tanstack/react-router'
+import { format } from 'date-fns'
+import { id } from 'date-fns/locale'
+import { Button } from '../../components/ui/button'
 
 export const Route = createFileRoute('/santri/')({
   component: SantriDashboard,
+  loader: async () => {
+    const res = await getSantriDashboardData()
+    if (!res.success) throw new Error(res.error?.message || 'Gagal memuat data')
+    return res.data
+  }
 })
 
 function SantriDashboard() {
-  const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-  
-  const riwayat = [
-    {
-      id: 1,
-      tanggal: "Hari ini, 06:00",
-      jenis: "Ziyadah",
-      surah: "Al-Mulk (1-10)",
-      kualitas: "Lancar",
-      kualitasColor: "text-emerald-600 bg-emerald-100 border-emerald-200",
-    },
-    {
-      id: 2,
-      tanggal: "Kemarin, 16:30",
-      jenis: "Murojaah",
-      surah: "Al-Qalam (1-52)",
-      kualitas: "Lancar",
-      kualitasColor: "text-emerald-600 bg-emerald-100 border-emerald-200",
-    },
-    {
-      id: 3,
-      tanggal: "5 Juli 2026",
-      jenis: "Sabqi",
-      surah: "Al-Haqqah (1-15)",
-      kualitas: "Mengulang",
-      kualitasColor: "text-amber-700 bg-amber-100 border-amber-200",
-    },
+  const data = Route.useLoaderData()
+  const profil = data?.profil
+  const riwayat = data?.riwayat || []
+  const progress = data?.progress
+
+  const chartData = [
+    { name: 'Selesai', value: progress?.juzSelesai || 0 },
+    { name: 'Sisa', value: (progress?.targetJuz || 30) - (progress?.juzSelesai || 0) }
   ]
+  const COLORS = ['#10b981', '#f1f5f9'] // Emerald for done, slate for remaining
 
   return (
-    <div className="p-5 space-y-8 max-w-lg mx-auto pb-8">
+    <div className="space-y-6 pb-6">
       
-      {/* Date & Motivation Card */}
-      <div className="space-y-4">
-        <p className="text-emerald-700 text-sm font-bold px-2">{today}</p>
-        
-        <div className="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-2xl p-6 text-white shadow-md">
-          <p className="text-emerald-50 text-sm italic">"Barangsiapa membaca satu huruf dari Kitabullah (Al-Qur'an), maka baginya satu kebaikan..." (HR. Tirmidzi)</p>
-        </div>
+      {/* Header Welcome */}
+      <div>
+        <h1 className="text-2xl font-bold text-slate-800">Ahlan, {profil?.nama}! 👋</h1>
+        <p className="text-slate-500">Semoga istiqomah menjaga hafalan hari ini.</p>
+      </div>
 
-        <div className="bg-white rounded-2xl p-6 border-2 border-slate-100 shadow-sm flex items-start gap-4">
-          <div className="bg-emerald-100 p-3 rounded-full text-emerald-600 mt-1">
-            <CheckCircle2 className="w-8 h-8" />
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-slate-800">Alhamdulillah!</h2>
-            <p className="text-slate-600 mt-1">Anda sudah melapor <strong className="text-emerald-600">3 kali</strong> minggu ini. Terus tingkatkan semangat murojaahnya!</p>
-          </div>
+      {/* Streak Card */}
+      <div className="bg-gradient-to-r from-orange-400 to-amber-500 rounded-2xl p-5 text-white shadow-md flex items-center justify-between">
+        <div>
+          <h3 className="font-bold text-lg opacity-90 flex items-center gap-2">
+            <Flame className="w-5 h-5" /> Weekly Streak
+          </h3>
+          <p className="text-3xl font-black mt-1">{data?.streak} Hari</p>
+          <p className="text-sm opacity-80 mt-1">Luar biasa! Pertahankan terus.</p>
+        </div>
+        <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+          <Flame className="w-10 h-10 text-white" />
         </div>
       </div>
 
-      {/* Riwayat Timeline */}
-      <section>
-        <h3 className="text-lg font-bold text-slate-800 mb-5">Riwayat Laporan Anda</h3>
-        
-        <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
-          
-          {riwayat.map((item) => (
-            <div key={item.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-              {/* Icon / Bullet */}
-              <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-white bg-emerald-500 text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
-                <Clock className="w-4 h-4" />
-              </div>
-              
-              {/* Card */}
-              <div className="w-[calc(100%-3rem)] md:w-[calc(50%-2.5rem)] bg-white p-4 rounded-xl border border-slate-200 shadow-sm ml-4 md:ml-0 relative">
-                <button className="absolute bottom-4 right-4 text-slate-400 hover:text-emerald-600 transition-colors">
-                  <Edit className="w-4 h-4" />
-                </button>
-                <div className="flex justify-between items-start mb-2 pr-6">
-                  <span className="text-xs font-bold text-slate-400">{item.tanggal}</span>
-                  <span className={`text-[10px] font-bold px-2 py-1 rounded-md border ${item.kualitasColor}`}>
-                    {item.kualitas}
-                  </span>
-                </div>
-                <h4 className="font-bold text-slate-800 text-base">{item.jenis}</h4>
-                <p className="text-slate-600 text-sm mt-1">{item.surah}</p>
+      {/* Progress Hafalan (Recharts) */}
+      <Card className="rounded-2xl shadow-sm border-slate-200">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg font-bold flex items-center gap-2 text-slate-800">
+            <Target className="w-5 h-5 text-emerald-600" /> Progres Hafalan
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-4">
+            <div className="w-32 h-32 relative shrink-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={35}
+                    outerRadius={55}
+                    stroke="none"
+                    dataKey="value"
+                    startAngle={90}
+                    endAngle={-270}
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span className="text-xl font-bold text-slate-800">{progress?.percentage}%</span>
               </div>
             </div>
-          ))}
+            <div className="flex-1">
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs text-slate-500 font-medium">Target Hafalan</p>
+                  <p className="font-bold text-slate-800">{progress?.targetJuz} Juz</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 font-medium">Telah Diselesaikan</p>
+                  <p className="font-bold text-emerald-600">{progress?.juzSelesai} Juz</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
+      {/* Timeline Riwayat Murojaah */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <Clock className="w-5 h-5 text-emerald-600" /> Riwayat Murojaah
+          </h2>
+          <Link to="/santri/input" className="text-sm text-emerald-600 font-medium hover:underline">
+            Lapor Baru
+          </Link>
         </div>
-      </section>
-      
+
+        {riwayat.length === 0 ? (
+          <div className="bg-white p-6 rounded-2xl text-center border border-slate-200">
+            <BookOpen className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+            <p className="text-slate-500 text-sm">Belum ada riwayat Murojaah.</p>
+            <Link to="/santri/input">
+              <Button variant="outline" className="mt-4 text-emerald-600 border-emerald-200 hover:bg-emerald-50">
+                Mulai Murojaah
+              </Button>
+            </Link>
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm relative">
+            {/* Vertical Line */}
+            <div className="absolute left-8 top-6 bottom-6 w-0.5 bg-slate-100"></div>
+            
+            <div className="space-y-6 relative">
+              {riwayat.map((item: any, i: number) => (
+                <div key={item.id} className="flex gap-4">
+                  <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 z-10 ring-4 ring-white">
+                    <BookOpen className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 bg-slate-50 rounded-xl p-3 border border-slate-100 relative">
+                    <div className="flex justify-between items-start mb-1">
+                      <span className="text-xs font-medium uppercase tracking-wider text-emerald-600 bg-emerald-100/50 px-2 py-0.5 rounded-md">
+                        {item.jenis}
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-medium">
+                        {format(new Date(item.tanggal), 'd MMM yyyy, HH:mm', { locale: id })}
+                      </span>
+                    </div>
+                    <p className="font-semibold text-slate-800 text-sm">Surat {item.surat}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Juz {item.juz} • Hal {item.halaman} • {item.kualitas}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
     </div>
   )
 }
