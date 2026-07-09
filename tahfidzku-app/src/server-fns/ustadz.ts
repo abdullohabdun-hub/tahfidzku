@@ -2,7 +2,7 @@
 // Server Functions untuk modul Ustadz — dijalankan di server, dipanggil dari React
 
 import { createServerFn } from '@tanstack/react-start'
-import { eq, and, desc } from 'drizzle-orm'
+import { eq, and, desc, gte } from 'drizzle-orm'
 import { db } from '../db'
 import { setoran } from '../db/schema'
 import { getAuthSession, requireRole } from '../middleware/auth.middleware'
@@ -12,6 +12,7 @@ import { AuthenticationError, ForbiddenError } from '../lib/errors'
 
 import { getPageInfo } from '../lib/quranMapper'
 import { santri } from '../db/schema/santri'
+import { kelas } from '../db/schema/kelas'
 import { z } from 'zod'
 
 // ═══════════════════════════════════════════════════════
@@ -208,20 +209,57 @@ export const getUstadzDashboard = createServerFn({ method: 'GET' }).handler(
       const today = new Date()
       today.setHours(0, 0, 0, 0)
 
+      // 1. Ambil data santri yang diajar oleh ustadz ini (lewat relasi kelas)
+      const santriBinaan = await db
+        .select({
+          id: santri.id,
+          nama: santri.nama,
+          targetJuz: santri.targetJuz,
+        })
+        .from(santri)
+        .innerJoin(kelas, eq(santri.kelasId, kelas.id))
+        .where(
+          and(
+            eq(santri.tenantId, tenantId),
+            eq(kelas.ustadzId, session.user.id)
+          )
+        )
+
+      // 2. Ambil data setoran hari ini (beserta nama santrinya)
       const setoranHariIni = await db
-        .select()
+        .select({
+          id: setoran.id,
+          santriId: setoran.santriId,
+          santriNama: santri.nama,
+          jenis: setoran.jenis,
+          surah: setoran.surah,
+          ayatAwal: setoran.ayatAwal,
+          ayatAkhir: setoran.ayatAkhir,
+          kualitas: setoran.kualitas,
+          createdAt: setoran.createdAt
+        })
         .from(setoran)
+        .leftJoin(santri, eq(setoran.santriId, santri.id))
         .where(
           and(
             eq(setoran.tenantId, tenantId),
             eq(setoran.ustadzId, session.user.id),
-          ),
+            gte(setoran.createdAt, today)
+          )
         )
+        .orderBy(desc(setoran.createdAt))
+
+      // 3. Filter santri yang belum setor hari ini
+      const sudahSetorIds = setoranHariIni.map((s) => s.santriId)
+      const belumSetor = santriBinaan.filter((s) => !sudahSetorIds.includes(s.id))
 
       return success(
         {
-          totalSetoran: setoranHariIni.length,
           namaUstadz: session.user.nama,
+          totalSantri: santriBinaan.length,
+          totalSetoran: setoranHariIni.length,
+          setoranTerbaru: setoranHariIni.slice(0, 5),
+          belumSetor: belumSetor.slice(0, 5),
         },
         'Dashboard berhasil dimuat',
       )
