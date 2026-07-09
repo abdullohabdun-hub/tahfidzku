@@ -4,7 +4,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "../components/ui/c
 
 import { Link } from "react-router-dom"
 
-function LandingPage() {
+function Page() {
   return (
     <div className="min-h-screen flex flex-col font-sans bg-slate-50 text-slate-900">
       {/* Navbar */}
@@ -41,7 +41,7 @@ function LandingPage() {
               Platform Digital Dedikasi untuk Umat
             </div>
             <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight text-slate-900 mb-6 leading-tight">
-              Pencatatan Hafalan Santri <br className="hidden md:block"/>
+              Pencatatan Hafalan Santri <br className="hidden md:block" />
               <span className="text-emerald-600">Lebih Simpel & Terstruktur</span>
             </h1>
             <p className="text-lg md:text-xl text-slate-600 mb-10 max-w-2xl mx-auto leading-relaxed">
@@ -143,18 +143,18 @@ function LandingPage() {
                   <div className="p-6 flex-1 bg-slate-50 flex flex-col gap-4">
                     <div className="h-8 bg-slate-200 rounded w-1/3 mb-4"></div>
                     <div className="h-24 bg-white border rounded-lg p-4 flex gap-4">
-                       <div className="w-12 h-12 bg-emerald-100 rounded-full shrink-0"></div>
-                       <div className="space-y-2 flex-1">
-                          <div className="h-4 bg-slate-200 rounded w-1/2"></div>
-                          <div className="h-3 bg-slate-100 rounded w-1/3"></div>
-                       </div>
+                      <div className="w-12 h-12 bg-emerald-100 rounded-full shrink-0"></div>
+                      <div className="space-y-2 flex-1">
+                        <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+                        <div className="h-3 bg-slate-100 rounded w-1/3"></div>
+                      </div>
                     </div>
                     <div className="h-24 bg-white border rounded-lg p-4 flex gap-4">
-                       <div className="w-12 h-12 bg-emerald-100 rounded-full shrink-0"></div>
-                       <div className="space-y-2 flex-1">
-                          <div className="h-4 bg-slate-200 rounded w-1/2"></div>
-                          <div className="h-3 bg-slate-100 rounded w-1/3"></div>
-                       </div>
+                      <div className="w-12 h-12 bg-emerald-100 rounded-full shrink-0"></div>
+                      <div className="space-y-2 flex-1">
+                        <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+                        <div className="h-3 bg-slate-100 rounded w-1/3"></div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -209,4 +209,4 @@ function LandingPage() {
   )
 }
 
-export default LandingPage
+export default Page

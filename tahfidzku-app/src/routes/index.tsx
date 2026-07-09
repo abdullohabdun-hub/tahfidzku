@@ -1,13 +1,13 @@
 import { createFileRoute, redirect, Link } from '@tanstack/react-router'
 import { checkAuth } from '../server-fns/auth'
 import { BookOpen, Shield, Smartphone, ArrowRight, CheckCircle2 } from "lucide-react"
-import { Button } from "../components/ui/button"
+import { Button, buttonVariants } from "../components/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
 
 export const Route = createFileRoute('/')({
   beforeLoad: async () => {
     const user = await checkAuth()
-    
+
     // Jika user sudah login, langsung arahkan ke dashboard masing-masing
     if (user) {
       switch (user.role) {
@@ -22,10 +22,10 @@ export const Route = createFileRoute('/')({
       }
     }
   },
-  component: LandingPage,
+  component: Page,
 })
 
-function LandingPage() {
+function Page() {
   return (
     <div className="min-h-screen flex flex-col font-sans bg-slate-50 text-slate-900">
       {/* Navbar */}
@@ -42,12 +42,12 @@ function LandingPage() {
             <a href="#keunggulan" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Keunggulan</a>
           </nav>
           <div className="flex items-center gap-4">
-            <Button variant="ghost" className="hidden sm:inline-flex" asChild>
-              <Link to="/login">Masuk</Link>
-            </Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700" asChild>
-              <Link to="/login">Daftarkan Lembaga</Link>
-            </Button>
+            <Link to="/login" className={buttonVariants({ variant: "ghost", className: "hidden sm:inline-flex" })}>
+              Masuk
+            </Link>
+            <Link to="/login" className={buttonVariants({ className: "bg-emerald-600 hover:bg-emerald-700" })}>
+              Daftarkan Lembaga
+            </Link>
           </div>
         </div>
       </header>
@@ -62,18 +62,16 @@ function LandingPage() {
               Platform Digital Dedikasi untuk Umat
             </div>
             <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight text-slate-900 mb-6 leading-tight">
-              Pencatatan Hafalan Santri <br className="hidden md:block"/>
+              Pencatatan Hafalan Santri <br className="hidden md:block" />
               <span className="text-emerald-600">Lebih Simpel & Terstruktur</span>
             </h1>
             <p className="text-lg md:text-xl text-slate-600 mb-10 max-w-2xl mx-auto leading-relaxed">
               Tingkatkan efisiensi lembaga tahfidz Anda dengan sistem murni logika database tanpa kompleksitas. Fokus pada hafalan santri, biarkan kami yang mengurus datanya. 100% Gratis.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button size="lg" className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 h-12 px-8 text-base" asChild>
-                <Link to="/login">
-                  Gunakan Secara Gratis <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
+              <Link to="/login" className={buttonVariants({ size: "lg", className: "w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 h-12 px-8 text-base" })}>
+                Gunakan Secara Gratis <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
               <Button size="lg" variant="outline" className="w-full sm:w-auto h-12 px-8 text-base border-slate-300">
                 Pelajari Lebih Lanjut
               </Button>
@@ -148,9 +146,9 @@ function LandingPage() {
                     </div>
                   ))}
                 </div>
-                <Button className="mt-8 bg-emerald-600 hover:bg-emerald-700" asChild>
-                  <Link to="/login">Gunakan Sekarang</Link>
-                </Button>
+                <Link to="/login" className={buttonVariants({ className: "mt-8 bg-emerald-600 hover:bg-emerald-700" })}>
+                  Gunakan Sekarang
+                </Link>
               </div>
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-tr from-emerald-100 to-teal-50 rounded-2xl transform rotate-3 scale-105 -z-10"></div>
@@ -164,18 +162,18 @@ function LandingPage() {
                   <div className="p-6 flex-1 bg-slate-50 flex flex-col gap-4">
                     <div className="h-8 bg-slate-200 rounded w-1/3 mb-4"></div>
                     <div className="h-24 bg-white border rounded-lg p-4 flex gap-4">
-                       <div className="w-12 h-12 bg-emerald-100 rounded-full shrink-0"></div>
-                       <div className="space-y-2 flex-1">
-                          <div className="h-4 bg-slate-200 rounded w-1/2"></div>
-                          <div className="h-3 bg-slate-100 rounded w-1/3"></div>
-                       </div>
+                      <div className="w-12 h-12 bg-emerald-100 rounded-full shrink-0"></div>
+                      <div className="space-y-2 flex-1">
+                        <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+                        <div className="h-3 bg-slate-100 rounded w-1/3"></div>
+                      </div>
                     </div>
                     <div className="h-24 bg-white border rounded-lg p-4 flex gap-4">
-                       <div className="w-12 h-12 bg-emerald-100 rounded-full shrink-0"></div>
-                       <div className="space-y-2 flex-1">
-                          <div className="h-4 bg-slate-200 rounded w-1/2"></div>
-                          <div className="h-3 bg-slate-100 rounded w-1/3"></div>
-                       </div>
+                      <div className="w-12 h-12 bg-emerald-100 rounded-full shrink-0"></div>
+                      <div className="space-y-2 flex-1">
+                        <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+                        <div className="h-3 bg-slate-100 rounded w-1/3"></div>
+                      </div>
                     </div>
                   </div>
                 </div>
