@@ -1,7 +1,9 @@
 import { createFileRoute, Outlet, Link, useLocation } from "@tanstack/react-router"
 import { BookOpen, Users, UserSquare2, Home, Settings, LogOut, Menu } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "../components/ui/button"
+import { checkAuth } from "../server-fns/auth"
+import { getTenantInfo } from "../server-fns/admin-settings"
 
 export const Route = createFileRoute('/admin')({
   component: AdminLayout,
@@ -10,6 +12,22 @@ export const Route = createFileRoute('/admin')({
 function AdminLayout() {
   const location = useLocation()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [user, setUser] = useState<any>(null)
+  const [tenantName, setTenantName] = useState('Memuat...')
+
+  useEffect(() => {
+    async function loadProfile() {
+      const auth = await checkAuth()
+      if (auth) {
+        setUser(auth)
+        const tenantRes = await getTenantInfo()
+        if (tenantRes.success && tenantRes.data) {
+          setTenantName(tenantRes.data.namaLembaga)
+        }
+      }
+    }
+    loadProfile()
+  }, [])
 
   const navItems = [
     { name: "Dashboard", path: "/admin", icon: <Home className="w-5 h-5" /> },
@@ -97,11 +115,11 @@ function AdminLayout() {
           </h1>
           <div className="flex items-center gap-4">
             <div className="text-sm text-right">
-              <p className="font-medium text-slate-900">Ustadz Ahmad</p>
-              <p className="text-slate-500 text-xs">Pesantren Darussalam</p>
+              <p className="font-medium text-slate-900">{user?.nama || "Admin"}</p>
+              <p className="text-slate-500 text-xs">{tenantName}</p>
             </div>
-            <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold">
-              UA
+            <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold uppercase">
+              {user?.nama ? user.nama.substring(0, 2) : "AD"}
             </div>
           </div>
         </header>
