@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { Users, Plus, Loader2, Trash2 } from 'lucide-react'
-import { getSantriList, createSantri, deleteSantri, getKelasList } from '../../server-fns/admin-functions'
+import { Users, Plus, Loader2, Trash2, Edit } from 'lucide-react'
+import { getSantriList, createSantri, deleteSantri, getKelasList, updateSantri } from '../../server-fns/admin-functions'
 import { getSurahByJuz, getAyatRangeInJuz } from '../../lib/quranMapper'
 import { Button } from '../../components/ui/button'
 
@@ -16,6 +16,7 @@ function DataSantriPage() {
   const [showForm, setShowForm] = useState(false)
   
   // Form State
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [nama, setNama] = useState('')
   const [targetJuz, setTargetJuz] = useState<number>(30)
   const [juzProgress, setJuzProgress] = useState<number[]>([])
@@ -85,7 +86,8 @@ function DataSantriPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitting(true)
-    const res = await createSantri({ 
+
+    const payload = { 
       data: { 
         nama, 
         targetJuz: Number(targetJuz), 
@@ -96,17 +98,55 @@ function DataSantriPage() {
         kelasId: kelasId ? kelasId : undefined,
         tipe
       } 
-    })
+    }
+    
+    let res;
+    if (editingId) {
+      res = await updateSantri({ data: { ...payload.data, id: editingId } })
+    } else {
+      res = await createSantri(payload)
+    }
     
     if (res.success) {
-      alert(res.message || 'Berhasil menambah santri')
-      setShowForm(false)
-      setNama(''); setTargetJuz(30); setJuzProgress([]); setBatasHafalanJuz(''); setBatasHafalanSurah(''); setBatasHafalanAyat(''); setKelasId(''); setTipe('dewasa')
+      alert(res.message || 'Berhasil menyimpan data')
+      handleCloseForm()
       loadData()
     } else {
       alert(res.error?.message || 'Gagal')
     }
     setSubmitting(false)
+  }
+
+  const handleEdit = (s: any) => {
+    setEditingId(s.id)
+    setNama(s.nama)
+    setTargetJuz(s.targetJuz)
+    setJuzProgress(s.juzProgress || [])
+    setBatasHafalanJuz(s.batasHafalanJuz || '')
+    // batasHafalanSurah will be set after useEffect triggers from batasHafalanJuz, so we setTimeout
+    setTimeout(() => {
+      setBatasHafalanSurah(s.batasHafalanSurah || '')
+      setTimeout(() => {
+        setBatasHafalanAyat(s.batasHafalanAyat || '')
+      }, 50)
+    }, 50)
+    
+    setKelasId(s.kelasId || '')
+    setTipe(s.tipe || 'dewasa')
+    setShowForm(true)
+  }
+
+  const handleCloseForm = () => {
+    setShowForm(false)
+    setEditingId(null)
+    setNama('')
+    setTargetJuz(30)
+    setJuzProgress([])
+    setBatasHafalanJuz('')
+    setBatasHafalanSurah('')
+    setBatasHafalanAyat('')
+    setKelasId('')
+    setTipe('dewasa')
   }
 
   const handleDelete = async (id: string) => {
@@ -127,14 +167,14 @@ function DataSantriPage() {
           <h2 className="text-2xl font-bold tracking-tight text-slate-900">Data Santri</h2>
           <p className="text-slate-500">Kelola master data peserta didik.</p>
         </div>
-        <Button onClick={() => setShowForm(!showForm)} className="bg-emerald-600 hover:bg-emerald-700">
+        <Button onClick={() => { handleCloseForm(); setShowForm(!showForm) }} className="bg-emerald-600 hover:bg-emerald-700">
           <Plus className="w-4 h-4 mr-2" /> Tambah Santri
         </Button>
       </div>
 
       {showForm && (
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-          <h3 className="font-semibold text-lg mb-4">Form Tambah Santri</h3>
+          <h3 className="font-semibold text-lg mb-4">{editingId ? 'Edit Santri' : 'Form Tambah Santri'}</h3>
           <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
             <div>
               <label className="block text-sm font-medium mb-1">Nama Lengkap</label>
@@ -222,7 +262,7 @@ function DataSantriPage() {
               </p>
             </div>
             <div className="flex gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Batal</Button>
+              <Button type="button" variant="outline" onClick={handleCloseForm}>Batal</Button>
               <Button type="submit" disabled={submitting} className="bg-emerald-600 hover:bg-emerald-700">
                 {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                 Simpan
@@ -332,7 +372,10 @@ function DataSantriPage() {
                       )}
                     </td>
                     <td className="p-4 text-slate-600">{s.targetJuz} Juz</td>
-                    <td className="p-4 text-right">
+                    <td className="p-4 text-right flex justify-end gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(s)} className="text-blue-500 hover:text-blue-700 hover:bg-blue-50">
+                        <Edit className="w-4 h-4" />
+                      </Button>
                       <Button variant="ghost" size="sm" onClick={() => handleDelete(s.id)} className="text-red-500 hover:text-red-700 hover:bg-red-50">
                         <Trash2 className="w-4 h-4" />
                       </Button>

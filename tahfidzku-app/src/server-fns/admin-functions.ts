@@ -88,6 +88,35 @@ export const deleteUstadz = createServerFn({ method: 'POST' })
     }
   })
 
+export const updateUstadz = createServerFn({ method: 'POST' })
+  .validator((data: unknown) => z.object({
+    id: z.string(),
+    nama: z.string().min(1, 'Nama wajib diisi'),
+    email: z.string().min(1, 'Username/Email wajib diisi'),
+    password: z.string().optional()
+  }).parse(data))
+  .handler(async ({ data }) => {
+    try {
+      const session = await getAuthSession()
+      if (!session) throw new AuthenticationError()
+      requireRole(session, 'admin')
+
+      // Cek duplikasi email/username
+      const existing = await db.select({ id: users.id }).from(users).where(eq(users.email, data.email))
+      if (existing.length > 0 && existing[0].id !== data.id) throw new ValidationError('Username/Email sudah terdaftar')
+
+      const updateData: any = { nama: data.nama, email: data.email }
+      if (data.password) {
+        updateData.passwordHash = data.password
+      }
+
+      await db.update(users).set(updateData).where(and(eq(users.id, data.id), eq(users.tenantId, session.user.tenantId)))
+      return success(null, 'Berhasil menyimpan Ustadz')
+    } catch (err) {
+      return handleError(err)
+    }
+  })
+
 // ==========================================
 // SANTRI CRUD
 // ==========================================
@@ -195,6 +224,41 @@ export const deleteSantri = createServerFn({ method: 'POST' })
     }
   })
 
+export const updateSantri = createServerFn({ method: 'POST' })
+  .validator((data: unknown) => z.object({
+    id: z.string(),
+    nama: z.string().min(1, 'Nama santri wajib diisi'),
+    targetJuz: z.number().min(1).max(30),
+    juzProgress: z.array(z.number()).default([]),
+    batasHafalanJuz: z.number().optional().nullable(),
+    batasHafalanSurah: z.string().optional().nullable(),
+    batasHafalanAyat: z.number().optional().nullable(),
+    kelasId: z.string().optional().nullable(),
+    tipe: z.enum(['reguler', 'dewasa']).default('dewasa')
+  }).parse(data))
+  .handler(async ({ data }) => {
+    try {
+      const session = await getAuthSession()
+      if (!session) throw new AuthenticationError()
+      requireRole(session, 'admin')
+
+      await db.update(santri).set({
+        nama: data.nama,
+        targetJuz: data.targetJuz,
+        juzProgress: data.juzProgress,
+        batasHafalanJuz: data.batasHafalanJuz,
+        batasHafalanSurah: data.batasHafalanSurah,
+        batasHafalanAyat: data.batasHafalanAyat,
+        kelasId: data.kelasId || null,
+        tipe: data.tipe,
+      }).where(and(eq(santri.id, data.id), eq(santri.tenantId, session.user.tenantId)))
+
+      return success(null, 'Berhasil menyimpan Santri')
+    } catch (err) {
+      return handleError(err)
+    }
+  })
+
 // ==========================================
 // KELAS CRUD
 // ==========================================
@@ -262,3 +326,27 @@ export const deleteKelas = createServerFn({ method: 'POST' })
       return handleError(err)
     }
   })
+
+export const updateKelas = createServerFn({ method: 'POST' })
+  .validator((data: unknown) => z.object({ 
+    id: z.string(),
+    nama: z.string().min(1, 'Nama kelas wajib diisi'),
+    ustadzId: z.string().optional().nullable()
+  }).parse(data))
+  .handler(async ({ data }) => {
+    try {
+      const session = await getAuthSession()
+      if (!session) throw new AuthenticationError()
+      requireRole(session, 'admin')
+
+      await db.update(kelas).set({
+        nama: data.nama,
+        ustadzId: data.ustadzId || null
+      }).where(and(eq(kelas.id, data.id), eq(kelas.tenantId, session.user.tenantId)))
+
+      return success(null, 'Berhasil menyimpan Kelas/Halaqoh')
+    } catch (err) {
+      return handleError(err)
+    }
+  })
+
