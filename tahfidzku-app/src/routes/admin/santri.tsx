@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { Users, Plus, Loader2, Trash2 } from 'lucide-react'
 import { getSantriList, createSantri, deleteSantri, getKelasList } from '../../server-fns/admin-functions'
+import { getSurahByJuz, getAyatRangeInJuz } from '../../lib/quranMapper'
 import { Button } from '../../components/ui/button'
 
 export const Route = createFileRoute('/admin/santri')({
@@ -17,7 +18,13 @@ function DataSantriPage() {
   // Form State
   const [nama, setNama] = useState('')
   const [targetJuz, setTargetJuz] = useState<number>(30)
-  const [hafalanAwal, setHafalanAwal] = useState<number>(0)
+  const [juzProgress, setJuzProgress] = useState<number[]>([])
+  const [batasHafalanJuz, setBatasHafalanJuz] = useState<number | ''>('')
+  const [batasHafalanSurah, setBatasHafalanSurah] = useState<string>('')
+  const [batasHafalanAyat, setBatasHafalanAyat] = useState<number | ''>('')
+  const [surahOptions, setSurahOptions] = useState<any[]>([])
+  const [ayatMax, setAyatMax] = useState<number>(999)
+
   const [kelasId, setKelasId] = useState('')
   const [tipe, setTipe] = useState<'reguler' | 'dewasa'>('dewasa')
   const [submitting, setSubmitting] = useState(false)
@@ -42,6 +49,39 @@ function DataSantriPage() {
     loadData()
   }, [])
 
+  useEffect(() => {
+    if (batasHafalanJuz !== '') {
+      const surahs = getSurahByJuz(Number(batasHafalanJuz))
+      setSurahOptions(surahs)
+      if (!surahs.find(s => s.nama === batasHafalanSurah)) {
+        setBatasHafalanSurah(surahs[0]?.nama || '')
+      }
+    } else {
+      setSurahOptions([])
+      setBatasHafalanSurah('')
+      setBatasHafalanAyat('')
+    }
+  }, [batasHafalanJuz])
+
+  useEffect(() => {
+    if (batasHafalanJuz !== '' && batasHafalanSurah) {
+      const selected = surahOptions.find(s => s.nama === batasHafalanSurah)
+      if (selected) {
+        const range = getAyatRangeInJuz(Number(batasHafalanJuz), selected.nomor)
+        setAyatMax(range.ayatAkhir)
+        if (batasHafalanAyat !== '' && batasHafalanAyat > range.ayatAkhir) {
+          setBatasHafalanAyat(range.ayatAkhir)
+        }
+      }
+    }
+  }, [batasHafalanSurah, batasHafalanJuz, surahOptions])
+
+  const toggleJuz = (j: number) => {
+    setJuzProgress(prev => 
+      prev.includes(j) ? prev.filter(x => x !== j) : [...prev, j]
+    )
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitting(true)
@@ -49,7 +89,10 @@ function DataSantriPage() {
       data: { 
         nama, 
         targetJuz: Number(targetJuz), 
-        hafalanAwal: Number(hafalanAwal),
+        juzProgress,
+        batasHafalanJuz: batasHafalanJuz !== '' ? Number(batasHafalanJuz) : undefined,
+        batasHafalanSurah: batasHafalanSurah ? batasHafalanSurah : undefined,
+        batasHafalanAyat: batasHafalanAyat !== '' ? Number(batasHafalanAyat) : undefined,
         kelasId: kelasId ? kelasId : undefined,
         tipe
       } 
@@ -58,7 +101,7 @@ function DataSantriPage() {
     if (res.success) {
       alert(res.message || 'Berhasil menambah santri')
       setShowForm(false)
-      setNama(''); setTargetJuz(30); setHafalanAwal(0); setKelasId(''); setTipe('dewasa')
+      setNama(''); setTargetJuz(30); setJuzProgress([]); setBatasHafalanJuz(''); setBatasHafalanSurah(''); setBatasHafalanAyat(''); setKelasId(''); setTipe('dewasa')
       loadData()
     } else {
       alert(res.error?.message || 'Gagal')
@@ -101,10 +144,57 @@ function DataSantriPage() {
               <label className="block text-sm font-medium mb-1">Target Hafalan (Juz)</label>
               <input required type="number" min={1} max={30} value={targetJuz} onChange={e => setTargetJuz(Number(e.target.value))} className="w-full border p-2 rounded-lg" />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Hafalan Awal (Juz)</label>
-              <input type="number" min={0} max={30} value={hafalanAwal} onChange={e => setHafalanAwal(Number(e.target.value))} className="w-full border p-2 rounded-lg" />
-              <p className="text-xs text-slate-500 mt-1">Jumlah juz yang sudah dihafal (Contoh: isi 2 jika sudah hafal Juz 30 & 29).</p>
+            
+            <div className="border border-slate-200 rounded-lg p-4 bg-slate-50 space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Juz yang Telah Selesai (Mutqin)</label>
+                <div className="flex flex-wrap gap-2">
+                  {Array.from({length: 30}, (_, i) => i + 1).map(j => (
+                    <button
+                      type="button"
+                      key={j}
+                      onClick={() => toggleJuz(j)}
+                      className={`w-10 h-10 rounded-full text-xs font-semibold flex items-center justify-center transition-colors ${
+                        juzProgress.includes(j) 
+                          ? 'bg-emerald-600 text-white shadow-sm hover:bg-emerald-700' 
+                          : 'bg-white border border-slate-300 text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      {j}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-slate-200">
+                <label className="block text-sm font-medium mb-2">Batas Hafalan Saat Ini (Parsial/Opsional)</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <select value={batasHafalanJuz} onChange={e => setBatasHafalanJuz(e.target.value)} className="border p-2 rounded-lg text-sm bg-white">
+                    <option value="">Pilih Juz</option>
+                    {Array.from({length: 30}, (_, i) => i + 1).map(j => (
+                      <option key={j} value={j}>Juz {j}</option>
+                    ))}
+                  </select>
+
+                  <select value={batasHafalanSurah} onChange={e => setBatasHafalanSurah(e.target.value)} disabled={batasHafalanJuz === ''} className="border p-2 rounded-lg text-sm bg-white">
+                    <option value="">Pilih Surah</option>
+                    {surahOptions.map(s => (
+                      <option key={s.nomor} value={s.nama}>{s.nama}</option>
+                    ))}
+                  </select>
+
+                  <input 
+                    type="number" 
+                    placeholder="Ayat Terakhir" 
+                    min={1} 
+                    max={ayatMax}
+                    value={batasHafalanAyat} 
+                    onChange={e => setBatasHafalanAyat(e.target.value)} 
+                    disabled={batasHafalanJuz === '' || !batasHafalanSurah}
+                    className="border p-2 rounded-lg text-sm" 
+                  />
+                </div>
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Pilih Kelas / Halaqoh</label>
@@ -218,7 +308,19 @@ function DataSantriPage() {
                     <td className="p-4 text-slate-600">
                       {s.kelasNama ? <span className="bg-slate-100 px-2 py-1 rounded-md text-xs">{s.kelasNama}</span> : <span className="text-slate-400 italic text-xs">Belum ada kelas</span>}
                     </td>
-                    <td className="p-4 text-slate-600">{s.hafalanAwal || 0} Juz</td>
+                    <td className="p-4 text-slate-600">
+                      {s.juzProgress && s.juzProgress.length > 0 && (
+                        <div className="text-xs font-medium text-emerald-700">Selesai: {s.juzProgress.length} Juz ({s.juzProgress.join(', ')})</div>
+                      )}
+                      {s.batasHafalanJuz && (
+                        <div className="text-xs text-slate-500 mt-1">
+                          Batas: Juz {s.batasHafalanJuz} ({s.batasHafalanSurah} ayat {s.batasHafalanAyat})
+                        </div>
+                      )}
+                      {(!s.juzProgress || s.juzProgress.length === 0) && !s.batasHafalanJuz && (
+                        <div className="text-xs text-slate-400 italic">Nol Hafalan</div>
+                      )}
+                    </td>
                     <td className="p-4 text-slate-600">{s.targetJuz} Juz</td>
                     <td className="p-4 text-right">
                       <Button variant="ghost" size="sm" onClick={() => handleDelete(s.id)} className="text-red-500 hover:text-red-700 hover:bg-red-50">

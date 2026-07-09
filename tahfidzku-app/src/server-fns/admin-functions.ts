@@ -106,7 +106,10 @@ export const getSantriList = createServerFn({ method: 'GET' }).handler(
           targetJuz: santri.targetJuz,
           kelasId: santri.kelasId,
           kelasNama: kelas.nama,
-          hafalanAwal: santri.hafalanAwal,
+          juzProgress: santri.juzProgress,
+          batasHafalanJuz: santri.batasHafalanJuz,
+          batasHafalanSurah: santri.batasHafalanSurah,
+          batasHafalanAyat: santri.batasHafalanAyat,
           tipe: santri.tipe,
           createdAt: santri.createdAt,
         })
@@ -127,7 +130,10 @@ export const createSantri = createServerFn({ method: 'POST' })
     const schema = z.object({
       nama: z.string().min(1, 'Nama santri wajib diisi'),
       targetJuz: z.number().min(1).max(30),
-      hafalanAwal: z.number().min(0).max(30).default(0),
+      juzProgress: z.array(z.number()).default([]),
+      batasHafalanJuz: z.number().optional().nullable(),
+      batasHafalanSurah: z.string().optional().nullable(),
+      batasHafalanAyat: z.number().optional().nullable(),
       kelasId: z.string().optional(),
       tipe: z.enum(['reguler', 'dewasa']).default('dewasa')
     })
@@ -139,17 +145,14 @@ export const createSantri = createServerFn({ method: 'POST' })
       if (!session) throw new AuthenticationError()
       requireRole(session, 'admin')
 
-      const juzProgress: number[] = []
-      for (let i = 0; i < data.hafalanAwal; i++) {
-        juzProgress.push(30 - i)
-      }
-
       const newSantri = await db.insert(santri).values({
         tenantId: session.user.tenantId,
         nama: data.nama,
         targetJuz: data.targetJuz,
-        hafalanAwal: data.hafalanAwal,
-        juzProgress: juzProgress,
+        juzProgress: data.juzProgress,
+        batasHafalanJuz: data.batasHafalanJuz,
+        batasHafalanSurah: data.batasHafalanSurah,
+        batasHafalanAyat: data.batasHafalanAyat,
         kelasId: data.kelasId || null,
         tipe: data.tipe,
       }).returning({ id: santri.id, nama: santri.nama, tipe: santri.tipe })

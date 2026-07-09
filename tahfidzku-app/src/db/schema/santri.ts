@@ -17,6 +17,8 @@ export const santri = pgTable('santri', {
   kelasId: uuid('kelas_id').references(() => kelas.id, { onDelete: 'set null' }),
   targetJuz: integer('target_juz').notNull().default(30),
   juzProgress: integer('juz_progress').array().default([]), // Juz yang sudah diselesaikan (contoh: [30, 29])
-  hafalanAwal: integer('hafalan_awal').default(0), // Jumlah juz hafalan sebelum masuk sistem
+  batasHafalanJuz: integer('batas_hafalan_juz'), // Opsional: Juz untuk hafalan parsial
+  batasHafalanSurah: varchar('batas_hafalan_surah', { length: 100 }), // Opsional: Surah untuk hafalan parsial
+  batasHafalanAyat: integer('batas_hafalan_ayat'), // Opsional: Ayat terakhir untuk hafalan parsial
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 })
