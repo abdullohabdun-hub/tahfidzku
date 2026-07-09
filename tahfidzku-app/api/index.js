@@ -1,9 +1,6 @@
 import app from '../dist/server/server.js';
+import { createServerAdapter } from '@whatwg-node/server';
 
-export const config = {
-  runtime: 'edge'
-};
-
-export default async function handler(req, ctx) {
-  return app.fetch(req, ctx);
-}
+export default createServerAdapter((request) => {
+  return app.fetch(request);
+});
