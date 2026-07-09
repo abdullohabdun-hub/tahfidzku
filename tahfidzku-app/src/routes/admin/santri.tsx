@@ -169,7 +169,7 @@ function DataSantriPage() {
               <div className="pt-2 border-t border-slate-200">
                 <label className="block text-sm font-medium mb-2">Batas Hafalan Saat Ini (Parsial/Opsional)</label>
                 <div className="grid grid-cols-3 gap-2">
-                  <select value={batasHafalanJuz} onChange={e => setBatasHafalanJuz(e.target.value)} className="border p-2 rounded-lg text-sm bg-white">
+                  <select value={batasHafalanJuz} onChange={e => setBatasHafalanJuz(e.target.value ? Number(e.target.value) : '')} className="border p-2 rounded-lg text-sm bg-white">
                     <option value="">Pilih Juz</option>
                     {Array.from({length: 30}, (_, i) => i + 1).map(j => (
                       <option key={j} value={j}>Juz {j}</option>
@@ -189,7 +189,7 @@ function DataSantriPage() {
                     min={1} 
                     max={ayatMax}
                     value={batasHafalanAyat} 
-                    onChange={e => setBatasHafalanAyat(e.target.value)} 
+                    onChange={e => setBatasHafalanAyat(e.target.value ? Number(e.target.value) : '')} 
                     disabled={batasHafalanJuz === '' || !batasHafalanSurah}
                     className="border p-2 rounded-lg text-sm" 
                   />
