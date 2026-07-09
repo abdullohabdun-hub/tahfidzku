@@ -21,6 +21,11 @@ function DataSantriPage() {
   const [tipe, setTipe] = useState<'reguler' | 'dewasa'>('dewasa')
   const [submitting, setSubmitting] = useState(false)
 
+  // Filters
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filterTipe, setFilterTipe] = useState<'all' | 'reguler' | 'dewasa'>('all')
+  const [filterKelas, setFilterKelas] = useState<string>('all')
+
   async function loadData() {
     setLoading(true)
     const [resSantri, resKelas] = await Promise.all([
@@ -130,7 +135,38 @@ function DataSantriPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mt-6">
+        <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row gap-4 justify-between items-center">
+          <input
+            type="text"
+            placeholder="Cari nama santri..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="w-full sm:max-w-xs border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-emerald-500 focus:border-emerald-500"
+          />
+          <div className="flex gap-2 w-full sm:w-auto">
+            <select
+              value={filterTipe}
+              onChange={e => setFilterTipe(e.target.value as any)}
+              className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-emerald-500 w-full sm:w-auto"
+            >
+              <option value="all">Semua Tipe</option>
+              <option value="dewasa">Dewasa / Online</option>
+              <option value="reguler">Reguler (Anak)</option>
+            </select>
+            <select
+              value={filterKelas}
+              onChange={e => setFilterKelas(e.target.value)}
+              className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-emerald-500 w-full sm:w-auto"
+            >
+              <option value="all">Semua Kelas</option>
+              <option value="none">Belum Ada Kelas</option>
+              {kelasList.map(k => (
+                <option key={k.id} value={k.id}>{k.nama}</option>
+              ))}
+            </select>
+          </div>
+        </div>
         {loading ? (
           <div className="p-8 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-emerald-600" /></div>
         ) : (
@@ -147,10 +183,17 @@ function DataSantriPage() {
             <tbody>
               {santri.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="p-4 text-center text-slate-500">Belum ada data santri</td>
+                  <td colSpan={5} className="p-4 text-center text-slate-500">Belum ada data santri</td>
                 </tr>
               ) : (
-                santri.map(s => (
+                santri
+                  .filter(s => {
+                    const matchSearch = s.nama.toLowerCase().includes(searchQuery.toLowerCase())
+                    const matchTipe = filterTipe === 'all' || s.tipe === filterTipe
+                    const matchKelas = filterKelas === 'all' || (filterKelas === 'none' && !s.kelasId) || s.kelasId === filterKelas
+                    return matchSearch && matchTipe && matchKelas
+                  })
+                  .map(s => (
                   <tr key={s.id} className="border-b border-slate-100 hover:bg-slate-50">
                     <td className="p-4 font-medium flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700">
