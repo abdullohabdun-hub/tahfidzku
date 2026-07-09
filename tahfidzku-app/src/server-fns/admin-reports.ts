@@ -19,7 +19,7 @@ export const getMonthlyReport = createServerFn({ method: 'GET' })
     try {
       const session = await getAuthSession()
       if (!session) throw new AuthenticationError()
-      requireRole(session, 'admin_lembaga')
+      requireRole(session, 'admin')
 
       // Hitung rentang tanggal (Awal bulan s/d awal bulan berikutnya)
       const startDate = new Date(data.year, data.month - 1, 1)

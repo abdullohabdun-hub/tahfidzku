@@ -12,7 +12,7 @@ export const getTenantInfo = createServerFn({ method: 'GET' }).handler(
     try {
       const session = await getAuthSession()
       if (!session) throw new AuthenticationError()
-      requireRole(session, 'admin_lembaga')
+      requireRole(session, 'admin')
 
       const result = await db
         .select({
@@ -44,7 +44,7 @@ export const updateTenantInfo = createServerFn({ method: 'POST' })
     try {
       const session = await getAuthSession()
       if (!session) throw new AuthenticationError()
-      requireRole(session, 'admin_lembaga')
+      requireRole(session, 'admin')
 
       await db
         .update(tenants)

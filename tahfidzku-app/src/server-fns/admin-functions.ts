@@ -16,7 +16,7 @@ export const getUstadzList = createServerFn({ method: 'GET' }).handler(
     try {
       const session = await getAuthSession()
       if (!session) throw new AuthenticationError()
-      requireRole(session, 'admin_lembaga')
+      requireRole(session, 'admin')
 
       const ustadzList = await db
         .select({
@@ -49,7 +49,7 @@ export const createUstadz = createServerFn({ method: 'POST' })
     try {
       const session = await getAuthSession()
       if (!session) throw new AuthenticationError()
-      requireRole(session, 'admin_lembaga')
+      requireRole(session, 'admin')
 
       // Cek duplikasi email/username
       const existing = await db.select({ id: users.id }).from(users).where(eq(users.email, data.email))
@@ -79,7 +79,7 @@ export const deleteUstadz = createServerFn({ method: 'POST' })
     try {
       const session = await getAuthSession()
       if (!session) throw new AuthenticationError()
-      requireRole(session, 'admin_lembaga')
+      requireRole(session, 'admin')
 
       await db.delete(users).where(and(eq(users.id, data.id), eq(users.tenantId, session.user.tenantId)))
       return success(null, 'Berhasil menghapus Ustadz')
@@ -97,7 +97,7 @@ export const getSantriList = createServerFn({ method: 'GET' }).handler(
     try {
       const session = await getAuthSession()
       if (!session) throw new AuthenticationError()
-      requireRole(session, 'admin_lembaga')
+      requireRole(session, 'admin')
 
       const santriList = await db
         .select({
@@ -135,7 +135,7 @@ export const createSantri = createServerFn({ method: 'POST' })
     try {
       const session = await getAuthSession()
       if (!session) throw new AuthenticationError()
-      requireRole(session, 'admin_lembaga')
+      requireRole(session, 'admin')
 
       const newSantri = await db.insert(santri).values({
         tenantId: session.user.tenantId,
@@ -172,7 +172,7 @@ export const deleteSantri = createServerFn({ method: 'POST' })
     try {
       const session = await getAuthSession()
       if (!session) throw new AuthenticationError()
-      requireRole(session, 'admin_lembaga')
+      requireRole(session, 'admin')
 
       await db.delete(santri).where(and(eq(santri.id, data.id), eq(santri.tenantId, session.user.tenantId)))
       return success(null, 'Berhasil menghapus Santri')
@@ -190,7 +190,7 @@ export const getKelasList = createServerFn({ method: 'GET' }).handler(
     try {
       const session = await getAuthSession()
       if (!session) throw new AuthenticationError()
-      requireRole(session, 'admin_lembaga')
+      requireRole(session, 'admin')
 
       const kelasList = await db
         .select({
@@ -220,7 +220,7 @@ export const createKelas = createServerFn({ method: 'POST' })
     try {
       const session = await getAuthSession()
       if (!session) throw new AuthenticationError()
-      requireRole(session, 'admin_lembaga')
+      requireRole(session, 'admin')
 
       const newKelas = await db.insert(kelas).values({
         tenantId: session.user.tenantId,
@@ -240,7 +240,7 @@ export const deleteKelas = createServerFn({ method: 'POST' })
     try {
       const session = await getAuthSession()
       if (!session) throw new AuthenticationError()
-      requireRole(session, 'admin_lembaga')
+      requireRole(session, 'admin')
 
       await db.delete(kelas).where(and(eq(kelas.id, data.id), eq(kelas.tenantId, session.user.tenantId)))
       return success(null, 'Berhasil menghapus Kelas/Halaqoh')
