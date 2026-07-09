@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, Link, useLocation } from "@tanstack/react-router"
+import { createFileRoute, Outlet, Link, useLocation, useRouter } from "@tanstack/react-router"
 import { BookOpen, Users, UserSquare2, Home, Settings, LogOut, Menu } from "lucide-react"
 import { useState, useEffect } from "react"
 import { Button } from "../components/ui/button"
@@ -14,6 +14,8 @@ function AdminLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [tenantName, setTenantName] = useState('Memuat...')
+
+  const router = useRouter()
 
   useEffect(() => {
     async function loadProfile() {
@@ -31,7 +33,8 @@ function AdminLayout() {
 
   const handleLogout = async () => {
     await logout()
-    window.location.href = '/login'
+    router.invalidate()
+    router.navigate({ to: '/login' })
   }
 
   const navItems = [

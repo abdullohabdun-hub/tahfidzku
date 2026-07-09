@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, Link, useLocation } from "@tanstack/react-router"
+import { createFileRoute, Outlet, Link, useLocation, useRouter } from "@tanstack/react-router"
 import { Home, PlusCircle, History, User, Award, Clock, LogOut } from "lucide-react"
 import { useState, useEffect } from "react"
 import { checkAuth, logout } from "../server-fns/auth"
@@ -10,6 +10,7 @@ export const Route = createFileRoute('/ustadz')({
 
 function UstadzLayout() {
   const location = useLocation()
+  const router = useRouter()
   const [user, setUser] = useState<any>(null)
   const [tenantName, setTenantName] = useState('Memuat...')
 
@@ -29,7 +30,8 @@ function UstadzLayout() {
 
   const handleLogout = async () => {
     await logout()
-    window.location.href = '/login'
+    router.invalidate()
+    router.navigate({ to: '/login' })
   }
 
   const navItems = [

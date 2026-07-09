@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, Link, useLocation } from "@tanstack/react-router"
+import { createFileRoute, Outlet, Link, useLocation, useRouter } from "@tanstack/react-router"
 import { Home, PencilLine, User, Award, BookOpen, LogOut } from "lucide-react"
 import { logout } from "../server-fns/auth"
 
@@ -8,10 +8,12 @@ export const Route = createFileRoute('/santri')({
 
 function SantriLayout() {
   const location = useLocation()
+  const router = useRouter()
 
   const handleLogout = async () => {
     await logout()
-    window.location.href = '/login'
+    router.invalidate()
+    router.navigate({ to: '/login' })
   }
 
   const navItems = [
