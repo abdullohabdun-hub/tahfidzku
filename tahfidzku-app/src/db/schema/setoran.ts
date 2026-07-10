@@ -1,7 +1,7 @@
 // src/db/schema/setoran.ts
 // Tabel setoran — catatan hafalan yang diinput oleh Ustadz
 
-import { pgTable, uuid, varchar, integer, text, timestamp, pgEnum } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, varchar, integer, text, timestamp, pgEnum, real, boolean, jsonb } from 'drizzle-orm/pg-core'
 import { tenants } from './tenants'
 import { santri } from './santri'
 import { users } from './users'
@@ -22,11 +22,15 @@ export const setoran = pgTable('setoran', {
     .references(() => users.id, { onDelete: 'cascade' }),
   jenis: jenisSetoranEnum('jenis').notNull(),
   juz: integer('juz'),
-  halamanAwal: integer('halaman_awal'),
-  halamanAkhir: integer('halaman_akhir'),
+  juzMulai: integer('juz_mulai'),
+  juzSelesai: integer('juz_selesai'),
+  lintasJuz: boolean('lintas_juz').default(false),
+  halamanAwal: real('halaman_awal'),
+  halamanAkhir: real('halaman_akhir'),
   surah: varchar('surah', { length: 100 }),
   ayatAwal: integer('ayat_awal'),
   ayatAkhir: integer('ayat_akhir'),
+  surahMeta: jsonb('surah_meta').$type<Record<string, any>>(),
   kualitas: kualitasEnum('kualitas').notNull(),
   catatan: text('catatan'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

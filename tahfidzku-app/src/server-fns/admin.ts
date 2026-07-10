@@ -11,7 +11,7 @@ export const getAdminDashboardStats = createServerFn({ method: 'GET' }).handler(
     try {
       const session = await getAuthSession()
       if (!session) throw new AuthenticationError()
-      requireRole(session, 'admin_lembaga')
+      requireRole(session, 'admin')
 
       const tenantId = session.user.tenantId
 

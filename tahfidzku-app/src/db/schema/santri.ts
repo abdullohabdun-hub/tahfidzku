@@ -1,7 +1,7 @@
 // src/db/schema/santri.ts
 // Tabel santri — data peserta didik, terkait tenant dan kelas
 
-import { pgTable, uuid, varchar, integer, timestamp, pgEnum } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, varchar, integer, timestamp, pgEnum, jsonb } from 'drizzle-orm/pg-core'
 import { tenants } from './tenants'
 import { kelas } from './kelas'
 
@@ -20,5 +20,6 @@ export const santri = pgTable('santri', {
   batasHafalanJuz: integer('batas_hafalan_juz'), // Opsional: Juz untuk hafalan parsial
   batasHafalanSurah: varchar('batas_hafalan_surah', { length: 100 }), // Opsional: Surah untuk hafalan parsial
   batasHafalanAyat: integer('batas_hafalan_ayat'), // Opsional: Ayat terakhir untuk hafalan parsial
+  posisiTerakhir: jsonb('posisi_terakhir').$type<{surahNomor: number, ayat: number}>(), // Tracker untuk prefill setoran Ziyadah otomatis
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 })

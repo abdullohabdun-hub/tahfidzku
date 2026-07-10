@@ -11,12 +11,17 @@ export const createSetoranSchema = z
       message: 'Jenis setoran harus: ziyadah, sabqi, atau manzil',
     }),
     juz: z.number({ message: 'Juz harus berupa angka' }).int().positive().max(30, 'Juz maksimal 30').optional(),
-    halamanAwal: z.number().int().positive().max(604).optional(),
-    halamanAkhir: z.number().int().positive().max(604).optional(),
+    juzMulai: z.number({ message: 'Juz mulai harus berupa angka' }).int().positive().max(30).optional(),
+    juzSelesai: z.number({ message: 'Juz selesai harus berupa angka' }).int().positive().max(30).optional(),
+    lintasJuz: z.boolean().optional(),
+    halamanAwal: z.number().positive().max(604).optional(),
+    halamanAkhir: z.number().positive().max(604).optional(),
     surah: z
       .string()
       .max(100, 'Nama surah terlalu panjang')
       .optional(),
+    surahNomor: z.number().int().positive().max(114).optional(),
+    surahMeta: z.record(z.string(), z.any()).optional(),
     ayatAwal: z
       .number({ message: 'Ayat awal harus berupa angka' })
       .int()
@@ -40,13 +45,14 @@ export const createSetoranSchema = z
   .superRefine((data, ctx) => {
     if (data.jenis === 'ziyadah') {
       if (!data.surah) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Surah wajib diisi untuk Ziyadah', path: ['surah'] });
+      if (!data.surahNomor) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Nomor Surah wajib diisi untuk Ziyadah', path: ['surahNomor'] });
       if (!data.ayatAwal) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Ayat awal wajib diisi untuk Ziyadah', path: ['ayatAwal'] });
       if (!data.ayatAkhir) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Ayat akhir wajib diisi untuk Ziyadah', path: ['ayatAkhir'] });
       if (data.ayatAwal && data.ayatAkhir && data.ayatAkhir < data.ayatAwal) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Ayat akhir tidak boleh kurang dari ayat awal', path: ['ayatAkhir'] });
       }
     } else {
-      if (!data.juz) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Juz wajib diisi untuk Sabqi/Manzil', path: ['juz'] });
+      if (!data.juzMulai) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Juz wajib diisi untuk Sabqi/Manzil', path: ['juzMulai'] });
       if (!data.halamanAwal) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Halaman awal wajib diisi untuk Sabqi/Manzil', path: ['halamanAwal'] });
       if (!data.halamanAkhir) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Halaman akhir wajib diisi untuk Sabqi/Manzil', path: ['halamanAkhir'] });
       if (data.halamanAwal && data.halamanAkhir && data.halamanAkhir < data.halamanAwal) {

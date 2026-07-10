@@ -10,7 +10,6 @@ import { createSetoranSchema, updateSetoranSchema } from '../lib/validators'
 import { success, handleError } from '../lib/response'
 import { AuthenticationError, ForbiddenError } from '../lib/errors'
 
-import { getPageInfo } from '../lib/quranMapper'
 import { santri } from '../db/schema/santri'
 import { kelas } from '../db/schema/kelas'
 import { z } from 'zod'
@@ -31,23 +30,7 @@ export const createSetoran = createServerFn({ method: 'POST' })
       // tenantId & ustadzId SELALU dari session, TIDAK PERNAH dari client
       const tenantId = session.user.tenantId
 
-      // ── Auto-populate Surah/Ayat untuk Sabqi/Manzil ──
-      let finalSurah = data.surah
-      let finalAyatAwal = data.ayatAwal
-      let finalAyatAkhir = data.ayatAkhir
 
-      if (data.jenis !== 'ziyadah' && data.halamanAwal && data.halamanAkhir) {
-        const pageAwal = getPageInfo(data.halamanAwal)
-        const pageAkhir = getPageInfo(data.halamanAkhir)
-
-        if (pageAwal && pageAkhir && pageAwal.surahs.length > 0 && pageAkhir.surahs.length > 0) {
-           const firstSurah = pageAwal.surahs[0]
-           const lastSurah = pageAkhir.surahs[pageAkhir.surahs.length - 1]
-           finalSurah = firstSurah.nama !== lastSurah.nama ? `${firstSurah.nama} - ${lastSurah.nama}` : firstSurah.nama
-           finalAyatAwal = firstSurah.ayatAwal
-           finalAyatAkhir = lastSurah.ayatAkhir
-        }
-      }
 
       // ── Insert ke database ──
       const [result] = await db
@@ -58,15 +41,27 @@ export const createSetoran = createServerFn({ method: 'POST' })
           ustadzId: session.user.id,
           jenis: data.jenis,
           juz: data.juz ?? null,
+          juzMulai: data.juzMulai ?? null,
+          juzSelesai: data.juzSelesai ?? null,
+          lintasJuz: data.lintasJuz ?? false,
           halamanAwal: data.halamanAwal ?? null,
           halamanAkhir: data.halamanAkhir ?? null,
-          surah: finalSurah,
-          ayatAwal: finalAyatAwal,
-          ayatAkhir: finalAyatAkhir,
+          surah: data.surah ?? null,
+          ayatAwal: data.ayatAwal ?? null,
+          ayatAkhir: data.ayatAkhir ?? null,
+          surahMeta: data.surahMeta ?? null,
           kualitas: data.kualitas,
           catatan: data.catatan ?? null,
         })
         .returning()
+
+      // ── Update Tracker Ziyadah ──
+      if (data.jenis === 'ziyadah' && data.surahNomor && data.ayatAkhir) {
+        await db
+          .update(santri)
+          .set({ posisiTerakhir: { surahNomor: data.surahNomor, ayat: data.ayatAkhir } })
+          .where(eq(santri.id, data.santriId))
+      }
 
       return success(result, 'Setoran berhasil disimpan')
     } catch (err) {

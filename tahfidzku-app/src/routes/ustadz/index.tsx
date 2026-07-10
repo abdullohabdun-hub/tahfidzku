@@ -86,8 +86,7 @@ function UstadzDashboard() {
                     </div>
                   </div>
                   <Link 
-                    to="/ustadz/input-setoran"
-                    search={{ santriId: santri.id }}
+                    to="/ustadz/input"
                     className="bg-emerald-50 text-emerald-700 font-semibold px-3 py-1.5 rounded-lg text-xs hover:bg-emerald-100"
                   >
                     Input

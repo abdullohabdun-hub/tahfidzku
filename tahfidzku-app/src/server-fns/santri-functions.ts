@@ -89,12 +89,14 @@ export const inputMurojaah = createServerFn({ method: 'POST' })
         ustadzId: ustadzId,
         jenis: data.jenis,
         juz: data.juz,
-        halamanAwal: data.halaman, halamanAkhir: data.halaman,
-        surat: data.suratNama,
-        ayat: data.ayat || '-',
+        juzMulai: data.juz, // Map to new field for consistency if needed, but 'juz' still exists
+        halamanAwal: data.halaman, 
+        halamanAkhir: data.halaman,
+        surah: data.suratNama,
+        ayatAwal: 1, // Defaulting because santri doesn't submit exact ayat in this MVP
+        ayatAkhir: 286, // Defaulting
         kualitas: data.kualitas,
-        keterangan: data.keterangan,
-        tanggal: new Date(),
+        catatan: data.keterangan || null,
       }).returning()
 
       return success(record[0], 'Murojaah berhasil dilaporkan!')
