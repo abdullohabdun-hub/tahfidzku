@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { Users, Plus, Loader2, Trash2, Edit } from 'lucide-react'
-import { getSantriList, createSantri, deleteSantri, getKelasList, updateSantri } from '../../server-fns/admin-functions'
+import { getSantriList, createSantri, deleteSantri, updateSantri } from '../../server-fns/santri'
+import { getKelasList } from '../../server-fns/kelas'
 import { getSurahByJuz, getAyatRangeInJuz } from '../../lib/quranMapper'
 import { Button } from '../../components/ui/button'
 

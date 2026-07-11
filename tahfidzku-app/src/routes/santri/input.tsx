@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { inputMurojaah } from '../../server-fns/santri-functions'
+import { inputMurojaah } from '../../server-fns/setoran'
 import { Button } from '../../components/ui/button'
 import { Card, CardContent } from '../../components/ui/card'
 import { ArrowLeft } from 'lucide-react'

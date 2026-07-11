@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { Card, CardContent } from "../../components/ui/card"
 import { Users, BookOpen, Clock, Edit } from "lucide-react"
-import { getUstadzDashboard } from "../../server-fns/ustadz"
+import { getUstadzDashboard } from "../../server-fns/dashboard"
 
 export const Route = createFileRoute('/ustadz/')({
   component: UstadzDashboard,

@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 import React, { useState, useEffect, useMemo } from 'react'
 import { Check, ChevronDown, Loader2, Info, Settings2 } from 'lucide-react'
-import { getSantriList, createSetoran } from '../../server-fns/ustadz'
+import { getSantriList } from '../../server-fns/santri'
+import { createSetoran } from '../../server-fns/setoran'
 import { 
   buatSurahMetaOtomatis, 
   buatSurahMetaLintasJuz, 

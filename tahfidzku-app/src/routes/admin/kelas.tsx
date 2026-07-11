@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { BookOpen, Plus, Loader2, Trash2, Edit } from 'lucide-react'
-import { getKelasList, createKelas, deleteKelas, getUstadzList, updateKelas } from '../../server-fns/admin-functions'
+import { getKelasList, createKelas, deleteKelas, updateKelas } from '../../server-fns/kelas'
+import { getUstadzList } from '../../server-fns/ustadz'
 import { Button } from '../../components/ui/button'
 
 export const Route = createFileRoute('/admin/kelas')({

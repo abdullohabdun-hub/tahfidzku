@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { getSantriDashboardData } from '../../server-fns/santri-functions'
+import { getSantriDashboardData } from '../../server-fns/dashboard'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Flame, Target, BookOpen, Clock } from 'lucide-react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'

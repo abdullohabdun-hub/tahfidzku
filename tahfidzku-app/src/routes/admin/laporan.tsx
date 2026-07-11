@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { Printer, Loader2, FileText, ChevronDown, ChevronUp, ChevronsUpDown } from 'lucide-react'
 import { flexRender, getCoreRowModel, useReactTable, getSortedRowModel } from "@tanstack/react-table"
 import type { SortingState } from "@tanstack/react-table"
-import { getMonthlyReport } from '../../server-fns/admin-reports'
+import { getMonthlyReport } from '../../server-fns/setoran'
 import { Button } from '../../components/ui/button'
 
 export const Route = createFileRoute('/admin/laporan')({

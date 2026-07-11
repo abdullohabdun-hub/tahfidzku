@@ -814,6 +814,25 @@ export function buatSurahMeta(juz, halamanRelatifMulai, halamanRelatifSelesai) {
   const absolutSelesai = halamanRelatifKeAbsolut(juz, halamanRelatifSelesai);
   if (absolutMulai === null || absolutSelesai === null) return null;
 
+  return _surahMetaDariAbsolut(absolutMulai, absolutSelesai);
+}
+
+/**
+ * ==========================================================================
+ * EKSTENSI: rekam-jejak Ziyadah, presisi ayat, dan setoran lintas-juz
+ * ==========================================================================
+ */
+
+/**
+ * Inti pembacaan surah dari rentang halaman ABSOLUT (1-604), lepas dari
+ * konsep "relatif per-juz". Dipakai bersama oleh buatSurahMeta() (dalam-juz)
+ * dan buatSurahMetaLintasJuz() (lintas-juz) supaya labelnya selalu konsisten.
+ */
+function _surahMetaDariAbsolut(absolutMulai, absolutSelesai) {
+  if (absolutMulai > absolutSelesai) {
+    throw new Error("Halaman mulai tidak boleh lebih besar dari halaman selesai");
+  }
+
   const surahMulai = getSurahDiHalaman(absolutMulai)[0];
   const surahSelesaiList = getSurahDiHalaman(absolutSelesai);
   const surahSelesai = surahSelesaiList[surahSelesaiList.length - 1];
@@ -826,9 +845,8 @@ export function buatSurahMeta(juz, halamanRelatifMulai, halamanRelatifSelesai) {
     // Kasus umum: satu surah saja. Contoh: "An-Naba 1-30"
     label = `${surahMulai.nama} ${ayatAwal}-${ayatAkhir}`;
   } else {
-    // Kasus lintas-surah dalam satu entri (mis. Juz 30 yang surahnya banyak & pendek).
-    // Surah awal ditampilkan utuh sampai ayat terakhirnya (dari SURAH_LIST), supaya jelas
-    // bahwa surah itu sudah tuntas, bukan cuma "ayat 1" yang terlihat seperti baru dimulai.
+    // Kasus lintas-surah dalam satu entri (mis. Juz 30 yang surahnya banyak & pendek,
+    // atau setoran lintas-juz yang otomatis lintas-surah juga).
     const totalAyatSurahMulai = surahByNomor[surahMulai.nomor]?.totalAyat ?? ayatAwal;
     label = `${surahMulai.nama} ${ayatAwal}-${totalAyatSurahMulai} - ${surahSelesai.nama} 1-${ayatAkhir}`;
   }
@@ -840,4 +858,384 @@ export function buatSurahMeta(juz, halamanRelatifMulai, halamanRelatifSelesai) {
     surahSelesai: { nomor: surahSelesai.nomor, nama: surahSelesai.nama, ayat: ayatAkhir },
     label,
   };
+}
+
+/**
+ * (1) ZIYADAH — rekam jejak setoran kemarin.
+ * Mengembalikan posisi ayat SETELAH (surahNomor, ayat), melompat otomatis
+ * ke surah berikutnya bila ayat sudah di ayat terakhir surah tsb.
+ * Mengembalikan null jika (surahNomor, ayat) sudah An-Nas 6 (khatam 30 juz).
+ */
+export function ayatBerikutnya(surahNomor, ayat) {
+  const surah = surahByNomor[surahNomor];
+  if (!surah) throw new Error(`Surah tidak valid: ${surahNomor}`);
+  if (ayat < 1 || ayat > surah.totalAyat) {
+    throw new Error(`Ayat ${ayat} di luar rentang surah ${surah.nama} (1-${surah.totalAyat})`);
+  }
+  if (ayat < surah.totalAyat) {
+    return { surahNomor, ayat: ayat + 1 };
+  }
+  const surahBerikut = surahByNomor[surahNomor + 1];
+  return surahBerikut ? { surahNomor: surahBerikut.nomor, ayat: 1 } : null;
+}
+
+/**
+ * (Prefill Ziyadah versi lengkap, memperhitungkan urutanHafalan custom,
+ * didefinisikan lebih bawah sebagai prefillZiyadahBerikutnya().)
+ */
+
+/**
+ * (2C/2D) SABQI & MANZIL — versi buatSurahMeta() yang mendukung rentang
+ * LINTAS JUZ, mis. juz 29 halaman 18 s.d. juz 30 halaman 2. Menerima
+ * (juz, halamanRelatif) di kedua ujung rentang secara independen, sehingga
+ * otomatis juga menangani surah yang menyeberang batas juz (2D) karena
+ * pembacaannya memakai getSurahDiHalaman() di ruang halaman absolut.
+ */
+export function buatSurahMetaLintasJuz(juzMulai, halamanRelatifMulai, juzSelesai, halamanRelatifSelesai) {
+  const absolutMulai = halamanRelatifKeAbsolut(juzMulai, halamanRelatifMulai);
+  const absolutSelesai = halamanRelatifKeAbsolut(juzSelesai, halamanRelatifSelesai);
+  if (absolutMulai === null || absolutSelesai === null) return null;
+
+  const meta = _surahMetaDariAbsolut(absolutMulai, absolutSelesai);
+  return { ...meta, juzMulai, juzSelesai, lintasJuz: juzMulai !== juzSelesai };
+}
+
+/**
+ * Pembungkus praktis untuk form Sabqi/Manzil: otomatis memilih antara
+ * buatSurahMeta (dalam-juz) dan buatSurahMetaLintasJuz (lintas-juz),
+ * supaya UI cukup panggil satu fungsi ini tanpa perlu tahu kasus mana yang
+ * sedang terjadi. Selalu mengembalikan field `lintasJuz` untuk ditampilkan.
+ */
+export function buatSurahMetaOtomatis(juzMulai, halamanRelatifMulai, juzSelesai, halamanRelatifSelesai) {
+  if (juzMulai === juzSelesai) {
+    const hasil = buatSurahMeta(juzMulai, halamanRelatifMulai, halamanRelatifSelesai);
+    if (hasil !== null) return { ...hasil, juzMulai, juzSelesai, lintasJuz: false };
+    // halamanRelatifSelesai melebihi batas juzMulai -> jatuhkan ke jalur lintas-juz
+  }
+  return buatSurahMetaLintasJuz(juzMulai, halamanRelatifMulai, juzSelesai, halamanRelatifSelesai);
+}
+
+/**
+ * (2B) Presisi ¼/½/¾ halaman — menerapkan override ayat manual (opsional)
+ * dari ustadz di atas hasil auto-deteksi berbasis batas halaman penuh.
+ * Dipakai saat setoran berhenti di TENGAH halaman, bukan di ujungnya, jadi
+ * ayat hasil auto-deteksi (dari batas halaman) perlu dikoreksi manual.
+ * Halaman & pecahan halaman tetap dipakai apa adanya sebagai metrik jumlah
+ * bacaan; hanya label & rentang ayat presisi yang dikoreksi di sini.
+ *
+ * meta          : hasil dari buatSurahMeta / buatSurahMetaLintasJuz / buatSurahMetaOtomatis
+ * overrideAwal  : { surahNomor, ayat } | null  (biarkan null jika tidak dikoreksi)
+ * overrideAkhir : { surahNomor, ayat } | null
+ */
+export function terapkanOverrideAyat(meta, overrideAwal, overrideAkhir) {
+  if (!meta) return meta;
+
+  const surahMulai = overrideAwal
+    ? { nomor: overrideAwal.surahNomor, nama: surahByNomor[overrideAwal.surahNomor].nama, ayat: overrideAwal.ayat }
+    : meta.surahMulai;
+  const surahSelesai = overrideAkhir
+    ? { nomor: overrideAkhir.surahNomor, nama: surahByNomor[overrideAkhir.surahNomor].nama, ayat: overrideAkhir.ayat }
+    : meta.surahSelesai;
+
+  let label;
+  if (surahMulai.nomor === surahSelesai.nomor) {
+    label = `${surahMulai.nama} ${surahMulai.ayat}-${surahSelesai.ayat}`;
+  } else {
+    const totalAyatSurahMulai = surahByNomor[surahMulai.nomor]?.totalAyat ?? surahMulai.ayat;
+    label = `${surahMulai.nama} ${surahMulai.ayat}-${totalAyatSurahMulai} - ${surahSelesai.nama} 1-${surahSelesai.ayat}`;
+  }
+
+  return {
+    ...meta,
+    surahMulai,
+    surahSelesai,
+    label,
+    presisiManual: Boolean(overrideAwal || overrideAkhir),
+  };
+}
+
+/**
+ * ==========================================================================
+ * PERBAIKAN: santri dengan hafalan sebelumnya + urutan hafalan custom
+ *            (mis. mulai dari Juz 30 mundur), dan ziyadah lintas-surat.
+ * ==========================================================================
+ */
+
+/**
+ * Mencari juz yang memuat sebuah posisi ayat. Diperlukan karena urutan
+ * hafalan santri bisa TIDAK linear (surah 1->114), mis. santri mulai dari
+ * Juz 30 lalu mundur ke Juz 29, 28, dst.
+ */
+function cariJuzUntukAyat(surahNomor, ayat) {
+  for (const halaman of PAGES_DATA) {
+    for (const seg of halaman.surahs) {
+      if (seg.nomor === surahNomor && ayat >= seg.ayatAwal && ayat <= seg.ayatAkhir) {
+        return halaman.juz;
+      }
+    }
+  }
+  throw new Error(`Posisi tidak ditemukan: surah ${surahNomor} ayat ${ayat}`);
+}
+
+/** Ayat pertama pada sebuah juz (surah & nomor ayat di halaman pertama juz itu). */
+export function getAyatPertamaJuz(juz) {
+  const { halamanAwal } = getRentangHalamanJuz(juz);
+  const seg = getSurahDiHalaman(halamanAwal)[0];
+  return { surahNomor: seg.nomor, ayat: seg.ayatAwal };
+}
+
+/** Ayat terakhir pada sebuah juz (surah & nomor ayat di halaman terakhir juz itu). */
+export function getAyatTerakhirJuz(juz) {
+  const { halamanAkhir } = getRentangHalamanJuz(juz);
+  const segList = getSurahDiHalaman(halamanAkhir);
+  const seg = segList[segList.length - 1];
+  return { surahNomor: seg.nomor, ayat: seg.ayatAkhir };
+}
+
+/** Preset: urutan standar Juz 1 -> 30 (default untuk santri baru). */
+export function urutanJuzStandar() {
+  return Array.from({ length: 30 }, (_, i) => i + 1);
+}
+
+/** Preset: urutan mundur Juz 30 -> 1 (pola umum di lapangan: mulai dari surat pendek). */
+export function urutanJuzMundurDari30() {
+  return Array.from({ length: 30 }, (_, i) => 30 - i);
+}
+
+/**
+ * (1) ZIYADAH — posisi berikutnya yang MENGERTI urutan hafalan santri.
+ * urutanHafalan: array 30 nomor juz sesuai urutan yang dijalani santri,
+ * mis. urutanJuzStandar() atau urutanJuzMundurDari30() atau susunan custom
+ * apa pun (mis. [30, 29, 26, 27, 28, 25, ...]) yang diatur admin/ustadz.
+ *
+ * Selama posisi belum di ayat TERAKHIR juz saat ini, tetap maju normal
+ * dalam mushaf (bisa lintas surat, lihat ayatBerikutnya). Begitu posisi
+ * sudah di ayat terakhir juz saat ini, lompat ke ayat PERTAMA juz
+ * berikutnya sesuai urutanHafalan -- baik itu nomor juz lebih besar
+ * maupun lebih kecil.
+ */
+export function posisiHafalanBerikutnya(surahNomor, ayat, urutanHafalan) {
+  const juzSekarang = cariJuzUntukAyat(surahNomor, ayat);
+  const akhirJuz = getAyatTerakhirJuz(juzSekarang);
+  const sudahDiAkhirJuz = akhirJuz.surahNomor === surahNomor && akhirJuz.ayat === ayat;
+
+  if (!sudahDiAkhirJuz) {
+    const next = ayatBerikutnya(surahNomor, ayat);
+    return next ? { ...next, juz: juzSekarang } : null;
+  }
+
+  const idx = urutanHafalan.indexOf(juzSekarang);
+  const juzBerikutnya = idx >= 0 && idx < urutanHafalan.length - 1 ? urutanHafalan[idx + 1] : null;
+  if (juzBerikutnya === null) return null; // sudah menuntaskan seluruh urutan hafalan
+
+  const awal = getAyatPertamaJuz(juzBerikutnya);
+  return { surahNomor: awal.surahNomor, ayat: awal.ayat, juz: juzBerikutnya };
+}
+
+/**
+ * Versi baru prefillZiyadahBerikutnya() yang menerima urutanHafalan.
+ * posisiTerakhir null -> mulai dari ayat pertama juz PERTAMA di urutanHafalan
+ * (bukan selalu Al-Fatiha -- kalau urutanHafalan dimulai dari Juz 30, maka
+ * santri baru pun mulai dari An-Naba ayat 1).
+ */
+export function prefillZiyadahBerikutnya(posisiTerakhir, urutanHafalan = urutanJuzStandar()) {
+  if (!posisiTerakhir) {
+    const awal = getAyatPertamaJuz(urutanHafalan[0]);
+    return { surahNomor: awal.surahNomor, namaSurah: surahByNomor[awal.surahNomor].nama, ayat: awal.ayat };
+  }
+  const next = posisiHafalanBerikutnya(posisiTerakhir.surahNomor, posisiTerakhir.ayat, urutanHafalan);
+  if (!next) return null;
+  return { surahNomor: next.surahNomor, namaSurah: surahByNomor[next.surahNomor].nama, ayat: next.ayat };
+}
+
+/**
+ * Untuk ONBOARDING santri yang sudah punya hafalan sebelumnya (mis. sudah
+ * hafal 2 juz: Juz 30 dan Juz 29). Admin cukup memasukkan BERAPA JUZ
+ * PERTAMA dari urutanHafalan yang sudah tuntas -- fungsi ini menghitung
+ * posisiTerakhir yang tepat, siap dipakai prefillZiyadahBerikutnya().
+ * Untuk kasus juz belum tuntas penuh / urutan tidak berurutan, admin bisa
+ * set posisiTerakhir secara manual (surah+ayat) tanpa lewat fungsi ini.
+ */
+export function posisiTerakhirDariJumlahJuzSelesai(urutanHafalan, jumlahJuzSelesai) {
+  if (jumlahJuzSelesai <= 0) return null;
+  const juzTerakhirSelesai = urutanHafalan[jumlahJuzSelesai - 1];
+  return getAyatTerakhirJuz(juzTerakhirSelesai);
+}
+
+/**
+ * (2) ZIYADAH LINTAS-SURAT — label untuk rentang ayat yang bisa melewati
+ * lebih dari satu surat dalam SATU entri setoran (mis. santri menghabiskan
+ * An-Nas lalu lanjut beberapa ayat Al-Falaq dalam setoran yang sama).
+ * Dalam satu entri, arah baca selalu maju di dalam mushaf, jadi
+ * surahSelesaiNomor harus >= surahMulaiNomor.
+ */
+export function labelRentangAyatZiyadah(surahMulaiNomor, ayatMulai, surahSelesaiNomor, ayatSelesai) {
+  if (surahSelesaiNomor < surahMulaiNomor || (surahSelesaiNomor === surahMulaiNomor && ayatSelesai < ayatMulai)) {
+    throw new Error("Ayat selesai harus berada setelah ayat mulai di dalam mushaf.");
+  }
+  const sMulai = surahByNomor[surahMulaiNomor];
+  const sSelesai = surahByNomor[surahSelesaiNomor];
+
+  if (surahMulaiNomor === surahSelesaiNomor) {
+    return ayatMulai === ayatSelesai
+      ? `${sMulai.nama} ayat ${ayatMulai}`
+      : `${sMulai.nama} ayat ${ayatMulai}-${ayatSelesai}`;
+  }
+
+  const bagian = [`${sMulai.nama} ${ayatMulai}-${sMulai.totalAyat}`];
+  for (let n = surahMulaiNomor + 1; n < surahSelesaiNomor; n++) {
+    bagian.push(`${surahByNomor[n].nama} (utuh)`);
+  }
+  bagian.push(`${sSelesai.nama} 1-${ayatSelesai}`);
+  return bagian.join(" - ");
+}
+
+/**
+ * ==========================================================================
+ * PERBAIKAN: parsing input halaman dengan pecahan (bug "1,5" tidak terbaca)
+ * ==========================================================================
+ */
+
+/**
+ * Parser toleran untuk field "Halaman" yang mendukung notasi pecahan ala
+ * Indonesia (koma) maupun titik -- mis. "1,5", "1.5", "1,25", atau "12"
+ * biasa. Mengembalikan { halaman, pecahan }:
+ *   - halaman  : nomor halaman relatif BULAT yang sedang dibaca
+ *   - pecahan  : seberapa jauh halaman itu terbaca (0 = penuh/utuh,
+ *                0.25 / 0.5 / 0.75 = seperempat / setengah / tigaperempat)
+ * Melempar Error dengan pesan jelas kalau formatnya tidak dikenali, supaya
+ * UI bisa menampilkan alasan gagal-nya alih-alih diam-diam menampilkan
+ * "lengkapi input" seperti sebelumnya.
+ */
+export function parseHalamanPecahan(input) {
+  if (input === null || input === undefined || String(input).trim() === "") {
+    throw new Error("Halaman belum diisi.");
+  }
+  const dibersihkan = String(input).trim().replace(",", ".");
+  const nilai = Number(dibersihkan);
+  if (Number.isNaN(nilai)) {
+    throw new Error(`"${input}" bukan format halaman yang dikenali. Contoh: 3 atau 3,5`);
+  }
+  if (nilai < 1) {
+    throw new Error("Nomor halaman minimal 1.");
+  }
+  const halaman = Math.floor(nilai);
+  const pecahan = Math.round((nilai - halaman) * 100) / 100;
+  if (![0, 0.25, 0.5, 0.75].includes(pecahan)) {
+    throw new Error(`Pecahan ",${String(pecahan).split(".")[1] || "0"}" tidak dikenali. Gunakan ,25 / ,5 / ,75 atau tanpa pecahan.`);
+  }
+  return { halaman, pecahan };
+}
+
+/**
+ * ==========================================================================
+ * PERBAIKAN: satu sumber kebenaran posisi hafalan + progres per-halaman
+ * ==========================================================================
+ */
+
+/** Sama seperti cariJuzUntukAyat tapi mengembalikan nomor HALAMAN ABSOLUT (1-604). */
+function cariHalamanAbsolutUntukAyat(surahNomor, ayat) {
+  for (const halaman of PAGES_DATA) {
+    for (const seg of halaman.surahs) {
+      if (seg.nomor === surahNomor && ayat >= seg.ayatAwal && ayat <= seg.ayatAkhir) {
+        return halaman.halaman;
+      }
+    }
+  }
+  throw new Error(`Posisi tidak ditemukan: surah ${surahNomor} ayat ${ayat}`);
+}
+
+/**
+ * SATU SUMBER KEBENARAN untuk "hafalan awal" santri (dipakai baik saat admin
+ * mendaftarkan santri yang sudah punya hafalan, MAUPUN oleh sistem input
+ * ustadz & grafik santri -- supaya keduanya selalu baca data yang sama).
+ *
+ * Dipanggil sekali di awal (onboarding). Menghasilkan { urutanHafalan,
+ * posisiTerakhir } yang langsung disimpan ke kolom santri.urutanHafalan
+ * dan santri.posisiTerakhir.
+ *
+ * PENTING: hanya dipakai kalau posisiTerakhir santri masih kosong (santri
+ * benar-benar baru didaftarkan). Kalau santri sudah pernah ziyadah, JANGAN
+ * panggil ini lagi -- akan menimpa progres yang sudah berjalan. Tempatkan
+ * guard ini di endpoint pemanggilnya, bukan di dalam fungsi ini.
+ */
+export function aturHafalanAwal(polaUrutan, jumlahJuzSelesai) {
+  const urutanHafalan = polaUrutan === "mundur" ? urutanJuzMundurDari30() : urutanJuzStandar();
+  const posisiTerakhir = posisiTerakhirDariJumlahJuzSelesai(urutanHafalan, jumlahJuzSelesai);
+  return { urutanHafalan, posisiTerakhir };
+}
+
+/**
+ * PROGRES PER-HALAMAN (bukan per-juz) — dipakai untuk grafik hafalan santri.
+ * Menghitung total halaman yang sudah "tertempuh" sepanjang urutanHafalan
+ * santri sampai posisi terakhirnya saat ini, yaitu:
+ *   (jumlah halaman semua juz SEBELUM juz yang sedang berjalan, di urutanHafalan)
+ *   + (jumlah halaman yang sudah tertempuh DI DALAM juz yang sedang berjalan)
+ *
+ * Karena posisiTerakhir sudah ter-update di level ayat setiap kali ziyadah
+ * disimpan (bukan cuma saat 1 juz penuh selesai), angka ini otomatis naik
+ * setiap kali batas halaman terlewati -- bukan cuma saat 1 juz selesai.
+ *
+ * Mengembalikan null jika posisiTerakhir kosong (santri benar-benar baru,
+ * progres = 0).
+ */
+export function hitungProgresHalaman(urutanHafalan, posisiTerakhir) {
+  if (!posisiTerakhir) {
+    return { halamanTertempuh: 0, totalHalamanProgram: totalHalamanUrutan(urutanHafalan), persen: 0 };
+  }
+
+  const juzSekarang = cariJuzUntukAyat(posisiTerakhir.surahNomor, posisiTerakhir.ayat);
+  const idx = urutanHafalan.indexOf(juzSekarang);
+  if (idx === -1) {
+    throw new Error(`Juz ${juzSekarang} (posisi santri saat ini) tidak ada dalam urutanHafalan.`);
+  }
+
+  let halamanTertempuh = 0;
+  for (let i = 0; i < idx; i++) {
+    const { halamanAwal, halamanAkhir } = getRentangHalamanJuz(urutanHafalan[i]);
+    halamanTertempuh += halamanAkhir - halamanAwal + 1;
+  }
+
+  const { halamanAwal } = getRentangHalamanJuz(juzSekarang);
+  const halamanAbsolutSekarang = cariHalamanAbsolutUntukAyat(posisiTerakhir.surahNomor, posisiTerakhir.ayat);
+  halamanTertempuh += halamanAbsolutSekarang - halamanAwal + 1;
+
+  const totalHalamanProgram = totalHalamanUrutan(urutanHafalan);
+  return {
+    halamanTertempuh,
+    totalHalamanProgram,
+    persen: Math.round((halamanTertempuh / totalHalamanProgram) * 1000) / 10,
+  };
+}
+
+/** Total halaman keseluruhan program hafalan santri (biasanya 604 kalau urutanHafalan berisi 30 juz penuh). */
+function totalHalamanUrutan(urutanHafalan) {
+  return urutanHafalan.reduce((sum, j) => {
+    const { halamanAwal, halamanAkhir } = getRentangHalamanJuz(j);
+    return sum + (halamanAkhir - halamanAwal + 1);
+  }, 0);
+}
+
+/**
+ * ==========================================================================
+ * GRAFIK AKTIVITAS MUROJAAH (Sabqi/Manzil) — terpisah dari grafik Hafalan
+ * ==========================================================================
+ */
+
+/**
+ * Menghitung berapa HALAMAN yang benar-benar dibaca dalam satu entri
+ * Sabqi/Manzil, memperhitungkan pecahan di halaman mulai maupun selesai.
+ * Dipakai untuk disimpan sebagai kolom `jumlahHalaman` di setiap baris
+ * setoran, supaya grafik aktivitas murojaah tinggal SUM kolom ini per
+ * minggu/bulan -- tidak perlu hitung ulang dari juz.
+ *
+ * mulai, selesai: hasil parseHalamanPecahan(), yaitu { halaman, pecahan }.
+ * Untuk setoran LINTAS JUZ, `mulai`/`selesai` di sini harus dalam skala
+ * HALAMAN ABSOLUT (1-604), bukan relatif per-juz -- gunakan
+ * halamanRelatifKeAbsolut() dulu untuk mengonversi sebelum memanggil ini.
+ */
+export function hitungJumlahHalamanDibaca(mulai, selesai) {
+  const bagianAkhir = selesai.pecahan > 0 ? selesai.pecahan : 1;
+  const jumlah = selesai.halaman - mulai.halaman + bagianAkhir - mulai.pecahan;
+  return Math.round(jumlah * 100) / 100;
 }

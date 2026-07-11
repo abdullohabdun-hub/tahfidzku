@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { UserSquare2, Plus, Loader2, Trash2, Edit } from 'lucide-react'
-import { getUstadzList, createUstadz, deleteUstadz, updateUstadz } from '../../server-fns/admin-functions'
+import { getUstadzList, createUstadz, deleteUstadz, updateUstadz } from '../../server-fns/ustadz'
 import { Button } from '../../components/ui/button'
 
 export const Route = createFileRoute('/admin/ustadz')({

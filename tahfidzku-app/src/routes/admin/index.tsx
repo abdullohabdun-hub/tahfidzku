@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router"
 import { useState, useEffect } from "react"
 import { Users, UserSquare2, CheckCircle2, TrendingUp, Settings, Database, PlusCircle, Loader2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card"
-import { getAdminDashboardStats } from "../../server-fns/admin"
+import { getAdminDashboardStats } from "../../server-fns/dashboard"
 
 export const Route = createFileRoute('/admin/')({
   component: Dashboard,
@@ -143,8 +143,9 @@ function Dashboard() {
           <CardHeader>
             <CardTitle>Grafik Setoran Mingguan</CardTitle>
           </CardHeader>
-          <CardContent className="h-72 flex items-center justify-center bg-slate-50 rounded-md m-6 mt-0 border border-slate-100 border-dashed">
+          <CardContent className="h-72 flex flex-col items-center justify-center bg-slate-50 rounded-md m-6 mt-0 border border-slate-100 border-dashed">
             <p className="text-slate-400">Pembaruan Data Grafik Segera Hadir</p>
+            <p className="text-xs text-slate-400 mt-2 italic">*Catatan: Grafik aktivitas murojaah (jumlah halaman) tercatat mulai Juli 2026.</p>
           </CardContent>
         </Card>
         <Card className="col-span-3 border-slate-200 shadow-sm">

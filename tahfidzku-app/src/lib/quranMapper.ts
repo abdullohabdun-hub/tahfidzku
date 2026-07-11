@@ -967,7 +967,7 @@ export function terapkanOverrideAyat(meta, overrideAwal, overrideAkhir) {
  * hafalan santri bisa TIDAK linear (surah 1->114), mis. santri mulai dari
  * Juz 30 lalu mundur ke Juz 29, 28, dst.
  */
-function cariJuzUntukAyat(surahNomor, ayat) {
+export function cariJuzUntukAyat(surahNomor, ayat) {
   for (const halaman of PAGES_DATA) {
     for (const seg of halaman.surahs) {
       if (seg.nomor === surahNomor && ayat >= seg.ayatAwal && ayat <= seg.ayatAkhir) {
@@ -1161,3 +1161,73 @@ export function getTotalHalamanJuz(juz) {
   return juzInfo ? juzInfo.halamanAkhir - juzInfo.halamanAwal + 1 : 0;
 }
 
+
+
+export function cariHalamanAbsolutUntukAyat(surahNomor, ayat) {
+  for (const page of PAGES_DATA) {
+    const found = page.surahs.find(s => s.nomor === surahNomor && ayat >= s.ayatAwal && ayat <= s.ayatAkhir);
+    if (found) return page.halaman;
+  }
+  return 1;
+}
+
+export function bangunUrutanHafalan(juzProgress) {
+  if (!juzProgress || juzProgress.length === 0) return urutanJuzMundurDari30();
+  
+  let pola = 'mundur';
+  if (juzProgress.length >= 2) {
+    if (juzProgress[0] < juzProgress[1]) pola = 'maju';
+  } else if (juzProgress.length === 1) {
+    if (juzProgress[0] <= 15) pola = 'maju';
+  }
+  
+  const sisaJuz = [];
+  const full = pola === 'mundur' ? urutanJuzMundurDari30() : urutanJuzStandar();
+  for (const j of full) {
+    if (!juzProgress.includes(j)) sisaJuz.push(j);
+  }
+  
+  return [...juzProgress, ...sisaJuz];
+}
+
+export function hitungProgresHalaman(urutanHafalan, posisiTerakhir) {
+  if (!posisiTerakhir) {
+    return { halamanTertempuh: 0, totalHalamanProgram: totalHalamanUrutan(urutanHafalan), persen: 0 };
+  }
+
+  const juzSekarang = cariJuzUntukAyat(posisiTerakhir.surahNomor, posisiTerakhir.ayat);
+  const idx = urutanHafalan.indexOf(juzSekarang);
+  if (idx === -1) {
+    throw new Error(`Juz ${juzSekarang} (posisi santri saat ini) tidak ada dalam urutanHafalan.`);
+  }
+
+  let halamanTertempuh = 0;
+  for (let i = 0; i < idx; i++) {
+    const { halamanAwal, halamanAkhir } = getRentangHalamanJuz(urutanHafalan[i]);
+    halamanTertempuh += halamanAkhir - halamanAwal + 1;
+  }
+
+  const { halamanAwal } = getRentangHalamanJuz(juzSekarang);
+  const halamanAbsolutSekarang = cariHalamanAbsolutUntukAyat(posisiTerakhir.surahNomor, posisiTerakhir.ayat);
+  halamanTertempuh += halamanAbsolutSekarang - halamanAwal + 1;
+
+  const totalHalamanProgram = totalHalamanUrutan(urutanHafalan);
+  return {
+    halamanTertempuh,
+    totalHalamanProgram,
+    persen: Math.round((halamanTertempuh / totalHalamanProgram) * 1000) / 10,
+  };
+}
+
+export function totalHalamanUrutan(urutanHafalan) {
+  return urutanHafalan.reduce((sum, j) => {
+    const { halamanAwal, halamanAkhir } = getRentangHalamanJuz(j);
+    return sum + (halamanAkhir - halamanAwal + 1);
+  }, 0);
+}
+
+export function hitungJumlahHalamanDibaca(mulai, selesai) {
+  const bagianAkhir = selesai.pecahan > 0 ? selesai.pecahan : 1;
+  const jumlah = selesai.halaman - mulai.halaman + bagianAkhir - mulai.pecahan;
+  return Math.round(jumlah * 100) / 100;
+}
