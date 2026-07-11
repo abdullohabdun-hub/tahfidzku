@@ -1231,3 +1231,32 @@ export function hitungJumlahHalamanDibaca(mulai, selesai) {
   const jumlah = selesai.halaman - mulai.halaman + bagianAkhir - mulai.pecahan;
   return Math.round(jumlah * 100) / 100;
 }
+
+export function bangunPosisiDariAdminInput(juzProgress: number[], batasHafalanJuz?: number | null, batasHafalanSurah?: string | null, batasHafalanAyat?: number | null) {
+  const urutanHafalan = bangunUrutanHafalan(juzProgress);
+  let posisiTerakhir = null;
+
+  if (batasHafalanJuz !== null && batasHafalanJuz !== undefined &&
+      batasHafalanSurah !== null && batasHafalanSurah !== undefined &&
+      batasHafalanAyat !== null && batasHafalanAyat !== undefined) {
+      
+      let surahNomor = 1;
+      if (typeof batasHafalanSurah === 'string') {
+        const found = SURAH_LIST.find(s => s.nama.toLowerCase() === batasHafalanSurah.toLowerCase());
+        surahNomor = found ? found.nomor : parseInt(batasHafalanSurah, 10);
+      } else {
+        surahNomor = batasHafalanSurah;
+      }
+
+      if (!isNaN(surahNomor)) {
+          posisiTerakhir = {
+             surahNomor,
+             ayat: batasHafalanAyat
+          };
+      }
+  } else if (juzProgress && juzProgress.length > 0) {
+      posisiTerakhir = getAyatTerakhirJuz(juzProgress[juzProgress.length - 1]);
+  }
+  
+  return { urutanHafalan, posisiTerakhir };
+}

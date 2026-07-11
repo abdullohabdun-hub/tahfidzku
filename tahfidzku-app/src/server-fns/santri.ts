@@ -6,7 +6,7 @@ import { santri, users } from '../db/schema'
 import { getAuthSession, requireRole } from '../middleware/auth.middleware'
 import { success, handleError } from '../lib/response'
 import { AuthenticationError, ValidationError } from '../lib/errors'
-import { posisiTerakhirDariJumlahJuzSelesai, urutanJuzStandar, bangunUrutanHafalan, getAyatTerakhirJuz } from '../lib/quranMapper'
+import { bangunUrutanHafalan, getAyatTerakhirJuz, bangunPosisiDariAdminInput } from '../lib/quranMapper'
 
 // ==========================================
 // 1. GET SANTRI LIST (ADMIN & USTADZ)
@@ -87,10 +87,28 @@ export const createSantri = createServerFn({ method: 'POST' })
 
       const tenantId = session.user.tenantId
       
-      const defaultUrutan = bangunUrutanHafalan(data.juzProgress)
-      const defaultPosisi = data.juzProgress.length > 0 
-        ? getAyatTerakhirJuz(data.juzProgress[data.juzProgress.length - 1]) 
-        : null
+      let batasHafalanSaatIni = null;
+      if (data.batasHafalanJuz !== null && data.batasHafalanJuz !== undefined && 
+          data.batasHafalanSurah !== null && data.batasHafalanSurah !== undefined && 
+          data.batasHafalanAyat !== null && data.batasHafalanAyat !== undefined) {
+        
+        let surahNomor = 1;
+        if (typeof data.batasHafalanSurah === 'string') {
+          const found = SURAH_LIST.find((s: any) => s.nama.toLowerCase() === (data.batasHafalanSurah as string).toLowerCase());
+          surahNomor = found ? found.nomor : parseInt(data.batasHafalanSurah, 10);
+        } else {
+          surahNomor = data.batasHafalanSurah;
+        }
+        
+        if (!isNaN(surahNomor)) {
+          batasHafalanSaatIni = { juz: data.batasHafalanJuz, surahNomor, ayat: data.batasHafalanAyat };
+        }
+      }
+
+      const { urutanHafalan: defaultUrutan, posisiTerakhir: defaultPosisi } = bangunPosisiDariAdminInput(
+          data.juzProgress, 
+          batasHafalanSaatIni
+      )
 
       const result = await (async () => {
         const [newSantri] = await db.insert(santri).values({
@@ -171,11 +189,30 @@ export const updateSantri = createServerFn({ method: 'POST' })
           // Abaikan perubahan juzProgress dari input admin, gunakan yang lama
           data.juzProgress = currentSantri.juzProgress || []
         } else {
-          // Jika sebelumnya belum ada posisiTerakhir dan admin memasukkan juzProgress, kita inisialisasi
-          if (data.juzProgress.length > 0) {
-             newPosisiTerakhir = getAyatTerakhirJuz(data.juzProgress[data.juzProgress.length - 1])
-             newUrutanHafalan = bangunUrutanHafalan(data.juzProgress)
+          let batasHafalanSaatIni = null;
+          if (data.batasHafalanJuz !== null && data.batasHafalanJuz !== undefined && 
+              data.batasHafalanSurah !== null && data.batasHafalanSurah !== undefined && 
+              data.batasHafalanAyat !== null && data.batasHafalanAyat !== undefined) {
+            
+            let surahNomor = 1;
+            if (typeof data.batasHafalanSurah === 'string') {
+              const found = SURAH_LIST.find((s: any) => s.nama.toLowerCase() === (data.batasHafalanSurah as string).toLowerCase());
+              surahNomor = found ? found.nomor : parseInt(data.batasHafalanSurah, 10);
+            } else {
+              surahNomor = data.batasHafalanSurah;
+            }
+            
+            if (!isNaN(surahNomor)) {
+              batasHafalanSaatIni = { juz: data.batasHafalanJuz, surahNomor, ayat: data.batasHafalanAyat };
+            }
           }
+
+          const buildPosisi = bangunPosisiDariAdminInput(
+             data.juzProgress,
+             batasHafalanSaatIni
+          );
+          newPosisiTerakhir = buildPosisi.posisiTerakhir;
+          newUrutanHafalan = buildPosisi.urutanHafalan;
         }
 
         await db.update(santri).set({
