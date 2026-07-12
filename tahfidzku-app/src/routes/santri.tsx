@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, Link, useLocation, useRouter } from "@tanstack/react-router"
-import { Home, PencilLine, User, Award, BookOpen, LogOut } from "lucide-react"
+import { Home, PencilLine, Award, BookOpen, LogOut } from "lucide-react"
 import { useState, useEffect } from "react"
 import { checkAuth, logout } from "../server-fns/auth"
 

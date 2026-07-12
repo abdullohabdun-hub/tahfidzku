@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, Link, useLocation, useRouter } from "@tanstack/react-router"
-import { Home, PlusCircle, History, User, Award, Clock, LogOut, BookOpen } from "lucide-react"
+import { Home, PlusCircle, History, Award, Clock, LogOut, BookOpen } from "lucide-react"
 import { useState, useEffect } from "react"
 import { checkAuth, logout } from "../server-fns/auth"
 import { getTenantInfo } from "../server-fns/admin-settings"
