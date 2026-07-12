@@ -1,4 +1,5 @@
 import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
+import { PwaReloadPrompt } from '../components/PwaReloadPrompt'
 import appCss from '../styles.css?url'
 
 export const Route = createRootRoute({
@@ -12,10 +13,26 @@ export const Route = createRootRoute({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'TanStack Start Starter',
+        title: 'TahfidzKu',
       },
+      {
+        name: 'apple-mobile-web-app-capable',
+        content: 'yes',
+      },
+      {
+        name: 'apple-mobile-web-app-status-bar-style',
+        content: 'default',
+      },
+      {
+        name: 'theme-color',
+        content: '#059669',
+      }
     ],
     links: [
+      {
+        rel: 'apple-touch-icon',
+        href: '/pwa-192x192.png',
+      },
       {
         rel: 'stylesheet',
         href: appCss,
@@ -33,6 +50,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         {children}
+        <PwaReloadPrompt />
         <Scripts />
       </body>
     </html>
