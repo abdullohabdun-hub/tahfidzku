@@ -7,6 +7,8 @@ import { getAuthSession, requireRole } from '../middleware/auth.middleware'
 import { success, handleError } from '../lib/response'
 import { AuthenticationError, ValidationError } from '../lib/errors'
 import { bangunUrutanHafalan, bangunPosisiDariAdminInput } from '../lib/quranMapper'
+import { inArray } from 'drizzle-orm'
+import { kelas } from '../db/schema'
 
 // ==========================================
 // 1. GET SANTRI LIST (ADMIN & USTADZ)
@@ -23,9 +25,22 @@ export const getSantriList = createServerFn({ method: 'POST' }).handler(
 
       const tenantId = session.user.tenantId
 
+      let whereCondition: any = eq(santri.tenantId, tenantId)
+
+      if (session.user.role === 'ustadz') {
+        const ustadzKelas = await db.select({ id: kelas.id }).from(kelas).where(eq(kelas.ustadzId, session.user.id))
+        const kelasIds = ustadzKelas.map(k => k.id)
+        
+        if (kelasIds.length === 0) {
+          return success([], 'Berhasil mengambil daftar santri')
+        }
+        
+        whereCondition = and(eq(santri.tenantId, tenantId), inArray(santri.kelasId, kelasIds))
+      }
+
       // Menggunakan Relational Query Drizzle
       const results = await db.query.santri.findMany({
-        where: eq(santri.tenantId, tenantId),
+        where: whereCondition,
         orderBy: [desc(santri.createdAt)],
         with: {
           kelas: { columns: { nama: true } },
