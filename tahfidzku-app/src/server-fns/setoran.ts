@@ -5,6 +5,7 @@ import { setoran, santri } from '../db/schema'
 import { getAuthSession, requireRole } from '../middleware/auth.middleware'
 import { createSetoranSchema, updateSetoranSchema } from '../lib/validators'
 import { success, handleError } from '../lib/response'
+import { kelas } from '../db/schema'
 import { AuthenticationError, ForbiddenError } from '../lib/errors'
 import { z } from 'zod'
 import { cariJuzUntukAyat, getAyatTerakhirJuz } from '../lib/quranMapper'
@@ -247,16 +248,27 @@ export const inputMurojaah = createServerFn({ method: 'POST' })
 
       // Cari ustadz yang mengajar kelas santri ini (atau biarkan null jika tidak ada)
       // Untuk MVP, ustadzId wajib di skema setoran. Kita akan mencari ustadz yang ada di tenant ini.
-      const ustadzList = await db.query.users.findMany({
-        where: (users, { eq, and }) => and(eq(users.tenantId, session.user.tenantId), eq(users.role, 'ustadz')),
-        limit: 1
-      })
-      const ustadzId = ustadzList.length > 0 ? ustadzList[0].id : session.user.id // Fallback
+      const santriKelas = await db.select({ ustadzId: kelas.ustadzId })
+        .from(santri)
+        .leftJoin(kelas, eq(santri.kelasId, kelas.id))
+        .where(eq(santri.id, santriId))
+        .limit(1)
+
+      let assignedUstadzId = santriKelas[0]?.ustadzId
+      
+      if (!assignedUstadzId) {
+          // fallback ke admin atau ustadz pertama
+          const ustadzList = await db.query.users.findMany({
+            where: (users, { eq, and }) => and(eq(users.tenantId, session.user.tenantId), eq(users.role, 'ustadz')),
+            limit: 1
+          })
+          assignedUstadzId = ustadzList.length > 0 ? ustadzList[0].id : session.user.id // Fallback
+      }
 
       const record = await db.insert(setoran).values({
         tenantId: session.user.tenantId,
         santriId: santriId,
-        ustadzId: ustadzId,
+        ustadzId: assignedUstadzId,
         jenis: data.jenis,
         juz: data.juz,
         juzMulai: data.juz,

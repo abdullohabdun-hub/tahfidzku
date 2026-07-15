@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { db } from '../../db'
-import { setoran, santri } from '../../db/schema'
+import { setoran, santri, kelas } from '../../db/schema'
 import { desc, eq, and, or } from 'drizzle-orm'
 import { getAuthSession, requireRole } from '../../middleware/auth.middleware'
 import { success, handleError } from '../../lib/response'
@@ -31,10 +31,12 @@ export const getPantauanMurojaah = createServerFn({ method: 'GET' })
           santriNama: santri.nama,
         })
         .from(setoran)
-        .leftJoin(santri, eq(setoran.santriId, santri.id))
+        .innerJoin(santri, eq(setoran.santriId, santri.id))
+        .innerJoin(kelas, eq(santri.kelasId, kelas.id))
         .where(
           and(
             eq(setoran.tenantId, session.user.tenantId),
+            eq(kelas.ustadzId, session.user.id),
             or(eq(setoran.jenis, 'sabqi'), eq(setoran.jenis, 'manzil'))
           )
         )
