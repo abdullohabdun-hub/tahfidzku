@@ -342,3 +342,26 @@ export const updateSantriPassword = createServerFn({ method: 'POST' })
       return handleError(err)
     }
   })
+
+// ==========================================
+// 6. GET CURRENT SANTRI PROFILE
+// ==========================================
+export const getSantriProfile = createServerFn({ method: 'POST' }).handler(async () => {
+  try {
+    const session = await getAuthSession()
+    if (!session) throw new AuthenticationError()
+    requireRole(session, 'santri')
+
+    if (!session.user.santriId) throw new Error('Profil santri tidak ditemukan')
+
+    const [profile] = await db.select().from(santri).where(
+      and(eq(santri.id, session.user.santriId), eq(santri.tenantId, session.user.tenantId))
+    ).limit(1)
+
+    if (!profile) throw new Error('Profil santri tidak ditemukan')
+
+    return success(profile, 'Berhasil memuat profil santri')
+  } catch (err) {
+    return handleError(err)
+  }
+})

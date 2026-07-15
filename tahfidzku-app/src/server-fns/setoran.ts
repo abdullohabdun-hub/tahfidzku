@@ -45,6 +45,7 @@ export const createSetoran = createServerFn({ method: 'POST' })
             surahMeta: data.surahMeta ?? null,
             kualitas: data.kualitas,
             catatan: data.catatan ?? null,
+            sumber: 'ustadz',
           })
           .returning()
 
@@ -228,12 +229,14 @@ export const inputMurojaah = createServerFn({ method: 'POST' })
   .validator((data: unknown) => {
     const schema = z.object({
       jenis: z.enum(['sabqi', 'manzil']),
-      juz: z.number().min(1).max(30),
-      halaman: z.number().min(1).max(604),
-      suratNama: z.string(),
-      ayat: z.string().optional(),
+      lintasJuz: z.boolean().default(false),
+      juzMulai: z.number().nullable().optional(),
+      juzSelesai: z.number().nullable().optional(),
+      halamanAwal: z.number(),
+      halamanAkhir: z.number(),
+      surahMeta: z.record(z.any()),
       kualitas: z.enum(['lancar', 'mengulang', 'terbata']),
-      keterangan: z.string().optional(),
+      catatan: z.string().optional(),
     })
     return schema.parse(data)
   })
@@ -270,15 +273,17 @@ export const inputMurojaah = createServerFn({ method: 'POST' })
         santriId: santriId,
         ustadzId: assignedUstadzId,
         jenis: data.jenis,
-        juz: data.juz,
-        juzMulai: data.juz,
-        halamanAwal: data.halaman, 
-        halamanAkhir: data.halaman,
-        surah: data.suratNama,
-        ayatAwal: 1, 
-        ayatAkhir: 286, 
+        juz: !data.lintasJuz ? data.juzMulai : null,
+        juzMulai: data.juzMulai || null,
+        juzSelesai: data.juzSelesai || null,
+        lintasJuz: data.lintasJuz,
+        halamanAwal: data.halamanAwal, 
+        halamanAkhir: data.halamanAkhir,
+        surah: null, // Legacy field, surahMeta handles this now, or we can extract from surahMeta
+        surahMeta: data.surahMeta,
         kualitas: data.kualitas,
-        catatan: data.keterangan || null,
+        catatan: data.catatan || null,
+        sumber: 'santri_self_report',
       }).returning()
 
       return success(record[0], 'Murojaah berhasil dilaporkan!')

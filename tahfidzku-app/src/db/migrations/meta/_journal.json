@@ -15,6 +15,13 @@
       "when": 1783816656231,
       "tag": "0001_wise_butterfly",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784121590817,
+      "tag": "0002_same_domino",
+      "breakpoints": true
     }
   ]
 }

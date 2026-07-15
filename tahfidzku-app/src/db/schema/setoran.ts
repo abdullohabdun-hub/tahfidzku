@@ -8,6 +8,7 @@ import { users } from './users'
 
 export const jenisSetoranEnum = pgEnum('jenis_setoran', ['ziyadah', 'sabqi', 'manzil'])
 export const kualitasEnum = pgEnum('kualitas_bacaan', ['lancar', 'mengulang', 'terbata'])
+export const sumberSetoranEnum = pgEnum('sumber_setoran', ['ustadz', 'santri_self_report'])
 
 export const setoran = pgTable('setoran', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -33,6 +34,7 @@ export const setoran = pgTable('setoran', {
   surahMeta: jsonb('surah_meta').$type<Record<string, any>>(),
   kualitas: kualitasEnum('kualitas').notNull(),
   catatan: text('catatan'),
+  sumber: sumberSetoranEnum('sumber').notNull().default('ustadz'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })
