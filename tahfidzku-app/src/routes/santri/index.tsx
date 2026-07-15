@@ -173,11 +173,11 @@ function SantriDashboard() {
                         {item.jenis}
                       </span>
                       <span className="text-[10px] text-slate-400 font-medium">
-                        {format(new Date(item.tanggal), 'd MMM yyyy, HH:mm', { locale: id })}
+                        {item.createdAt ? format(new Date(item.createdAt), 'd MMM yyyy, HH:mm', { locale: id }) : '-'}
                       </span>
                     </div>
-                    <p className="font-semibold text-slate-800 text-sm">Surat {item.surat}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">Juz {item.juz} • Hal {item.halaman} • {item.kualitas}</p>
+                    {item.surah && <p className="font-semibold text-slate-800 text-sm">Surat {item.surah}</p>}
+                    <p className="text-xs text-slate-500 mt-0.5">Juz {item.juz} • Hal {item.halamanAwal === item.halamanAkhir ? item.halamanAwal : `${item.halamanAwal}-${item.halamanAkhir}`} • {item.kualitas}</p>
                   </div>
                 </div>
               ))}
