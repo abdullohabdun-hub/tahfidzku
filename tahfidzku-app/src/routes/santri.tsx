@@ -2,7 +2,6 @@ import { createFileRoute, Outlet, Link, useLocation, useRouter } from "@tanstack
 import { Home, PencilLine, Award, BookOpen, LogOut } from "lucide-react"
 import { useState, useEffect } from "react"
 import { checkAuth, logout } from "../server-fns/auth"
-import { AppLogo, AppLogoIcon } from "../components/AppLogo"
 
 export const Route = createFileRoute('/santri')({
   component: SantriLayout,
@@ -42,7 +41,7 @@ function SantriLayout() {
       <header className="bg-white border-b border-slate-200 p-4 sticky top-0 z-50 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-2">
           <div className="bg-emerald-600 p-1.5 rounded-md">
-            <AppLogoIcon className="h-4 w-4 text-white" />
+            <BookOpen className="h-4 w-4 text-white" />
           </div>
           <span className="font-bold text-base text-emerald-950 tracking-tight">TahfidzKu Santri</span>
         </div>
@@ -87,7 +86,10 @@ function SantriLayout() {
       {/* Desktop Sidebar (Optional, if viewed on PC) */}
       <aside className="hidden md:flex fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-200 flex-col z-40">
         <div className="p-6 flex items-center gap-2 border-b border-slate-100">
-          <AppLogo />
+          <div className="bg-emerald-600 p-1.5 rounded-md">
+            <BookOpen className="h-5 w-5 text-white" />
+          </div>
+          <span className="font-bold text-xl tracking-tight text-emerald-950">TahfidzKu</span>
         </div>
         <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
           {navItems.map((item) => {

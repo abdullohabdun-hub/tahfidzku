@@ -4,7 +4,6 @@ import { BookOpen, Shield, Smartphone, ArrowRight, CheckCircle2 } from "lucide-r
 import { Button, buttonVariants } from "../components/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
 import { cn } from "../lib/utils"
-import { AppLogo } from "../components/AppLogo"
 
 export const Route = createFileRoute('/')({
   beforeLoad: async () => {
@@ -33,7 +32,12 @@ function Page() {
       {/* Navbar */}
       <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <AppLogo />
+          <div className="flex items-center gap-2">
+            <div className="bg-emerald-600 p-1.5 rounded-md">
+              <BookOpen className="h-5 w-5 text-white" />
+            </div>
+            <span className="font-bold text-xl tracking-tight text-emerald-950">TahfidzKu</span>
+          </div>
           <nav className="hidden md:flex gap-6">
             <a href="#fitur" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Fitur</a>
             <a href="#keunggulan" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Keunggulan</a>
@@ -185,7 +189,12 @@ function Page() {
         <div className="container mx-auto px-4 max-w-5xl">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div className="col-span-2">
-              <AppLogo textClassName="text-white" containerClassName="mb-4" />
+              <div className="flex items-center gap-2 mb-4">
+                <div className="bg-emerald-600 p-1 rounded-md">
+                  <BookOpen className="h-5 w-5 text-white" />
+                </div>
+                <span className="font-bold text-xl text-white">TahfidzKu</span>
+              </div>
               <p className="text-slate-400 max-w-sm mb-6">
                 Sistem Manajemen Tahfidz untuk Pesantren dan Halaqoh. Simpel, cepat, dan transparan. Didedikasikan untuk umat.
               </p>

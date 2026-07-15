@@ -25,7 +25,7 @@ function WaliDashboard() {
       surah: "Al-Mulk (1-10)",
       kualitas: "Lancar",
       kualitasColor: "text-emerald-600 bg-emerald-100 border-emerald-200",
-      ustadz: "Ustadz Pengampu"
+      ustadz: "Ustadz Ahmad"
     },
     {
       id: 2,
@@ -34,7 +34,7 @@ function WaliDashboard() {
       surah: "Al-Qalam (1-52)",
       kualitas: "Lancar",
       kualitasColor: "text-emerald-600 bg-emerald-100 border-emerald-200",
-      ustadz: "Ustadz Pengampu"
+      ustadz: "Ustadz Ahmad"
     },
     {
       id: 3,
@@ -43,7 +43,7 @@ function WaliDashboard() {
       surah: "Al-Haqqah (1-15)",
       kualitas: "Mengulang",
       kualitasColor: "text-amber-700 bg-amber-100 border-amber-200",
-      ustadz: "Ustadz Pengampu"
+      ustadz: "Ustadz Ahmad"
     },
   ]
 

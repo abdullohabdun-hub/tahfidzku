@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { Button } from "../components/ui/button"
 import { checkAuth, logout } from "../server-fns/auth"
 import { getTenantInfo } from "../server-fns/admin-settings"
-import { AppLogo } from "../components/AppLogo"
 
 export const Route = createFileRoute('/admin')({
   component: AdminLayout,
@@ -52,7 +51,12 @@ function AdminLayout() {
       
       {/* Mobile Topbar */}
       <div className="md:hidden flex items-center justify-between bg-white border-b border-slate-200 p-4 sticky top-0 z-50">
-        <AppLogo />
+        <div className="flex items-center gap-2">
+          <div className="bg-emerald-600 p-1.5 rounded-md">
+            <BookOpen className="h-5 w-5 text-white" />
+          </div>
+          <span className="font-bold text-lg text-emerald-950">TahfidzKu Admin</span>
+        </div>
         <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
           <Menu className="h-6 w-6 text-slate-600" />
         </Button>
@@ -65,7 +69,10 @@ function AdminLayout() {
         ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
       `}>
         <div className="p-6 hidden md:flex items-center gap-2 border-b border-slate-100">
-          <AppLogo />
+          <div className="bg-emerald-600 p-1.5 rounded-md">
+            <BookOpen className="h-5 w-5 text-white" />
+          </div>
+          <span className="font-bold text-xl tracking-tight text-emerald-950">TahfidzKu</span>
         </div>
 
         <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
