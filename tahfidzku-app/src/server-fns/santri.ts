@@ -113,49 +113,47 @@ export const createSantri = createServerFn({ method: 'POST' })
       const email = data.email ? normalisasiEmail(data.email) : null;
       const noWa = data.noWa ? normalisasiNoWa(data.noWa) : null;
 
-      const result = await db.transaction(async (tx) => {
-        const [newSantri] = await tx.insert(santri).values({
+      const [newSantri] = await db.insert(santri).values({
+        tenantId,
+        nama: data.nama,
+        targetJuz: data.targetJuz,
+        juzProgress: data.juzProgress,
+        batasHafalanJuz: data.batasHafalanJuz,
+        batasHafalanSurah: data.batasHafalanSurah,
+        batasHafalanAyat: data.batasHafalanAyat,
+        kelasId: data.kelasId || null,
+        tipe: data.tipe,
+        posisiTerakhir: defaultPosisi,
+        urutanHafalan: defaultUrutan,
+      }).returning({ id: santri.id, nama: santri.nama, tipe: santri.tipe })
+
+      if (data.tipe === 'dewasa') {
+        if (!email && !noWa) {
+          throw new ValidationError('Santri wajib mengisi Email atau No WA')
+        }
+        if (!data.password) {
+          throw new ValidationError('Password wajib diisi untuk Santri Dewasa')
+        }
+
+        const existing = await db.select({ id: users.id }).from(users).where(
+          or(
+            email ? eq(users.email, email) : undefined,
+            noWa ? eq(users.noWa, noWa) : undefined
+          )
+        )
+        if (existing.length > 0) throw new ValidationError('Email / No WA sudah terdaftar oleh pengguna lain.')
+        
+        await db.insert(users).values({
           tenantId,
           nama: data.nama,
-          targetJuz: data.targetJuz,
-          juzProgress: data.juzProgress,
-          batasHafalanJuz: data.batasHafalanJuz,
-          batasHafalanSurah: data.batasHafalanSurah,
-          batasHafalanAyat: data.batasHafalanAyat,
-          kelasId: data.kelasId || null,
-          tipe: data.tipe,
-          posisiTerakhir: defaultPosisi,
-          urutanHafalan: defaultUrutan,
-        }).returning({ id: santri.id, nama: santri.nama, tipe: santri.tipe })
-
-        if (data.tipe === 'dewasa') {
-          if (!email && !noWa) {
-            throw new ValidationError('Santri wajib mengisi Email atau No WA')
-          }
-          if (!data.password) {
-            throw new ValidationError('Password wajib diisi untuk Santri Dewasa')
-          }
-
-          const existing = await tx.select({ id: users.id }).from(users).where(
-            or(
-              email ? eq(users.email, email) : undefined,
-              noWa ? eq(users.noWa, noWa) : undefined
-            )
-          )
-          if (existing.length > 0) throw new ValidationError('Email / No WA sudah terdaftar oleh pengguna lain.')
-          
-          await tx.insert(users).values({
-            tenantId,
-            nama: data.nama,
-            email,
-            noWa,
-            passwordHash: data.password,
-            role: 'santri',
-            santriId: newSantri.id
-          })
-        }
-        return newSantri
-      });
+          email,
+          noWa,
+          passwordHash: data.password,
+          role: 'santri',
+          santriId: newSantri.id
+        })
+      }
+      const result = newSantri;
 
       return success(result, 'Berhasil menambahkan Santri')
     } catch (err) {
@@ -192,78 +190,76 @@ export const updateSantri = createServerFn({ method: 'POST' })
       const email = data.email ? normalisasiEmail(data.email) : null;
       const noWa = data.noWa ? normalisasiNoWa(data.noWa) : null;
 
-      await db.transaction(async (tx) => {
-        // Ambil data santri saat ini untuk memeriksa apakah perlu update posisiTerakhir
-        const [currentSantri] = await tx.select().from(santri).where(eq(santri.id, data.id)).limit(1)
-        
-        let newPosisiTerakhir = currentSantri?.posisiTerakhir
-        let newUrutanHafalan = currentSantri?.urutanHafalan || bangunUrutanHafalan(data.juzProgress)
-        
-        // Guard: Jangan pernah menimpa urutanHafalan & posisiTerakhir jika santri sudah punya progres
-        // (yaitu posisiTerakhir !== null). Update juzProgress via form ini hanya diizinkan
-        // saat onboarding / posisiTerakhir masih kosong.
-        if (currentSantri?.posisiTerakhir !== null && currentSantri?.posisiTerakhir !== undefined) {
-          // Abaikan perubahan juzProgress dari input admin, gunakan yang lama
-          data.juzProgress = currentSantri.juzProgress || []
-        } else {
-          const buildPosisi = bangunPosisiDariAdminInput(
-             data.juzProgress,
-             data.batasHafalanJuz,
-             data.batasHafalanSurah,
-             data.batasHafalanAyat
-          );
-          newPosisiTerakhir = buildPosisi.posisiTerakhir;
-          newUrutanHafalan = buildPosisi.urutanHafalan;
-        }
+      // Ambil data santri saat ini untuk memeriksa apakah perlu update posisiTerakhir
+      const [currentSantri] = await db.select().from(santri).where(eq(santri.id, data.id)).limit(1)
+      
+      let newPosisiTerakhir = currentSantri?.posisiTerakhir
+      let newUrutanHafalan = currentSantri?.urutanHafalan || bangunUrutanHafalan(data.juzProgress)
+      
+      // Guard: Jangan pernah menimpa urutanHafalan & posisiTerakhir jika santri sudah punya progres
+      // (yaitu posisiTerakhir !== null). Update juzProgress via form ini hanya diizinkan
+      // saat onboarding / posisiTerakhir masih kosong.
+      if (currentSantri?.posisiTerakhir !== null && currentSantri?.posisiTerakhir !== undefined) {
+        // Abaikan perubahan juzProgress dari input admin, gunakan yang lama
+        data.juzProgress = currentSantri.juzProgress || []
+      } else {
+        const buildPosisi = bangunPosisiDariAdminInput(
+           data.juzProgress,
+           data.batasHafalanJuz,
+           data.batasHafalanSurah,
+           data.batasHafalanAyat
+        );
+        newPosisiTerakhir = buildPosisi.posisiTerakhir;
+        newUrutanHafalan = buildPosisi.urutanHafalan;
+      }
 
-        await tx.update(santri).set({
-          nama: data.nama,
-          targetJuz: data.targetJuz,
-          juzProgress: data.juzProgress,
-          batasHafalanJuz: data.batasHafalanJuz,
-          batasHafalanSurah: data.batasHafalanSurah,
-          batasHafalanAyat: data.batasHafalanAyat,
-          kelasId: data.kelasId || null,
-          tipe: data.tipe,
-          posisiTerakhir: newPosisiTerakhir,
-          urutanHafalan: newUrutanHafalan,
-        }).where(and(eq(santri.id, data.id), eq(santri.tenantId, tenantId)))
+      await db.update(santri).set({
+        nama: data.nama,
+        targetJuz: data.targetJuz,
+        juzProgress: data.juzProgress,
+        batasHafalanJuz: data.batasHafalanJuz,
+        batasHafalanSurah: data.batasHafalanSurah,
+        batasHafalanAyat: data.batasHafalanAyat,
+        kelasId: data.kelasId || null,
+        tipe: data.tipe,
+        posisiTerakhir: newPosisiTerakhir,
+        urutanHafalan: newUrutanHafalan,
+      }).where(and(eq(santri.id, data.id), eq(santri.tenantId, tenantId)))
 
-        if (data.tipe === 'dewasa') {
-          if (!email && !noWa) throw new ValidationError('Santri wajib mengisi Email atau No WA')
-          
-          const existing = await tx.select({ id: users.id }).from(users).where(
-            or(
-              email ? eq(users.email, email) : undefined,
-              noWa ? eq(users.noWa, noWa) : undefined
-            )
+      if (data.tipe === 'dewasa') {
+        if (!email && !noWa) throw new ValidationError('Santri wajib mengisi Email atau No WA')
+        
+        const existing = await db.select({ id: users.id }).from(users).where(
+          or(
+            email ? eq(users.email, email) : undefined,
+            noWa ? eq(users.noWa, noWa) : undefined
           )
-          const existingUser = existing.find(u => u.id)
-          
-          const userForSantri = await tx.select({ id: users.id }).from(users).where(eq(users.santriId, data.id))
+        )
+        const existingUser = existing.find(u => u.id)
+        
+        const userForSantri = await db.select({ id: users.id }).from(users).where(eq(users.santriId, data.id))
 
-          if (userForSantri.length > 0) {
-            if (existingUser && existingUser.id !== userForSantri[0].id) {
-              throw new ValidationError('Email / No WA sudah terdaftar oleh pengguna lain.')
-            }
-            const updateData: any = { nama: data.nama, email, noWa }
-            if (data.password) updateData.passwordHash = data.password
-            await tx.update(users).set(updateData).where(eq(users.id, userForSantri[0].id))
-          } else {
-            if (!data.password) throw new ValidationError('Password wajib diisi untuk akun baru')
-            if (existingUser) throw new ValidationError('Email / No WA sudah terdaftar oleh pengguna lain.')
-            await tx.insert(users).values({
-              tenantId,
-              nama: data.nama,
-              email,
-              noWa,
-              passwordHash: data.password,
-              role: 'santri',
-              santriId: data.id
-            })
+        if (userForSantri.length > 0) {
+          if (existingUser && existingUser.id !== userForSantri[0].id) {
+            throw new ValidationError('Email / No WA sudah terdaftar oleh pengguna lain.')
           }
+          const updateData: any = { nama: data.nama, email, noWa }
+          if (data.password) updateData.passwordHash = data.password
+          await db.update(users).set(updateData).where(eq(users.id, userForSantri[0].id))
+        } else {
+          if (!data.password) throw new ValidationError('Password wajib diisi untuk akun baru')
+          if (existingUser) throw new ValidationError('Email / No WA sudah terdaftar oleh pengguna lain.')
+          await db.insert(users).values({
+            tenantId,
+            nama: data.nama,
+            email,
+            noWa,
+            passwordHash: data.password,
+            role: 'santri',
+            santriId: data.id
+          })
         }
-      });
+      }
 
       return success(null, 'Berhasil memperbarui Santri')
     } catch (err) {
@@ -304,15 +300,13 @@ export const updateSantriProfile = createServerFn({ method: 'POST' })
 
       if (!session.user.santriId) throw new Error('Profil santri tidak ditemukan')
 
-      await db.transaction(async (tx) => {
-        await tx.update(santri).set({
-          nama: data.nama
-        }).where(and(eq(santri.id, session.user.santriId!), eq(santri.tenantId, session.user.tenantId)))
+      await db.update(santri).set({
+        nama: data.nama
+      }).where(and(eq(santri.id, session.user.santriId!), eq(santri.tenantId, session.user.tenantId)))
 
-        await tx.update(users).set({
-          nama: data.nama
-        }).where(and(eq(users.santriId, session.user.santriId!), eq(users.tenantId, session.user.tenantId)))
-      });
+      await db.update(users).set({
+        nama: data.nama
+      }).where(and(eq(users.santriId, session.user.santriId!), eq(users.tenantId, session.user.tenantId)))
 
       return success(null, 'Profil berhasil diperbarui')
     } catch (err) {

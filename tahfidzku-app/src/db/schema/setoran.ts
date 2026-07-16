@@ -35,6 +35,8 @@ export const setoran = pgTable('setoran', {
   kualitas: kualitasEnum('kualitas').notNull(),
   catatan: text('catatan'),
   sumber: sumberSetoranEnum('sumber').notNull().default('ustadz'),
+  updatedBy: uuid('updated_by').references(() => users.id, { onDelete: 'set null' }),
+  previousData: jsonb('previous_data').$type<Record<string, any>>(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })

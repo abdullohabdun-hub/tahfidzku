@@ -1260,3 +1260,25 @@ export function bangunPosisiDariAdminInput(juzProgress: number[], batasHafalanJu
   
   return { urutanHafalan, posisiTerakhir };
 }
+export function getValidJuzList(profile: {
+  urutanHafalan?: number[] | null,
+  juzProgress?: number[] | null,
+  posisiTerakhir?: { surahNomor: number, ayat: number } | null
+}): number[] {
+  if (!profile) return [];
+  const urutan = profile.urutanHafalan || urutanJuzStandar();
+  let passedJuzList = [...(profile.juzProgress || [])];
+  if (profile.posisiTerakhir) {
+    const curJuz = cariJuzUntukAyat(profile.posisiTerakhir.surahNomor, profile.posisiTerakhir.ayat);
+    const currentIndex = urutan.indexOf(curJuz);
+    if (currentIndex !== -1) {
+      for (let i = 0; i <= currentIndex; i++) {
+        if (!passedJuzList.includes(urutan[i])) {
+          passedJuzList.push(urutan[i]);
+        }
+      }
+    }
+  }
+  if (passedJuzList.length === 0) return [30];
+  return passedJuzList;
+}

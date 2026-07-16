@@ -105,6 +105,11 @@ export const createLaporanSchema = z
 
 export type CreateLaporanInput = z.infer<typeof createLaporanSchema>
 
+export const updateSetoranSantriSchema = createLaporanSchema.extend({
+  id: z.string().uuid('ID Setoran tidak valid'),
+})
+export type UpdateSetoranSantriInput = z.infer<typeof updateSetoranSantriSchema>
+
 // ── Auth ─────────────────────────────────────────────
 export const loginSchema = z.object({
   identifier: z.string().min(1, 'Username / No WA / Email wajib diisi'),

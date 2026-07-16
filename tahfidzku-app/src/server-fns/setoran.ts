@@ -1,14 +1,14 @@
 import { createServerFn } from '@tanstack/react-start'
-import { eq, and, desc } from 'drizzle-orm'
+import { eq, and, desc, sql } from 'drizzle-orm'
 import { db } from '../db'
 import { setoran, santri } from '../db/schema'
 import { getAuthSession, requireRole } from '../middleware/auth.middleware'
 import { createSetoranSchema, updateSetoranSchema } from '../lib/validators'
 import { success, handleError } from '../lib/response'
 import { kelas } from '../db/schema'
-import { AuthenticationError, ForbiddenError } from '../lib/errors'
+import { AuthenticationError, ForbiddenError, ValidationError } from '../lib/errors'
 import { z } from 'zod'
-import { cariJuzUntukAyat, getAyatTerakhirJuz } from '../lib/quranMapper'
+import { cariJuzUntukAyat, getAyatTerakhirJuz, getValidJuzList } from '../lib/quranMapper'
 
 // ═══════════════════════════════════════════════════════
 // 1. INPUT SETORAN BARU (USTADZ)
@@ -23,59 +23,55 @@ export const createSetoran = createServerFn({ method: 'POST' })
 
       const tenantId = session.user.tenantId
 
-      // Transaksi sudah didukung karena kita pindah ke driver neon-serverless (Pool)
-      const result = await db.transaction(async (tx) => {
-        // 1. Insert setoran
-        const [newSetoran] = await tx
-          .insert(setoran)
-          .values({
-            tenantId,
-            santriId: data.santriId,
-            ustadzId: session.user.id,
-            jenis: data.jenis,
-            juz: data.juz ?? null,
-            juzMulai: data.juzMulai ?? null,
-            juzSelesai: data.juzSelesai ?? null,
-            lintasJuz: data.lintasJuz ?? false,
-            halamanAwal: data.halamanAwal ?? null,
-            halamanAkhir: data.halamanAkhir ?? null,
-            surah: data.surah ?? null,
-            ayatAwal: data.ayatAwal ?? null,
-            ayatAkhir: data.ayatAkhir ?? null,
-            surahMeta: data.surahMeta ?? null,
-            kualitas: data.kualitas,
-            catatan: data.catatan ?? null,
-            sumber: 'ustadz',
-          })
-          .returning()
+      // Hapus penggunaan db.transaction() karena tidak didukung Neon HTTP
+      // 1. Insert setoran
+      const [newSetoran] = await db
+        .insert(setoran)
+        .values({
+          tenantId,
+          santriId: data.santriId,
+          ustadzId: session.user.id,
+          jenis: data.jenis,
+          juz: data.juz ?? null,
+          juzMulai: data.juzMulai ?? null,
+          juzSelesai: data.juzSelesai ?? null,
+          lintasJuz: data.lintasJuz ?? false,
+          halamanAwal: data.halamanAwal ?? null,
+          halamanAkhir: data.halamanAkhir ?? null,
+          surah: data.surah ?? null,
+          ayatAwal: data.ayatAwal ?? null,
+          ayatAkhir: data.ayatAkhir ?? null,
+          surahMeta: data.surahMeta ?? null,
+          kualitas: data.kualitas,
+          catatan: data.catatan ?? null,
+          sumber: 'ustadz',
+        })
+        .returning()
 
-        // 2. Update tracker posisiTerakhir jika Ziyadah
-        if (data.jenis === 'ziyadah' && data.surahNomor && data.ayatAkhir) {
-          const currentSantri = await tx.select({ juzProgress: santri.juzProgress }).from(santri).where(eq(santri.id, data.santriId)).limit(1)
-          let newJuzProgress = currentSantri[0]?.juzProgress || []
+      // 2. Update tracker posisiTerakhir jika Ziyadah
+      if (data.jenis === 'ziyadah' && data.surahNomor && data.ayatAkhir) {
+        const currentSantri = await db.select({ juzProgress: santri.juzProgress }).from(santri).where(eq(santri.id, data.santriId)).limit(1)
+        let newJuzProgress = currentSantri[0]?.juzProgress || []
 
-          const juzSekarang = cariJuzUntukAyat(data.surahNomor, data.ayatAkhir)
-          const akhirJuz = getAyatTerakhirJuz(juzSekarang)
-          
-          if (data.surahNomor === akhirJuz.surahNomor && data.ayatAkhir === akhirJuz.ayat) {
-             if (!newJuzProgress.includes(juzSekarang)) {
-                 newJuzProgress = [...newJuzProgress, juzSekarang]
-             }
-          }
-
-          await tx
-            .update(santri)
-            .set({ 
-              posisiTerakhir: { surahNomor: data.surahNomor, ayat: data.ayatAkhir },
-              juzProgress: newJuzProgress
-            })
-            .where(eq(santri.id, data.santriId))
+        const juzSekarang = cariJuzUntukAyat(data.surahNomor, data.ayatAkhir)
+        const akhirJuz = getAyatTerakhirJuz(juzSekarang)
+        
+        if (data.surahNomor === akhirJuz.surahNomor && data.ayatAkhir === akhirJuz.ayat) {
+           if (!newJuzProgress.includes(juzSekarang)) {
+               newJuzProgress = [...newJuzProgress, juzSekarang]
+           }
         }
 
-        return newSetoran
-      });
+        await db
+          .update(santri)
+          .set({ 
+            posisiTerakhir: { surahNomor: data.surahNomor, ayat: data.ayatAkhir },
+            juzProgress: newJuzProgress
+          })
+          .where(eq(santri.id, data.santriId))
+      }
 
-      return success(result, 'Setoran berhasil disimpan')
+      return success(newSetoran, 'Setoran berhasil disimpan')
     } catch (err) {
       return handleError(err)
     }
@@ -93,30 +89,128 @@ export const updateSetoran = createServerFn({ method: 'POST' })
       requireRole(session, 'ustadz')
 
       const tenantId = session.user.tenantId
-
-      const [result] = await db
-        .update(setoran)
-        .set({
-          santriId: data.santriId,
-          jenis: data.jenis,
-          surah: data.surah,
-          ayatAwal: data.ayatAwal,
-          ayatAkhir: data.ayatAkhir,
-          kualitas: data.kualitas,
-          catatan: data.catatan ?? null,
-          updatedAt: new Date(),
-        })
-        .where(
-          and(
-            eq(setoran.id, data.id),
-            eq(setoran.tenantId, tenantId),
-            eq(setoran.ustadzId, session.user.id),
-          ),
+      
+      // Ambil data lama
+      const [oldSetoran] = await db.select().from(setoran).where(
+        and(
+          eq(setoran.id, data.id),
+          eq(setoran.tenantId, tenantId),
+          eq(setoran.ustadzId, session.user.id)
         )
-        .returning()
+      ).limit(1)
 
-      if (!result) throw new ForbiddenError('Setoran tidak ditemukan atau bukan milik Anda')
-      return success(result, 'Setoran berhasil diperbarui')
+      if (!oldSetoran) throw new ForbiddenError('Setoran tidak ditemukan atau bukan milik Anda')
+
+      // Batas waktu edit 7 hari
+      const MAX_EDIT_AGE_MS = 7 * 24 * 60 * 60 * 1000
+      if (Date.now() - new Date(oldSetoran.createdAt).getTime() > MAX_EDIT_AGE_MS) {
+        throw new ForbiddenError('Data ini sudah berusia lebih dari 7 hari dan tidak bisa diedit lagi untuk menjaga validitas laporan.')
+      }
+      
+      // Jenis tidak boleh diubah
+      if (oldSetoran.jenis !== data.jenis) {
+        throw new ValidationError('Jenis setoran tidak boleh diubah. Silakan hapus data ini dan buat baru jika jenisnya salah.')
+      }
+
+      const previousData = {
+        juz: oldSetoran.juz,
+        juzMulai: oldSetoran.juzMulai,
+        juzSelesai: oldSetoran.juzSelesai,
+        halamanAwal: oldSetoran.halamanAwal,
+        halamanAkhir: oldSetoran.halamanAkhir,
+        surah: oldSetoran.surah,
+        surahMeta: oldSetoran.surahMeta,
+        ayatAwal: oldSetoran.ayatAwal,
+        ayatAkhir: oldSetoran.ayatAkhir,
+        kualitas: oldSetoran.kualitas,
+        catatan: oldSetoran.catatan
+      }
+
+      if (data.jenis === 'ziyadah') {
+        if (!data.surahNomor || !data.ayatAkhir) {
+          throw new ValidationError('Data surah dan ayat akhir tidak lengkap untuk Ziyadah')
+        }
+        
+        // Cek secara atomik apakah ini ziyadah terbaru
+        const execRes = await db.execute(sql`
+          UPDATE "setoran"
+          SET 
+            "surah" = ${data.surah},
+            "ayat_awal" = ${data.ayatAwal},
+            "ayat_akhir" = ${data.ayatAkhir},
+            "surah_meta" = ${data.surahMeta}::jsonb,
+            "kualitas" = ${data.kualitas},
+            "catatan" = ${data.catatan || null},
+            "updated_at" = NOW(),
+            "updated_by" = ${session.user.id},
+            "previous_data" = ${previousData}::jsonb
+          WHERE "id" = ${data.id}
+            AND "tenant_id" = ${tenantId}
+            AND "ustadz_id" = ${session.user.id}
+            AND "id" = (
+              SELECT "id" FROM "setoran" 
+              WHERE "santri_id" = ${data.santriId} AND "jenis" = 'ziyadah' 
+              ORDER BY "created_at" DESC LIMIT 1
+            )
+          RETURNING *;
+        `)
+
+        const result = (execRes as any).rows ? (execRes as any).rows[0] : (execRes as any)[0];
+
+        if (!result) {
+          throw new ForbiddenError('Data ini sudah tidak bisa diedit karena sudah ada setoran ziyadah baru sesudahnya.')
+        }
+
+        // Hitung ulang posisiTerakhir
+        const currentSantri = await db.select({ juzProgress: santri.juzProgress }).from(santri).where(eq(santri.id, data.santriId)).limit(1)
+        let newJuzProgress = currentSantri[0]?.juzProgress || []
+
+        const juzSekarang = cariJuzUntukAyat(data.surahNomor, data.ayatAkhir)
+        const akhirJuz = getAyatTerakhirJuz(juzSekarang)
+        
+        if (data.surahNomor === akhirJuz.surahNomor && data.ayatAkhir === akhirJuz.ayat) {
+           if (!newJuzProgress.includes(juzSekarang)) {
+               newJuzProgress = [...newJuzProgress, juzSekarang]
+           }
+        }
+
+        await db
+          .update(santri)
+          .set({ 
+            posisiTerakhir: { surahNomor: data.surahNomor, ayat: data.ayatAkhir },
+            juzProgress: newJuzProgress
+          })
+          .where(eq(santri.id, data.santriId))
+
+        return success(result, 'Setoran ziyadah berhasil diperbarui')
+
+      } else {
+        // Sabqi atau Manzil
+        const [result] = await db
+          .update(setoran)
+          .set({
+            juzMulai: data.juzMulai,
+            juzSelesai: data.juzSelesai,
+            lintasJuz: data.lintasJuz,
+            halamanAwal: data.halamanAwal,
+            halamanAkhir: data.halamanAkhir,
+            kualitas: data.kualitas,
+            catatan: data.catatan || null,
+            updatedAt: new Date(),
+            updatedBy: session.user.id,
+            previousData,
+          })
+          .where(
+            and(
+              eq(setoran.id, data.id),
+              eq(setoran.tenantId, tenantId),
+              eq(setoran.ustadzId, session.user.id),
+            ),
+          )
+          .returning()
+
+        return success(result, 'Setoran berhasil diperbarui')
+      }
     } catch (err) {
       return handleError(err)
     }
@@ -234,7 +328,7 @@ export const inputMurojaah = createServerFn({ method: 'POST' })
       juzSelesai: z.number().nullable().optional(),
       halamanAwal: z.number(),
       halamanAkhir: z.number(),
-      surahMeta: z.record(z.any()),
+      surahMeta: z.record(z.string(), z.any()),
       kualitas: z.enum(['lancar', 'mengulang', 'terbata']),
       catatan: z.string().optional(),
     })
@@ -266,6 +360,20 @@ export const inputMurojaah = createServerFn({ method: 'POST' })
             limit: 1
           })
           assignedUstadzId = ustadzList.length > 0 ? ustadzList[0].id : session.user.id // Fallback
+      }
+
+      // Validasi Sabqi/Manzil Juz di backend
+      if (data.jenis === 'sabqi' || data.jenis === 'manzil') {
+        const profile = await db.query.santri.findFirst({ where: eq(santri.id, santriId) })
+        if (profile) {
+           const validJuzList = getValidJuzList(profile)
+           if (!data.lintasJuz && data.juzMulai && !validJuzList.includes(data.juzMulai)) {
+              throw new ValidationError(`Juz ${data.juzMulai} belum ada di riwayat hafalanmu.`)
+           }
+           if (data.lintasJuz && data.juzMulai && data.juzSelesai && (!validJuzList.includes(data.juzMulai) || !validJuzList.includes(data.juzSelesai))) {
+              throw new ValidationError('Rentang lintas juz memuat juz yang belum dihafal.')
+           }
+        }
       }
 
       const record = await db.insert(setoran).values({
@@ -384,4 +492,107 @@ export const getRiwayatSetoranSantri = createServerFn({ method: 'POST' }).handle
     }
   }
 )
+// ═══════════════════════════════════════════════════════
+// 9. EDIT MUROJAAH MANDIRI (OLEH SANTRI)
+// ═══════════════════════════════════════════════════════
+export const updateSetoranSantri = createServerFn({ method: 'POST' })
+  .validator((data: unknown) => {
+    const schema = z.object({
+      id: z.string().uuid(),
+      jenis: z.enum(['sabqi', 'manzil']),
+      lintasJuz: z.boolean().default(false),
+      juzMulai: z.number().nullable().optional(),
+      juzSelesai: z.number().nullable().optional(),
+      halamanAwal: z.number(),
+      halamanAkhir: z.number(),
+      surahMeta: z.record(z.string(), z.any()),
+      kualitas: z.enum(['lancar', 'mengulang', 'terbata']),
+      catatan: z.string().optional(),
+    })
+    return schema.parse(data)
+  })
+  .handler(async ({ data }) => {
+    try {
+      const session = await getAuthSession()
+      if (!session) throw new AuthenticationError()
+      requireRole(session, 'santri')
 
+      const santriId = session.user.santriId
+      if (!santriId) throw new Error('Data santri tidak valid.')
+      const tenantId = session.user.tenantId
+
+      const [oldSetoran] = await db.select().from(setoran).where(
+        and(
+          eq(setoran.id, data.id),
+          eq(setoran.tenantId, tenantId),
+          eq(setoran.santriId, santriId),
+          eq(setoran.sumber, 'santri_self_report')
+        )
+      ).limit(1)
+
+      if (!oldSetoran) throw new ForbiddenError('Setoran tidak ditemukan atau bukan milik Anda')
+
+      // Batas waktu edit 7 hari
+      const MAX_EDIT_AGE_MS = 7 * 24 * 60 * 60 * 1000
+      if (Date.now() - new Date(oldSetoran.createdAt).getTime() > MAX_EDIT_AGE_MS) {
+        throw new ForbiddenError('Data ini sudah berusia lebih dari 7 hari dan tidak bisa diedit lagi untuk menjaga validitas laporan.')
+      }
+      
+      // Jenis tidak boleh diubah
+      if (oldSetoran.jenis !== data.jenis) {
+        throw new ValidationError('Jenis setoran tidak boleh diubah.')
+      }
+
+      // Validasi Juz yang sudah dihafal menggunakan getValidJuzList
+      const profile = await db.query.santri.findFirst({ where: eq(santri.id, santriId) })
+      if (profile) {
+         const validJuzList = getValidJuzList(profile)
+         if (!data.lintasJuz && data.juzMulai && !validJuzList.includes(data.juzMulai)) {
+            throw new ValidationError(`Juz ${data.juzMulai} belum ada di riwayat hafalanmu.`)
+         }
+         if (data.lintasJuz && data.juzMulai && data.juzSelesai && (!validJuzList.includes(data.juzMulai) || !validJuzList.includes(data.juzSelesai))) {
+            throw new ValidationError('Rentang lintas juz memuat juz yang belum dihafal.')
+         }
+      }
+
+      const previousData = {
+        juz: oldSetoran.juz,
+        juzMulai: oldSetoran.juzMulai,
+        juzSelesai: oldSetoran.juzSelesai,
+        halamanAwal: oldSetoran.halamanAwal,
+        halamanAkhir: oldSetoran.halamanAkhir,
+        surahMeta: oldSetoran.surahMeta,
+        kualitas: oldSetoran.kualitas,
+        catatan: oldSetoran.catatan
+      }
+
+      const [result] = await db
+        .update(setoran)
+        .set({
+          juzMulai: data.juzMulai,
+          juzSelesai: data.juzSelesai,
+          lintasJuz: data.lintasJuz,
+          halamanAwal: data.halamanAwal,
+          halamanAkhir: data.halamanAkhir,
+          surahMeta: data.surahMeta,
+          kualitas: data.kualitas,
+          catatan: data.catatan || null,
+          updatedAt: new Date(),
+          updatedBy: session.user.id,
+          previousData,
+        })
+        .where(
+          and(
+            eq(setoran.id, data.id),
+            eq(setoran.tenantId, tenantId),
+            eq(setoran.santriId, santriId),
+            eq(setoran.sumber, 'santri_self_report')
+          )
+        )
+        .returning()
+
+      return success(result, 'Laporan Murojaah berhasil diperbarui')
+    } catch (err) {
+      return handleError(err)
+    }
+  })

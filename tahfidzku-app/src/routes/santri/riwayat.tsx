@@ -1,9 +1,10 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useRouter } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { getRiwayatSetoranSantri } from '../../server-fns/setoran'
-import { Loader2, History, AlertCircle, Calendar } from 'lucide-react'
+import { getRiwayatSetoranSantri, updateSetoranSantri } from '../../server-fns/setoran'
+import { Loader2, History, AlertCircle, Calendar, Edit2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
+import { EditSetoranModal } from '../../components/EditSetoranModal'
 
 export const Route = createFileRoute('/santri/riwayat')({
   component: SantriRiwayatSetoran,
@@ -22,27 +23,47 @@ const JENIS_MAP = {
 }
 
 function SantriRiwayatSetoran() {
+  const router = useRouter()
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const res = await getRiwayatSetoranSantri()
-        if (res.success) {
-          setData(res.data)
-        } else {
-          setErrorMsg(res.error?.message || 'Gagal memuat riwayat')
-        }
-      } catch (err: any) {
-        setErrorMsg(err.message || 'Terjadi kesalahan')
-      } finally {
-        setLoading(false)
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [selectedSetoran, setSelectedSetoran] = useState<any>(null)
+
+  const loadData = async () => {
+    try {
+      setLoading(true)
+      const res = await getRiwayatSetoranSantri()
+      if (res.success) {
+        setData(res.data)
+      } else {
+        setErrorMsg(res.error?.message || 'Gagal memuat riwayat')
       }
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Terjadi kesalahan')
+    } finally {
+      setLoading(false)
     }
+  }
+
+  useEffect(() => {
     loadData()
   }, [])
+
+  const handleEdit = (item: any) => {
+    setSelectedSetoran(item)
+    setEditModalOpen(true)
+  }
+
+  const handleSave = async (payload: any) => {
+    const res = await updateSetoranSantri({ data: payload })
+    if (res.success) {
+      await loadData()
+      router.invalidate()
+    }
+    return res
+  }
 
   if (loading) {
     return (
@@ -131,18 +152,40 @@ function SantriRiwayatSetoran() {
                  )}
 
                  <div className="pt-2 border-t border-slate-50 flex justify-between items-center text-[11px]">
-                    <span className="text-slate-400">
-                      {isSelfReport ? 'Dilaporkan Mandiri Kepada:' : 'Disimak Oleh:'}
-                    </span>
-                    <span className="font-medium text-slate-700">
-                      {isSelfReport && (!item.ustadzNama || item.ustadzNama === 'Tanpa Ustadz') ? 'Sistem' : item.ustadzNama}
-                    </span>
+                    <div className="flex flex-col">
+                      <span className="text-slate-400">
+                        {isSelfReport ? 'Dilaporkan Mandiri Kepada:' : 'Disimak Oleh:'}
+                      </span>
+                      <span className="font-medium text-slate-700">
+                        {isSelfReport && (!item.ustadzNama || item.ustadzNama === 'Tanpa Ustadz') ? 'Sistem' : item.ustadzNama}
+                      </span>
+                    </div>
+
+                    {isSelfReport && (
+                      <button 
+                        onClick={() => handleEdit(item)}
+                        className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100 flex items-center gap-1.5 hover:bg-emerald-100 transition-colors"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" /> Edit
+                      </button>
+                    )}
                  </div>
                </div>
              )
           })
         )}
       </div>
+
+      <EditSetoranModal 
+        isOpen={editModalOpen}
+        onClose={() => {
+          setEditModalOpen(false)
+          setSelectedSetoran(null)
+        }}
+        initialData={selectedSetoran}
+        onSave={handleSave}
+        isUstadz={false}
+      />
     </div>
   )
 }
