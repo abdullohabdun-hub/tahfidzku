@@ -10,6 +10,25 @@ import { AuthenticationError, ForbiddenError, ValidationError } from '../lib/err
 import { z } from 'zod'
 import { cariJuzUntukAyat, getAyatTerakhirJuz, getValidJuzList } from '../lib/quranMapper'
 
+
+// Helper function to safely calculate the final position for Ziyadah
+// This ensures that even for cross-surah entries, we pick the true ending point.
+function kalkulasiPosisiTerakhirZiyadah(payloadSurahNomor: number, payloadAyatAkhir: number, surahMeta?: any) {
+  let akhirSurahNomor = payloadSurahNomor;
+  let akhirAyat = payloadAyatAkhir;
+
+  if (surahMeta && Array.isArray(surahMeta.meta) && surahMeta.meta.length > 0) {
+    // Always use the LAST segment in case of multiple segments
+    const lastSegmen = surahMeta.meta[surahMeta.meta.length - 1];
+    if (lastSegmen && lastSegmen.surahSelesai) {
+      akhirSurahNomor = lastSegmen.surahSelesai.nomor ?? akhirSurahNomor;
+      akhirAyat = lastSegmen.surahSelesai.ayat ?? akhirAyat;
+    }
+  }
+
+  return { surahNomor: akhirSurahNomor, ayat: akhirAyat };
+}
+
 // ═══════════════════════════════════════════════════════
 // 1. INPUT SETORAN BARU (USTADZ)
 // ═══════════════════════════════════════════════════════
