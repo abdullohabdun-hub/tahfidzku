@@ -946,8 +946,16 @@ export function terapkanOverrideAyat(meta, overrideAwal, overrideAkhir) {
     label = `${surahMulai.nama} ${surahMulai.ayat}-${totalAyatSurahMulai} - ${surahSelesai.nama} 1-${surahSelesai.ayat}`;
   }
 
+  // Update inner meta array too
+  let newMetaArray = meta.meta ? [...meta.meta] : [];
+  if (newMetaArray.length > 0) {
+    newMetaArray[0] = { ...newMetaArray[0], surahMulai: { ...surahMulai } };
+    newMetaArray[newMetaArray.length - 1] = { ...newMetaArray[newMetaArray.length - 1], surahSelesai: { ...surahSelesai } };
+  }
+
   return {
     ...meta,
+    meta: newMetaArray,
     surahMulai,
     surahSelesai,
     label,
@@ -1267,7 +1275,7 @@ export function getValidJuzList(profile: {
 }): number[] {
   if (!profile) return [];
   const urutan = profile.urutanHafalan || urutanJuzStandar();
-  let passedJuzList = [...(profile.juzProgress || [])];
+  let passedJuzList = kalkulasiJuzProgress(profile.urutanHafalan || [], profile.posisiTerakhir);
   if (profile.posisiTerakhir) {
     const curJuz = cariJuzUntukAyat(profile.posisiTerakhir.surahNomor, profile.posisiTerakhir.ayat);
     const currentIndex = urutan.indexOf(curJuz);
@@ -1281,4 +1289,17 @@ export function getValidJuzList(profile: {
   }
   if (passedJuzList.length === 0) return [30];
   return passedJuzList;
+}
+
+export function kalkulasiJuzProgress(urutanHafalan: number[], posisiTerakhir: { surahNomor: number, ayat: number } | null): number[] {
+  if (!posisiTerakhir) return [];
+  const juzSekarang = cariJuzUntukAyat(posisiTerakhir.surahNomor, posisiTerakhir.ayat);
+  const indexJuzSekarang = urutanHafalan.indexOf(juzSekarang);
+  if (indexJuzSekarang === -1) return [];
+  const completed = urutanHafalan.slice(0, indexJuzSekarang);
+  const akhirJuz = getAyatTerakhirJuz(juzSekarang);
+  if (posisiTerakhir.surahNomor === akhirJuz.surahNomor && posisiTerakhir.ayat === akhirJuz.ayat) {
+    completed.push(juzSekarang);
+  }
+  return completed;
 }

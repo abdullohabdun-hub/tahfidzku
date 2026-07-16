@@ -5,7 +5,7 @@ import { santri, setoran, users, kelas } from '../db/schema'
 import { getAuthSession, requireRole } from '../middleware/auth.middleware'
 import { success, handleError } from '../lib/response'
 import { AuthenticationError } from '../lib/errors'
-import { hitungProgresHalaman } from '../lib/quranMapper'
+import { hitungProgresHalaman, kalkulasiJuzProgress } from '../lib/quranMapper'
 
 // ==========================================
 // 1. ADMIN DASHBOARD
@@ -149,7 +149,7 @@ export const getSantriDashboardData = createServerFn({ method: 'POST' }).handler
       })
 
       const targetJuz = profil?.targetJuz || 30
-      const juzSelesai = profil?.juzProgress?.length || 0
+      const juzSelesai = profil ? kalkulasiJuzProgress(profil.urutanHafalan || [], profil.posisiTerakhir).length : 0
       
       let progressPercentage = Math.round((juzSelesai / targetJuz) * 100)
       try {

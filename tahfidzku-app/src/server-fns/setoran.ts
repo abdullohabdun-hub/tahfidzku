@@ -69,23 +69,10 @@ export const createSetoran = createServerFn({ method: 'POST' })
 
       // 2. Update tracker posisiTerakhir jika Ziyadah
       if (data.jenis === 'ziyadah' && data.surahNomor && data.ayatAkhir) {
-        const currentSantri = await db.select({ juzProgress: santri.juzProgress }).from(santri).where(eq(santri.id, data.santriId)).limit(1)
-        let newJuzProgress = currentSantri[0]?.juzProgress || []
-
-        const juzSekarang = cariJuzUntukAyat(data.surahNomor, data.ayatAkhir)
-        const akhirJuz = getAyatTerakhirJuz(juzSekarang)
-        
-        if (data.surahNomor === akhirJuz.surahNomor && data.ayatAkhir === akhirJuz.ayat) {
-           if (!newJuzProgress.includes(juzSekarang)) {
-               newJuzProgress = [...newJuzProgress, juzSekarang]
-           }
-        }
-
         await db
           .update(santri)
           .set({ 
-            posisiTerakhir: { surahNomor: data.surahNomor, ayat: data.ayatAkhir },
-            juzProgress: newJuzProgress
+            posisiTerakhir: { surahNomor: data.surahNomor, ayat: data.ayatAkhir }
           })
           .where(eq(santri.id, data.santriId))
       }
@@ -181,23 +168,10 @@ export const updateSetoran = createServerFn({ method: 'POST' })
         }
 
         // Hitung ulang posisiTerakhir
-        const currentSantri = await db.select({ juzProgress: santri.juzProgress }).from(santri).where(eq(santri.id, data.santriId)).limit(1)
-        let newJuzProgress = currentSantri[0]?.juzProgress || []
-
-        const juzSekarang = cariJuzUntukAyat(data.surahNomor, data.ayatAkhir)
-        const akhirJuz = getAyatTerakhirJuz(juzSekarang)
-        
-        if (data.surahNomor === akhirJuz.surahNomor && data.ayatAkhir === akhirJuz.ayat) {
-           if (!newJuzProgress.includes(juzSekarang)) {
-               newJuzProgress = [...newJuzProgress, juzSekarang]
-           }
-        }
-
         await db
           .update(santri)
           .set({ 
-            posisiTerakhir: { surahNomor: data.surahNomor, ayat: data.ayatAkhir },
-            juzProgress: newJuzProgress
+            posisiTerakhir: { surahNomor: data.surahNomor, ayat: data.ayatAkhir }
           })
           .where(eq(santri.id, data.santriId))
 

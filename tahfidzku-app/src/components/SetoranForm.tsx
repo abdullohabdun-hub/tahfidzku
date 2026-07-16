@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { Check, ChevronDown, Loader2, Info, Settings2, X } from 'lucide-react'
+import { Check, ChevronDown, Loader2, Info, Settings2 } from 'lucide-react'
 import {
   buatSurahMetaOtomatis,
   buatSurahMetaLintasJuz,
@@ -73,15 +73,6 @@ function SectionLabel({ accent, children }: { accent: keyof typeof ACCENTS, chil
   );
 }
 
-function FieldChip({ label, value, accent }: { label: string, value: string | number, accent: keyof typeof ACCENTS }) {
-  const a = ACCENTS[accent];
-  return (
-    <div className={`flex-1 rounded-lg border ${a.border} ${a.softBg} p-2.5 flex flex-col justify-center`}>
-      <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-0.5">{label}</span>
-      <span className={`text-sm font-semibold ${a.chipText} truncate`}>{value}</span>
-    </div>
-  );
-}
 
 function PreviewBox({ accent, meta, note }: { accent: keyof typeof ACCENTS, meta: any, note?: string }) {
   const a = ACCENTS[accent];
@@ -201,20 +192,20 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
             setHalamanAkhir(String(initialData.halamanAkhir || 1).replace('.', ','))
         }
         
-        // Recover overrideAwal/Akhir if presisiManual exists
         if (initialData.surahMeta?.presisiManual) {
             setPresisiDisentuhManual(true)
             setShowPresisi(true)
-            if (initialData.surahMeta?.meta?.[0]) {
-                const arr = initialData.surahMeta.meta;
-                setOverrideAwal({
-                    surahNomor: arr[0].surahMulai.nomor,
-                    ayat: arr[0].surahMulai.ayat
-                })
-                setOverrideAkhir({
-                    surahNomor: arr[arr.length - 1].surahSelesai.nomor,
-                    ayat: arr[arr.length - 1].surahSelesai.ayat
-                })
+            const metaObj = initialData.surahMeta;
+            
+            // Coba ambil dari array meta jika ada, kalau tidak fallback ke root surahMulai (backward-compatibility)
+            const first = metaObj.meta?.[0]?.surahMulai || metaObj.surahMulai;
+            const last = metaObj.meta?.[metaObj.meta?.length - 1]?.surahSelesai || metaObj.surahSelesai;
+            
+            if (first) {
+                setOverrideAwal({ surahNomor: first.nomor, ayat: first.ayat })
+            }
+            if (last) {
+                setOverrideAkhir({ surahNomor: last.nomor, ayat: last.ayat })
             }
         }
       }
@@ -279,7 +270,7 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
     return prefillZiyadahBerikutnya(santri.posisiTerakhir, urutanHafalan)
   }, [jenisSetoran, santri, urutanHafalan, mode])
 
-  const prefillSurah = prefill ? surahByNomor[prefill.surahNomor] : null
+
 
   // Evaluasi Surah Mulai
   const actualSurahMulaiNomor = mode === 'create' ? (prefill?.surahNomor || 1) : editSurahMulaiNomor;
@@ -480,7 +471,7 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
                     <input
                       type="number"
                       min={surahSelesaiNomor === actualSurahMulaiNomor ? actualAyatMulai : 1}
-                      max={surahSelesaiObj?.ayat || 999}
+                      max={surahSelesaiObj?.totalAyat || 999}
                       value={ayatSelesai}
                       onChange={(e) => setAyatSelesai(e.target.value ? Number(e.target.value) : '')}
                       placeholder="Ayat"
@@ -525,7 +516,7 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
                       className={`w-full appearance-none bg-white border ${ACCENTS[activeAccent].border} text-slate-900 text-sm rounded-lg block px-3 py-2.5 pr-8`}
                     >
                       {JUZ_TABLE.map((j) => (
-                        <option key={j.juz} value={j.juz}>Juz {j.juz} ({j.surahMulai} - {j.surahSelesai})</option>
+                        <option key={j.juz} value={j.juz}>Juz {j.juz}</option>
                       ))}
                     </select>
                     <ChevronDown className="h-4 w-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
@@ -612,7 +603,7 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
                         <label className="block text-[10px] text-slate-500 font-bold mb-1 uppercase tracking-wider">Override Ayat Mulai</label>
                         <div className="flex gap-2">
                           <select 
-                            value={overrideAwal?.surahNomor || metaInfo.meta[0].surahMulai.nomor}
+                            value={overrideAwal?.surahNomor || metaInfo.surahMulai?.nomor}
                             onChange={(e) => setOverrideAwal({ ...overrideAwal, surahNomor: Number(e.target.value), ayat: 1 })}
                             className="flex-1 text-xs border-slate-200 rounded-md py-1.5"
                           >
@@ -621,7 +612,7 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
                           <input 
                             type="number" 
                             className="w-16 text-xs border-slate-200 rounded-md py-1.5"
-                            value={overrideAwal?.ayat || metaInfo.meta[0].surahMulai.ayat}
+                            value={overrideAwal?.ayat || metaInfo.surahMulai?.ayat}
                             onChange={(e) => setOverrideAwal({ ...overrideAwal, ayat: Number(e.target.value) })}
                           />
                         </div>
@@ -631,7 +622,7 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
                         <label className="block text-[10px] text-slate-500 font-bold mb-1 uppercase tracking-wider">Override Ayat Selesai</label>
                         <div className="flex gap-2">
                           <select 
-                            value={overrideAkhir?.surahNomor || metaInfo.meta[metaInfo.meta.length-1].surahSelesai.nomor}
+                            value={overrideAkhir?.surahNomor || metaInfo.surahSelesai?.nomor}
                             onChange={(e) => setOverrideAkhir({ ...overrideAkhir, surahNomor: Number(e.target.value), ayat: 1 })}
                             className="flex-1 text-xs border-slate-200 rounded-md py-1.5"
                           >
@@ -640,7 +631,7 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
                           <input 
                             type="number" 
                             className="w-16 text-xs border-slate-200 rounded-md py-1.5"
-                            value={overrideAkhir?.ayat || metaInfo.meta[metaInfo.meta.length-1].surahSelesai.ayat}
+                            value={overrideAkhir?.ayat || metaInfo.surahSelesai?.ayat}
                             onChange={(e) => setOverrideAkhir({ ...overrideAkhir, ayat: Number(e.target.value) })}
                           />
                         </div>

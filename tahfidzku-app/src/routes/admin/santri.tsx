@@ -89,15 +89,7 @@ function DataSantriPage() {
     }
   }, [batasHafalanSurah, batasHafalanJuz, surahOptions])
 
-  const toggleJuz = (j: number) => {
-    if (j === Number(batasHafalanJuz)) {
-      alert(`Juz ${j} sedang diisi pada "Batas Hafalan Saat Ini". Kosongkan Batas Hafalan terlebih dahulu jika ingin menandai juz ini sudah mutqin penuh.`)
-      return
-    }
-    setJuzProgress(prev => 
-      prev.includes(j) ? prev.filter(x => x !== j) : [...prev, j]
-    )
-  }
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -193,7 +185,7 @@ function DataSantriPage() {
     if (res.success && res.data) {
       window.location.href = res.data.redirectUrl
     } else {
-      alert(res.error?.message || 'Gagal memulai mode menyamar')
+      alert((res as any).error?.message || 'Gagal memulai mode menyamar')
       setImpersonateTarget(null)
     }
   }
@@ -226,17 +218,21 @@ function DataSantriPage() {
             <div className="border border-slate-200 rounded-lg p-4 bg-slate-50 space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-2">Juz yang Telah Selesai (Mutqin)</label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1">
                   {Array.from({length: 30}, (_, i) => i + 1).map(j => (
-                    <button
-                      type="button"
-                      key={j}
-                      onClick={() => toggleJuz(j)}
-                      className={`w-10 h-10 rounded-full text-xs font-semibold flex items-center justify-center transition-colors ${
+                    <button 
+                      key={j} type="button" 
+                      onClick={() => {
+                        if (editingId) return; // READ-ONLY untuk data berjalan
+                        setJuzProgress(prev => prev.includes(j) ? prev.filter(x => x !== j) : [...prev, j].sort((a,b)=>b-a))
+                      }}
+                      className={`h-10 w-10 rounded-lg text-sm font-bold flex items-center justify-center transition-all ${
                         juzProgress.includes(j) 
                           ? 'bg-emerald-600 text-white shadow-sm hover:bg-emerald-700' 
                           : 'bg-white border border-slate-300 text-slate-600 hover:bg-slate-100'
-                      }`}
+                      } ${editingId ? 'opacity-70 cursor-not-allowed' : ''}`}
+                      disabled={!!editingId}
+                      title={editingId ? "Juz progress otomatis diupdate dari histori riwayat setoran" : ""}
                     >
                       {j}
                     </button>

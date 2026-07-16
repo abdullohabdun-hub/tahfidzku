@@ -6,7 +6,7 @@ import { santri, users } from '../db/schema'
 import { getAuthSession, requireRole } from '../middleware/auth.middleware'
 import { success, handleError } from '../lib/response'
 import { AuthenticationError, ValidationError } from '../lib/errors'
-import { bangunUrutanHafalan, bangunPosisiDariAdminInput } from '../lib/quranMapper'
+import { bangunUrutanHafalan, bangunPosisiDariAdminInput, kalkulasiJuzProgress } from '../lib/quranMapper'
 import { inArray } from 'drizzle-orm'
 import { kelas } from '../db/schema'
 
@@ -54,7 +54,7 @@ export const getSantriList = createServerFn({ method: 'POST' }).handler(
         targetJuz: s.targetJuz,
         kelasId: s.kelasId,
         kelasNama: s.kelas?.nama || null,
-        juzProgress: s.juzProgress,
+        juzProgress: kalkulasiJuzProgress(s.urutanHafalan || [], s.posisiTerakhir),
         batasHafalanJuz: s.batasHafalanJuz,
         batasHafalanSurah: s.batasHafalanSurah,
         batasHafalanAyat: s.batasHafalanAyat,
@@ -353,6 +353,8 @@ export const getSantriProfile = createServerFn({ method: 'POST' }).handler(async
     ).limit(1)
 
     if (!profile) throw new Error('Profil santri tidak ditemukan')
+
+    profile.juzProgress = kalkulasiJuzProgress(profile.urutanHafalan || [], profile.posisiTerakhir);
 
     return success(profile, 'Berhasil memuat profil santri')
   } catch (err) {
