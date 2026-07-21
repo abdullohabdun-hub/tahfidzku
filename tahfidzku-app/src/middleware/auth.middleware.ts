@@ -1,5 +1,6 @@
 import type { Role } from '../lib/constants'
 import { getSession } from '../lib/session'
+import { AuthenticationError, ForbiddenError } from '../lib/errors'
 
 export type SessionUser = {
   id: string
@@ -33,10 +34,10 @@ export async function getAuthSession(): Promise<Session> {
  */
 export function requireRole(session: Session, ...allowedRoles: Role[]): void {
   if (!session) {
-    throw new Error('UNAUTHENTICATED')
+    throw new AuthenticationError()
   }
   if (!allowedRoles.includes(session.user.role)) {
-    throw new Error('FORBIDDEN')
+    throw new ForbiddenError()
   }
 }
 
@@ -46,10 +47,10 @@ export function requireRole(session: Session, ...allowedRoles: Role[]): void {
  */
 export function requireSuperAdmin(session: Session): void {
   if (!session) {
-    throw new Error('UNAUTHENTICATED')
+    throw new AuthenticationError()
   }
   if (session.user.id !== process.env.SUPERADMIN_USER_ID) {
-    throw new Error('FORBIDDEN')
+    throw new ForbiddenError()
   }
 }
 
@@ -61,7 +62,7 @@ export function requireSuperAdmin(session: Session): void {
 export async function requireAuth() {
   const session = await getAuthSession()
   if (!session) {
-    throw new Error('UNAUTHENTICATED')
+    throw new AuthenticationError()
   }
   return {
     user: session.user,
@@ -74,10 +75,10 @@ export async function requireAuth() {
  */
 export function requireTenantRole(user: SessionUser, allowedRoles: Role[]): void {
   if (!user) {
-    throw new Error('UNAUTHENTICATED')
+    throw new AuthenticationError()
   }
   if (!allowedRoles.includes(user.role)) {
-    throw new Error('FORBIDDEN')
+    throw new ForbiddenError()
   }
 }
 

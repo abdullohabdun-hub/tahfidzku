@@ -11,6 +11,7 @@ import {
   labelRentangAyatZiyadah,
   urutanJuzStandar,
 } from '../lib/quranMapper'
+import { getRubrikAktif } from '../server-fns/rubrik'
 
 // === Styles & Tokens ===
 const ACCENTS = {
