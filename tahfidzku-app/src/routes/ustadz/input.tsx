@@ -14,18 +14,28 @@ function InputSetoranPage() {
   const [santriList, setSantriList] = useState<any[]>([])
   const [loadingInitial, setLoadingInitial] = useState(true)
   
+  const [selectedKelasNama, setSelectedKelasNama] = useState<string>('Semua Kelas')
   const [santriId, setSantriId] = useState('')
   const selectedSantri = useMemo(() => santriList.find(s => s.id === santriId), [santriId, santriList])
 
-  const santriGrouped = useMemo(() => {
-    const groups: Record<string, typeof santriList> = {}
-    for (const s of santriList) {
-      const kelas = s.kelasNama || 'Tanpa Kelas'
-      if (!groups[kelas]) groups[kelas] = []
-      groups[kelas].push(s)
-    }
-    return groups
+  const kelasList = useMemo(() => {
+    return Array.from(new Set(santriList.map(s => s.kelasNama || 'Tanpa Kelas')))
   }, [santriList])
+
+  const santriFiltered = useMemo(() => {
+    if (!selectedKelasNama || selectedKelasNama === 'Semua Kelas') return santriList
+    return santriList.filter(s => (s.kelasNama || 'Tanpa Kelas') === selectedKelasNama)
+  }, [santriList, selectedKelasNama])
+
+  useEffect(() => {
+    if (santriFiltered.length > 0) {
+      if (!santriFiltered.find(s => s.id === santriId)) {
+        setSantriId(santriFiltered[0].id)
+      }
+    } else {
+      setSantriId('')
+    }
+  }, [santriFiltered, santriId])
 
   // Setup Hafalan Awal (Santri Baru)
   const [showSetup, setShowSetup] = useState(false)
@@ -97,27 +107,49 @@ function InputSetoranPage() {
 
   return (
     <div className="max-w-xl mx-auto space-y-5 pb-8">
-      {/* 1. Pemilihan Santri */}
+      {/* 1. Pemilihan Kelas (hanya muncul jika kelas > 1) */}
+      {kelasList.length > 1 && (
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm relative z-20">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Pilih Kelas / Halaqoh</label>
+          <div className="relative">
+            <select
+              value={selectedKelasNama}
+              onChange={(e) => setSelectedKelasNama(e.target.value)}
+              className="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block px-3 py-2.5 pr-8 font-medium"
+            >
+              <option value="Semua Kelas">-- Semua Kelas --</option>
+              {kelasList.map((k) => (
+                <option key={k} value={k}>{k}</option>
+              ))}
+            </select>
+            <ChevronDown className="h-4 w-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
+          </div>
+        </div>
+      )}
+
+      {/* 2. Pemilihan Santri */}
       <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm relative z-10">
         <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Santri yang Disimak</label>
-        <div className="relative">
-          <select
-            value={santriId}
-            onChange={(e) => setSantriId(e.target.value)}
-            className="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block px-3 py-2.5 pr-8 font-medium"
-          >
-            {Object.entries(santriGrouped).map(([kelasNama, list]) => (
-              <optgroup key={kelasNama} label={kelasNama}>
-                {list.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.nama}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-          <ChevronDown className="h-4 w-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
-        </div>
+        {santriFiltered.length === 0 ? (
+          <div className="p-3 text-sm text-slate-500 text-center bg-slate-50 rounded-lg border border-slate-100">
+            Tidak ada santri di kelas ini.
+          </div>
+        ) : (
+          <div className="relative">
+            <select
+              value={santriId}
+              onChange={(e) => setSantriId(e.target.value)}
+              className="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block px-3 py-2.5 pr-8 font-medium"
+            >
+              {santriFiltered.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.nama} {selectedKelasNama === 'Semua Kelas' && s.kelasNama ? `(${s.kelasNama})` : ''}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="h-4 w-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
+          </div>
+        )}
       </div>
 
       {/* UJIAN PENDING BANNER */}
