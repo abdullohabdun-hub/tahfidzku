@@ -13,6 +13,7 @@ function LembagaList() {
   const [tenants, setTenants] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'trial' | 'aktif' | 'suspend' | 'rejected'>('all')
 
   useEffect(() => {
     async function fetchTenants() {
@@ -44,6 +45,29 @@ function LembagaList() {
         </div>
       </div>
 
+      <div className="flex space-x-2 border-b border-slate-200">
+        {[
+          { id: 'all', label: 'Semua' },
+          { id: 'pending', label: 'Menunggu Persetujuan' },
+          { id: 'trial', label: 'Trial' },
+          { id: 'aktif', label: 'Aktif' },
+          { id: 'suspend', label: 'Suspend' },
+          { id: 'rejected', label: 'Ditolak' },
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as any)}
+            className={\`px-4 py-2 text-sm font-medium border-b-2 transition-colors \${
+              activeTab === tab.id
+                ? 'border-emerald-500 text-emerald-600'
+                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+            }\`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
@@ -58,7 +82,7 @@ function LembagaList() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {tenants.map(tenant => (
+              {tenants.filter(t => activeTab === 'all' || t.status === activeTab).map(tenant => (
                 <tr key={tenant.id} className="hover:bg-slate-50/80 transition-colors group">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="font-semibold text-slate-900">{tenant.namaLembaga}</div>
@@ -71,6 +95,8 @@ function LembagaList() {
                       tenant.status === 'aktif' ? 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20' :
                       tenant.status === 'trial' ? 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20' :
                       tenant.status === 'suspend' ? 'bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-600/20' :
+                      tenant.status === 'pending' ? 'bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20' :
+                      tenant.status === 'rejected' ? 'bg-slate-200 text-slate-700 ring-1 ring-inset ring-slate-600/20' :
                       'bg-slate-50 text-slate-700 ring-1 ring-inset ring-slate-600/20'
                     }`}>
                       {tenant.status}

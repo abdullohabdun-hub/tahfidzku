@@ -109,7 +109,10 @@ function LembagaDetail() {
         <div className="ml-auto">
           <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
             tenant.status === 'aktif' ? 'bg-emerald-100 text-emerald-700' :
-            tenant.status === 'suspend' ? 'bg-red-100 text-red-700' :
+            tenant.status === 'trial' ? 'bg-amber-100 text-amber-700' :
+            tenant.status === 'pending' ? 'bg-red-100 text-red-700' :
+            tenant.status === 'suspend' ? 'bg-rose-100 text-rose-700' :
+            tenant.status === 'rejected' ? 'bg-slate-200 text-slate-700' :
             'bg-slate-100 text-slate-700'
           }`}>
             {tenant.status.toUpperCase()}
@@ -154,7 +157,35 @@ function LembagaDetail() {
               <CardDescription>Manajemen akses ke seluruh layanan</CardDescription>
             </CardHeader>
             <CardContent className="pt-4 space-y-4">
-              {tenant.status === 'suspend' ? (
+              {tenant.status === 'pending' ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-slate-600">Lembaga ini baru mendaftar dan menunggu persetujuan Anda.</p>
+                  <Button 
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white" 
+                    onClick={() => {
+                      if(confirm('Yakin ingin menyetujui lembaga ini (Mulai Trial 14 Hari)? Mereka akan mendapat email notifikasi.')) {
+                        handleUpdateStatus('trial', 'Disetujui oleh Superadmin')
+                      }
+                    }}
+                    disabled={actionLoading}
+                  >
+                    <CheckCircle2 className="w-4 h-4 mr-2" /> Setujui (Mulai Trial 14 Hari)
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200" 
+                    onClick={() => {
+                      const alasan = prompt('Alasan penolakan (opsional, akan dikirim ke email mereka):')
+                      if (alasan !== null) {
+                        handleUpdateStatus('rejected', alasan)
+                      }
+                    }}
+                    disabled={actionLoading}
+                  >
+                    <Ban className="w-4 h-4 mr-2" /> Tolak Pendaftaran
+                  </Button>
+                </div>
+              ) : tenant.status === 'suspend' ? (
                 <div className="space-y-3">
                   <p className="text-sm text-slate-600">Lembaga sedang ditangguhkan. Semua admin, ustadz, dan santri tidak dapat login.</p>
                   <Button 
@@ -163,6 +194,21 @@ function LembagaDetail() {
                     disabled={actionLoading}
                   >
                     <CheckCircle2 className="w-4 h-4 mr-2" /> Pulihkan Akses (Aktifkan)
+                  </Button>
+                </div>
+              ) : tenant.status === 'rejected' ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-slate-600">Pendaftaran lembaga ini telah Anda tolak. Anda dapat membatalkannya dengan menyetujui ulang.</p>
+                  <Button 
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white" 
+                    onClick={() => {
+                      if(confirm('Yakin ingin menyetujui lembaga ini?')) {
+                        handleUpdateStatus('trial', 'Disetujui ulang oleh Superadmin')
+                      }
+                    }}
+                    disabled={actionLoading}
+                  >
+                    <CheckCircle2 className="w-4 h-4 mr-2" /> Setujui & Beri Trial
                   </Button>
                 </div>
               ) : (

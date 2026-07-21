@@ -79,10 +79,10 @@ export const registerLembaga = createServerFn({ method: 'POST' })
         .values({
           namaLembaga,
           slug,
-          status: 'trial',
+          status: 'pending',
           email: normEmail,
           noWa: normNoWa,
-          trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // +14 hari
+          // trialEndsAt tidak di-set saat pending, akan di-set oleh admin saat disetujui
         })
         .returning()
 
@@ -127,37 +127,27 @@ export const registerLembaga = createServerFn({ method: 'POST' })
         // Lanjut saja, tidak membatalkan registrasi
       }
 
-      // 5. Otomatis login (buat sesi)
-      await createSession({
-        id: newUser.id,
-        tenantId: newUser.tenantId,
-        nama: newUser.nama,
-        email: newUser.email,
-        username: newUser.username,
-        noWa: newUser.noWa,
-        role: newUser.role,
-        santriId: newUser.santriId,
-      })
+      // HAPUS otomatis login (sesi tidak dibuat karena masih pending)
+      console.log(`✅ Pendaftaran lembaga baru (pending): ${namaLembaga} (Admin: ${adminNama})`)
 
-      console.log(`✅ Pendaftaran lembaga baru berhasil: ${namaLembaga} (Admin: ${adminNama})`)
-
-      // Kirim Welcome Email (Fire and forget, tidak memblokir respon)
+      // Kirim Email Info bahwa sedang direview
       sendEmail({
         to: normEmail,
-        subject: 'Selamat Datang di TahfidzKu!',
+        subject: 'Pendaftaran TahfidzKu Sedang Diproses',
         html: `
           <h2>Ahlan wa Sahlan, ${adminNama}!</h2>
-          <p>Lembaga <b>${namaLembaga}</b> telah berhasil didaftarkan di TahfidzKu.</p>
-          <p>Anda mendapatkan masa percobaan gratis (Trial) selama 14 hari. Silakan lengkapi profil lembaga Anda di dasbor.</p>
+          <p>Terima kasih telah mendaftarkan <b>${namaLembaga}</b> di TahfidzKu.</p>
+          <p>Saat ini permohonan pendaftaran Anda <b>sedang dalam proses peninjauan</b> oleh tim kami.</p>
+          <p>Kami akan mengabari Anda kembali melalui Email ini maksimal dalam waktu 1x24 jam setelah proses review selesai.</p>
           <br/>
           <p>Tim TahfidzKu</p>
         `
-      }).catch(err => console.error('Gagal kirim email welcome:', err))
+      }).catch(err => console.error('Gagal kirim email pending:', err))
       
       return success({ 
         tenantId: newTenant.id, 
         role: newUser.role 
-      }, 'Pendaftaran berhasil. Selamat datang di TahfidzKu!')
+      }, 'Pendaftaran berhasil. Silakan tunggu konfirmasi dari admin.')
 
     } catch (err) {
       console.error('❌ Register Error:', err)

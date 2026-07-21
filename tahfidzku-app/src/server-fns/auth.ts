@@ -58,6 +58,14 @@ export const login = createServerFn({ method: 'POST' })
           .where(eq(tenants.id, user.tenantId))
           .limit(1)
 
+        if (tenantData?.status === 'pending') {
+          throw new AuthenticationError('Akun Anda masih dalam proses verifikasi oleh admin. Mohon tunggu konfirmasi via Email.')
+        }
+        
+        if (tenantData?.status === 'rejected') {
+          throw new AuthenticationError('Pendaftaran Anda tidak disetujui. Silakan hubungi admin untuk informasi lebih lanjut.')
+        }
+
         if (tenantData?.status === 'suspend') {
           throw new AuthenticationError('Akses lembaga ini sedang ditangguhkan. Hubungi administrator lembaga Anda.')
         }
