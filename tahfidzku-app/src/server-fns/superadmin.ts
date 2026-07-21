@@ -115,23 +115,23 @@ export const updateTenantStatus = createServerFn({ method: 'POST' })
              sendEmail({
                to: current.email!,
                subject: 'Pendaftaran TahfidzKu Disetujui!',
-               html: \`
+               html: `
                  <h2>Alhamdulillah!</h2>
-                 <p>Pendaftaran lembaga <b>\${current.namaLembaga}</b> telah disetujui oleh Superadmin.</p>
+                 <p>Pendaftaran lembaga <b>${current.namaLembaga}</b> telah disetujui oleh Superadmin.</p>
                  <p>Anda sekarang bisa masuk (login) ke dashboard dan mulai menggunakan sistem.</p>
                  <br/><a href="https://tahfidzku.my.id/login" style="padding:10px 20px;background:#059669;color:white;text-decoration:none;border-radius:8px;">Login Sekarang</a>
-               \`
+               `
              }).catch(console.error)
           } else if (action === 'reject') {
              sendEmail({
                to: current.email!,
                subject: 'Status Pendaftaran TahfidzKu',
-               html: \`
+               html: `
                  <h2>Mohon Maaf</h2>
-                 <p>Pendaftaran lembaga <b>\${current.namaLembaga}</b> saat ini tidak dapat kami setujui.</p>
-                 \${data.catatan ? \`<p>Catatan Admin: <i>"\${data.catatan}"</i></p>\` : ''}
+                 <p>Pendaftaran lembaga <b>${current.namaLembaga}</b> saat ini tidak dapat kami setujui.</p>
+                 ${data.catatan ? `<p>Catatan Admin: <i>"${data.catatan}"</i></p>` : ''}
                  <p>Jika ada pertanyaan, silakan balas email ini.</p>
-               \`
+               `
              }).catch(console.error)
           }
         })

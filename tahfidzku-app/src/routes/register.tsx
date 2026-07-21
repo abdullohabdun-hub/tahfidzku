@@ -169,7 +169,7 @@ function RegisterPage() {
                         value={slug}
                         onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
                         placeholder="al-kautsar"
-                        className={\`block w-full pr-10 pl-3 py-2.5 border rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm transition-shadow \${slugStatus === 'taken' ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-slate-300'}\`}
+                        className={`block w-full pr-10 pl-3 py-2.5 border rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm transition-shadow ${slugStatus === 'taken' ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-slate-300'}`}
                       />
                       <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                         {slugStatus === 'checking' && <Loader2 className="h-4 w-4 text-slate-400 animate-spin" />}
