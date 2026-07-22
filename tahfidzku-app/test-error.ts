@@ -3,8 +3,7 @@ config()
 import { z } from 'zod'
 import { db } from './src/db/index'
 import { santri } from './src/db/schema/index'
-import { updateSantri } from './src/server-fns/santri'
-import { eq, like } from 'drizzle-orm'
+import { like } from 'drizzle-orm'
 
 async function run() {
   const s = await db.select().from(santri).where(like(santri.nama, '%Hendri%')).limit(1)
@@ -46,8 +45,7 @@ async function run() {
   // Let's manually run the transaction code block to simulate it:
   try {
     const data = payload as any;
-    let newUrutanHafalan = s[0].urutanHafalan // || bangunUrutanHafalan(data.juzProgress)
-    let newPosisiTerakhir = s[0].posisiTerakhir
+
     
     // Guard
     if (s[0].posisiTerakhir !== null && s[0].posisiTerakhir !== undefined) {

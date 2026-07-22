@@ -8,7 +8,7 @@ import { ujian } from './ujian'
 import { impersonationLogs } from './impersonation'
 import { billingLogs } from './billing-logs'
 import { absensi, sesiKelas } from './absensi'
-
+import { waliSantri } from './wali-santri'
 export const tenantsRelations = relations(tenants, ({ many }) => ({
   users: many(users),
   kelas: many(kelas),
@@ -30,6 +30,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     fields: [users.santriId],
     references: [santri.id],
   }),
+  daftarAnak: many(waliSantri), // Untuk role wali (many-to-many)
 }))
 
 export const kelasRelations = relations(kelas, ({ one, many }) => ({
@@ -56,6 +57,7 @@ export const santriRelations = relations(santri, ({ one, many }) => ({
   setoran: many(setoran),
   ujian: many(ujian),
   akun: many(users), // Akun wali / santri yang terhubung ke santri ini
+  daftarWali: many(waliSantri), // Relasi ke wali (many-to-many)
 }))
 
 export const setoranRelations = relations(setoran, ({ one }) => ({
@@ -156,3 +158,17 @@ export const absensiRelations = relations(absensi, ({ one }) => ({
   }),
 }))
 
+export const waliSantriRelations = relations(waliSantri, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [waliSantri.tenantId],
+    references: [tenants.id],
+  }),
+  wali: one(users, {
+    fields: [waliSantri.waliUserId],
+    references: [users.id],
+  }),
+  santri: one(santri, {
+    fields: [waliSantri.santriId],
+    references: [santri.id],
+  }),
+}))

@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, redirect, useRouter } from '@tanstack/react-router'
 import { checkAuth, logout } from '../server-fns/auth'
-import { Shield, LayoutDashboard, Building2, LogOut, Loader2, Menu, X, ChevronLeft, ChevronRight, Bell } from 'lucide-react'
+import { LayoutDashboard, Building2, LogOut, Loader2, Menu, X, ChevronLeft, ChevronRight, Bell } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { useState, useEffect } from 'react'
 

@@ -29,7 +29,7 @@ function AbsensiUstadzPage() {
   const [loadingSesi, setLoadingSesi] = useState(false)
   const [sesiId, setSesiId] = useState<string | null>(null)
   const [daftarSantri, setDaftarSantri] = useState<SantriAbsensi[]>([])
-  const [kelasAktif, setKelasAktif] = useState<any>(null)
+
 
   // Submit
   const [submitting, setSubmitting] = useState(false)
@@ -69,7 +69,7 @@ function AbsensiUstadzPage() {
     const res = await bukaSesiAbsensi({ data: { kelasId: selectedKelasId, tanggal } })
     if (res.success && res.data) {
       setSesiId(res.data.sesiId)
-      setKelasAktif(res.data.kelasTarget)
+
       
       // Merge daftar santri dengan absensi tersimpan
       const tersimpan = res.data.absensiTersimpan || []
@@ -84,7 +84,7 @@ function AbsensiUstadzPage() {
       })
       setDaftarSantri(merged)
     } else {
-      setErrorMsg(res.error?.message || 'Gagal membuka sesi absensi')
+      setErrorMsg((res as any).error?.message || 'Gagal membuka sesi absensi')
     }
     setLoadingSesi(false)
   }

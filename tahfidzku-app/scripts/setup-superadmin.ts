@@ -1,7 +1,7 @@
 import { db } from '../src/db/index';
 import { tenants, users } from '../src/db/schema';
 import { eq } from 'drizzle-orm';
-import crypto from 'crypto';
+// import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 
 async function setupSystemTenant() {
@@ -40,12 +40,12 @@ async function setupSystemTenant() {
     }
 
     console.log('SUPERADMIN_USER_ID=' + superAdmin.id);
-    
+
     // Read .env file and append if not exists
     const fs = require('fs');
     let envContent = fs.readFileSync('.env', 'utf8');
     if (!envContent.includes('SUPERADMIN_USER_ID')) {
-      envContent += \nSUPERADMIN_USER_ID=""\n;
+      envContent += '\\nSUPERADMIN_USER_ID=""\\n';
       fs.writeFileSync('.env', envContent);
       console.log('Appended SUPERADMIN_USER_ID to .env');
     } else {

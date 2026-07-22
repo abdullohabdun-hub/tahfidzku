@@ -27,7 +27,6 @@ const TAJWID_MAP = {
 }
 
 function SantriRiwayatUjian() {
-  const router = useRouter()
   const [data, setData] = useState<any[]>([])
   const [juzPending, setJuzPending] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)

@@ -30,7 +30,7 @@ export const createSetoranSchema = z
       .optional(),
     ayatAkhir: z.number().int().min(1).max(286).optional().nullable(),
     kualitas: z.enum(['lancar', 'mengulang', 'terbata']).optional().nullable(),
-    penilaianKustom: z.record(z.any()).optional().nullable(),
+    penilaianKustom: z.record(z.string(), z.any()).optional().nullable(),
     catatan: z.string().max(500, { message: 'Catatan maksimal 500 karakter' }).optional().nullable(),
   })
   .superRefine((data, ctx) => {

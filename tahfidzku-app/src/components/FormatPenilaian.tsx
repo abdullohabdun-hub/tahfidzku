@@ -1,4 +1,4 @@
-import React from 'react'
+
 
 const LEGACY_KUALITAS_MAP: Record<string, { label: string, color: string }> = {
   lancar: { label: 'Lancar', color: 'text-emerald-700 bg-emerald-100 border-emerald-200' },

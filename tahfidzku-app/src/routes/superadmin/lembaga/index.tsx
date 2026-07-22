@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { getAllTenants } from '../../../server-fns/superadmin'
 import { useState, useEffect } from 'react'
-import { Card } from '../../../components/ui/card'
 import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
 
@@ -22,7 +21,7 @@ function LembagaList() {
         if (res.success && res.data) {
           setTenants(res.data)
         } else {
-          setError(res.error?.message || 'Gagal memuat data')
+          setError('Gagal memuat data')
         }
       } catch (err: any) {
         setError(err.message || 'Error jaringan')

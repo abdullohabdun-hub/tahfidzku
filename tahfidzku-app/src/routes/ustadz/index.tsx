@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { Card, CardContent } from "../../components/ui/card"
-import { Users, BookOpen, Clock, Edit } from "lucide-react"
+import { Edit } from "lucide-react"
 import { getUstadzDashboard } from "../../server-fns/dashboard"
 import { getAllRubrikTenant } from "../../server-fns/rubrik"
 import { FormatPenilaian } from "../../components/FormatPenilaian"

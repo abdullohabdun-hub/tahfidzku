@@ -2,7 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { eq, and } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '../db'
-import { rubrikPenilaian, rubrikOpsi, setoran } from '../db/schema'
+import { rubrikPenilaian, rubrikOpsi } from '../db/schema'
 import { requireAuth, requireTenantRole } from '../middleware/auth.middleware'
 import { sql } from 'drizzle-orm'
 
@@ -64,7 +64,7 @@ export const saveRubrik = createServerFn({ method: 'POST' })
   .validator(rubrikSchema)
   .handler(async ({ data }) => {
     const context = await requireAuth()
-    requireTenantRole(context.user, ['admin', 'superadmin'])
+    requireTenantRole(context.user, ['admin'])
     const { tenantId } = context.user
 
     try {
@@ -127,12 +127,13 @@ export const saveRubrik = createServerFn({ method: 'POST' })
       for (const oldOpsi of existingOpsi) {
         if (!incomingIds.includes(oldOpsi.id)) {
           // Cek apakah dipakai di setoran lama
-          const [usage] = await db.execute(sql`
+          const result = await db.execute(sql`
             SELECT 1 FROM setoran 
             WHERE tenant_id = ${tenantId} 
             AND penilaian_kustom->>${data.key} = ${oldOpsi.value}
             LIMIT 1
           `)
+          const usage = result.rows[0]
 
           if (usage) {
             throw new Error(`Opsi "${oldOpsi.value}" masih digunakan pada data setoran historis dan tidak dapat dihapus.`)

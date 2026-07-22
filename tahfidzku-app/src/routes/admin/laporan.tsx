@@ -12,7 +12,7 @@ export const Route = createFileRoute('/admin/laporan')({
   component: AdminLaporanBulanan,
   loader: async () => {
     const rubrikRes = await getAllRubrikTenant()
-    return { rubrikAktif: rubrikRes.data }
+    return { rubrikAktif: rubrikRes }
   },
 })
 

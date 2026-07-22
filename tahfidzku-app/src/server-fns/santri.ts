@@ -2,7 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { eq, and, desc, or } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '../db'
-import { santri, users } from '../db/schema'
+import { santri, users, waliSantri } from '../db/schema'
 import { getAuthSession, requireRole } from '../middleware/auth.middleware'
 import { success, handleError } from '../lib/response'
 import { AuthenticationError, ValidationError } from '../lib/errors'
@@ -44,28 +44,55 @@ export const getSantriList = createServerFn({ method: 'POST' }).handler(
         orderBy: [desc(santri.createdAt)],
         with: {
           kelas: { columns: { nama: true } },
-          akun: { columns: { email: true, noWa: true } }
+          akun: { columns: { email: true, noWa: true, role: true, nama: true } },
+          daftarWali: {
+            with: {
+              wali: { columns: { nama: true, email: true, noWa: true } }
+            }
+          }
         }
       })
 
-      const mapped = results.map(s => ({
-        id: s.id,
-        nama: s.nama,
-        targetJuz: s.targetJuz,
-        kelasId: s.kelasId,
-        kelasNama: s.kelas?.nama || null,
-        juzProgress: kalkulasiJuzProgress(s.urutanHafalan || [], s.posisiTerakhir, s.juzUjianPending),
-        batasHafalanJuz: s.batasHafalanJuz,
-        batasHafalanSurah: s.batasHafalanSurah,
-        batasHafalanAyat: s.batasHafalanAyat,
-        tipe: s.tipe,
-        email: s.akun && s.akun.length > 0 ? s.akun[0].email : null,
-        noWa: s.akun && s.akun.length > 0 ? s.akun[0].noWa : null,
-        createdAt: s.createdAt,
-        posisiTerakhir: s.posisiTerakhir,
-        urutanHafalan: s.urutanHafalan,
-        juzUjianPending: s.juzUjianPending,
-      }))
+      const mapped = results.map(s => {
+        const akunSantri = s.akun?.find(a => a.role === 'santri')
+        const akunWali = s.akun?.find(a => a.role === 'wali')
+        
+        // Gabungkan wali dari "akun" (legacy fallback) dan "daftarWali" (tabel junction)
+        const allWaliMap = new Map();
+        if (akunWali) {
+          allWaliMap.set(akunWali.noWa || akunWali.email, { nama: akunWali.nama, email: akunWali.email, noWa: akunWali.noWa });
+        }
+        if (s.daftarWali) {
+          s.daftarWali.forEach(dw => {
+             if (dw.wali) allWaliMap.set(dw.wali.noWa || dw.wali.email, dw.wali);
+          });
+        }
+        const allWalis = Array.from(allWaliMap.values());
+        const mainWali = allWalis[0] || null;
+
+        return {
+          id: s.id,
+          nama: s.nama,
+          targetJuz: s.targetJuz,
+          kelasId: s.kelasId,
+          kelasNama: s.kelas?.nama || null,
+          juzProgress: kalkulasiJuzProgress(s.urutanHafalan || [], s.posisiTerakhir, s.juzUjianPending),
+          batasHafalanJuz: s.batasHafalanJuz,
+          batasHafalanSurah: s.batasHafalanSurah,
+          batasHafalanAyat: s.batasHafalanAyat,
+          tipe: s.tipe,
+          email: akunSantri ? akunSantri.email : null,
+          noWa: akunSantri ? akunSantri.noWa : null,
+          waliNama: mainWali ? mainWali.nama : null,
+          waliEmail: mainWali ? mainWali.email : null,
+          waliNoWa: mainWali ? mainWali.noWa : null,
+          semuaWali: allWalis,
+          createdAt: s.createdAt,
+          posisiTerakhir: s.posisiTerakhir,
+          urutanHafalan: s.urutanHafalan,
+          juzUjianPending: s.juzUjianPending,
+        }
+      })
 
       return success(mapped, 'Berhasil mengambil daftar santri')
     } catch (err) {
@@ -92,7 +119,11 @@ export const createSantri = createServerFn({ method: 'POST' })
       tipe: z.enum(['reguler', 'dewasa']).default('dewasa'),
       email: z.string().optional().nullable(),
       noWa: z.string().optional().nullable(),
-      password: z.string().optional()
+      password: z.string().optional(),
+      waliNama: z.string().optional(),
+      waliEmail: z.string().email('Format email wali tidak valid').optional().nullable().or(z.literal('')),
+      waliNoWa: z.string().optional().nullable(),
+      waliPassword: z.string().min(4, 'Password wali minimal 4 karakter').optional().or(z.literal(''))
     })
     return schema.parse(data)
   })
@@ -153,7 +184,51 @@ export const createSantri = createServerFn({ method: 'POST' })
           role: 'santri',
           santriId: newSantri.id
         })
+      } else if (data.tipe === 'reguler' && data.waliNama) {
+        // Handle pembuatan akun Wali jika data diisi (opsional)
+        const waliEmail = data.waliEmail ? normalisasiEmail(data.waliEmail) : null;
+        const waliNoWa = data.waliNoWa ? normalisasiNoWa(data.waliNoWa) : null;
+        
+        if (waliEmail || waliNoWa) {
+          if (!data.waliPassword) {
+            throw new ValidationError('Password wajib diisi untuk akun Wali')
+          }
+          
+          const existingWali = await db.select({ id: users.id, role: users.role }).from(users).where(
+            or(
+              waliEmail ? eq(users.email, waliEmail) : undefined,
+              waliNoWa ? eq(users.noWa, waliNoWa) : undefined
+            )
+          )
+          
+          let targetUserId = null;
+          
+          if (existingWali.length > 0) {
+            const existing = existingWali[0]
+            if (existing.role !== 'wali') throw new ValidationError('Email / No WA Wali sudah terdaftar oleh akun Ustadz/Admin.')
+            targetUserId = existing.id
+          } else {
+            const [newUser] = await db.insert(users).values({
+              tenantId,
+              nama: data.waliNama,
+              email: waliEmail,
+              noWa: waliNoWa,
+              passwordHash: data.waliPassword,
+              role: 'wali',
+              santriId: newSantri.id
+            }).returning({ id: users.id })
+            targetUserId = newUser.id
+          }
+
+          // Hubungkan ke tabel wali_santri (many-to-many)
+          await db.insert(waliSantri).values({
+            tenantId,
+            waliUserId: targetUserId,
+            santriId: newSantri.id
+          }).onConflictDoNothing()
+        }
       }
+      
       const result = newSantri;
 
       return success(result, 'Berhasil menambahkan Santri')
@@ -178,7 +253,11 @@ export const updateSantri = createServerFn({ method: 'POST' })
     tipe: z.enum(['reguler', 'dewasa']).default('dewasa'),
     email: z.string().optional().nullable(),
     noWa: z.string().optional().nullable(),
-    password: z.string().optional()
+    password: z.string().optional(),
+    waliNama: z.string().optional(),
+    waliEmail: z.string().email('Format email wali tidak valid').optional().nullable().or(z.literal('')),
+    waliNoWa: z.string().optional().nullable(),
+    waliPassword: z.string().min(4, 'Password wali minimal 4 karakter').optional().or(z.literal(''))
   }).parse(data))
   .handler(async ({ data }) => {
     try {
@@ -259,6 +338,64 @@ export const updateSantri = createServerFn({ method: 'POST' })
             role: 'santri',
             santriId: data.id
           })
+        }
+      } else if (data.tipe === 'reguler' && data.waliNama) {
+        const waliEmail = data.waliEmail ? normalisasiEmail(data.waliEmail) : null;
+        const waliNoWa = data.waliNoWa ? normalisasiNoWa(data.waliNoWa) : null;
+        
+        if (waliEmail || waliNoWa) {
+          const existing = await db.select({ id: users.id, role: users.role }).from(users).where(
+            or(
+              waliEmail ? eq(users.email, waliEmail) : undefined,
+              waliNoWa ? eq(users.noWa, waliNoWa) : undefined
+            )
+          )
+          const existingUser = existing.find(u => u.id)
+          
+          const userForWaliResult = await db.select({ id: users.id }).from(users)
+            .innerJoin(waliSantri, eq(waliSantri.waliUserId, users.id))
+            .where(eq(waliSantri.santriId, data.id))
+            .limit(1)
+            
+          const currentUserForSantri = userForWaliResult.length > 0 ? userForWaliResult[0] : null;
+
+          if (currentUserForSantri) {
+            if (existingUser && existingUser.id !== currentUserForSantri.id) {
+              if (existingUser.role !== 'wali') throw new ValidationError('Email / No WA sudah dipakai oleh Ustadz/Admin.')
+              // Switch link to the existing user instead of updating current user's email
+              await db.delete(waliSantri).where(and(eq(waliSantri.waliUserId, currentUserForSantri.id), eq(waliSantri.santriId, data.id)))
+              await db.insert(waliSantri).values({ tenantId, waliUserId: existingUser.id, santriId: data.id }).onConflictDoNothing()
+            } else {
+              // Update existing linked user
+              const updateData: any = { nama: data.waliNama, email: waliEmail, noWa: waliNoWa }
+              if (data.waliPassword) updateData.passwordHash = data.waliPassword
+              await db.update(users).set(updateData).where(eq(users.id, currentUserForSantri.id))
+            }
+          } else {
+            let targetUserId = null;
+            if (existingUser) {
+              if (existingUser.role !== 'wali') throw new ValidationError('Email / No WA Wali sudah terdaftar oleh pengguna Ustadz/Admin.')
+              targetUserId = existingUser.id
+            } else {
+              if (!data.waliPassword) throw new ValidationError('Password wajib diisi untuk akun Wali baru')
+              const [newUser] = await db.insert(users).values({
+                tenantId,
+                nama: data.waliNama,
+                email: waliEmail,
+                noWa: waliNoWa,
+                passwordHash: data.waliPassword,
+                role: 'wali',
+                santriId: data.id
+              }).returning({ id: users.id })
+              targetUserId = newUser.id
+            }
+            
+            await db.insert(waliSantri).values({
+              tenantId,
+              waliUserId: targetUserId,
+              santriId: data.id
+            }).onConflictDoNothing()
+          }
         }
       }
 

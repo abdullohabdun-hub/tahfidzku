@@ -21,7 +21,7 @@ function SuperAdminDashboard() {
         if (res.success && res.data) {
           setStats(res.data)
         } else {
-          setError(res.error?.message || 'Gagal memuat statistik')
+          setError((res as any).error?.message || 'Gagal memuat statistik')
         }
       } catch (err: any) {
         setError(err.message || 'Error jaringan')

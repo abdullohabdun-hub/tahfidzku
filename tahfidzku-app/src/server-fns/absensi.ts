@@ -111,7 +111,12 @@ export const bukaSesiAbsensi = createServerFn({ method: 'POST' })
 
       // 4. Ambil absensi yang sudah tersimpan untuk sesi ini (jika ada)
       const absensiTersimpan = await db
-        .select()
+        .select({
+          id: absensi.id,
+          santriId: absensi.santriId,
+          status: absensi.status,
+          catatan: absensi.catatan
+        })
         .from(absensi)
         .where(and(eq(absensi.sesiKelasId, sesiId), eq(absensi.tenantId, tenantId)))
 

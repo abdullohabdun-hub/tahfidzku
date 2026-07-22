@@ -33,6 +33,12 @@ function DataSantriPage() {
   const [email, setEmail] = useState('')
   const [noWa, setNoWa] = useState('')
   const [password, setPassword] = useState('')
+  
+  const [waliNama, setWaliNama] = useState('')
+  const [waliEmail, setWaliEmail] = useState('')
+  const [waliNoWa, setWaliNoWa] = useState('')
+  const [waliPassword, setWaliPassword] = useState('')
+  
   const [submitting, setSubmitting] = useState(false)
 
   // Filters
@@ -107,7 +113,11 @@ function DataSantriPage() {
         tipe,
         email: tipe === 'dewasa' ? (email || undefined) : undefined,
         noWa: tipe === 'dewasa' ? (noWa || undefined) : undefined,
-        password: tipe === 'dewasa' ? password : undefined
+        password: tipe === 'dewasa' ? password : undefined,
+        waliNama: tipe === 'reguler' ? (waliNama || undefined) : undefined,
+        waliEmail: tipe === 'reguler' ? (waliEmail || undefined) : undefined,
+        waliNoWa: tipe === 'reguler' ? (waliNoWa || undefined) : undefined,
+        waliPassword: tipe === 'reguler' ? (waliPassword || undefined) : undefined
       } 
     }
     
@@ -147,6 +157,12 @@ function DataSantriPage() {
     setEmail(s.email || '')
     setNoWa(s.noWa || '')
     setPassword('') // Optional when editing
+    
+    setWaliNama(s.waliNama || '')
+    setWaliEmail(s.waliEmail || '')
+    setWaliNoWa(s.waliNoWa || '')
+    setWaliPassword('') // Optional when editing
+    
     setShowForm(true)
   }
 
@@ -164,6 +180,10 @@ function DataSantriPage() {
     setEmail('')
     setNoWa('')
     setPassword('')
+    setWaliNama('')
+    setWaliEmail('')
+    setWaliNoWa('')
+    setWaliPassword('')
   }
 
   const handleDelete = async (id: string) => {
@@ -316,6 +336,30 @@ function DataSantriPage() {
               </div>
             )}
 
+            {tipe === 'reguler' && (
+              <div className="border border-slate-200 rounded-lg p-4 bg-slate-50 space-y-4">
+                <div className="text-sm font-medium text-blue-700 bg-blue-50 p-2 rounded border border-blue-200">
+                  ℹ️ Data Wali / Orang Tua (Opsional). Jika diisi, Wali bisa login untuk memantau hafalan anak secara real-time.
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Nama Wali</label>
+                  <input type="text" value={waliNama} onChange={e => setWaliNama(e.target.value)} className="w-full border p-2 rounded-lg bg-white" placeholder="Nama Orang Tua / Wali" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Email Wali (Opsional)</label>
+                  <input type="email" value={waliEmail} onChange={e => setWaliEmail(e.target.value)} className="w-full border p-2 rounded-lg bg-white" placeholder="Cth: wali@gmail.com" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">No WhatsApp Wali (Opsional)</label>
+                  <input type="text" value={waliNoWa} onChange={e => setWaliNoWa(e.target.value)} className="w-full border p-2 rounded-lg bg-white" placeholder="Cth: 081234567" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Password Login {editingId && <span className="text-slate-500 font-normal">(Kosongkan jika tidak diubah)</span>}</label>
+                  <input type="text" value={waliPassword} onChange={e => setWaliPassword(e.target.value)} className="w-full border p-2 rounded-lg bg-white" placeholder="Minimal 4 karakter" />
+                </div>
+              </div>
+            )}
+
             <div className="flex gap-2 pt-2">
               <Button type="button" variant="outline" onClick={handleCloseForm}>Batal</Button>
               <Button type="submit" disabled={submitting} className="bg-emerald-600 hover:bg-emerald-700">
@@ -425,7 +469,43 @@ function DataSantriPage() {
                             )}
                           </div>
                         )
-                        : <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded-md text-xs font-medium">Reguler (Anak)</span>
+                        : (
+                          <div>
+                            <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded-md text-xs font-medium">Reguler (Anak)</span>
+                            {(s.semuaWali && s.semuaWali.length > 0) ? (
+                              <div className="mt-2 text-[10px] text-slate-500 font-mono bg-slate-50 p-1.5 rounded border border-slate-200 w-max leading-tight space-y-1">
+                                {s.semuaWali.length === 1 ? (
+                                  <>
+                                    <div>Wali: {s.semuaWali[0].nama}</div>
+                                    {s.semuaWali[0].email && <div>E: {s.semuaWali[0].email}</div>}
+                                    {s.semuaWali[0].noWa && <div>W: {s.semuaWali[0].noWa}</div>}
+                                  </>
+                                ) : (
+                                  <details className="cursor-pointer group">
+                                    <summary className="font-semibold text-blue-600 outline-none list-none flex items-center gap-1">
+                                      Wali: {s.semuaWali[0].nama} <span className="bg-blue-100 text-blue-700 px-1 py-0.5 rounded-sm text-[9px]">+{s.semuaWali.length - 1} wali</span>
+                                    </summary>
+                                    <div className="pt-2 space-y-2 pb-1">
+                                      {s.semuaWali.map((w: any, idx: number) => (
+                                        <div key={idx} className="border-l-2 border-blue-200 pl-2">
+                                          <div className="font-semibold text-slate-700">{w.nama}</div>
+                                          {w.email && <div>E: {w.email}</div>}
+                                          {w.noWa && <div>W: {w.noWa}</div>}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </details>
+                                )}
+                              </div>
+                            ) : (s.waliNama || s.waliEmail || s.waliNoWa) ? (
+                              <div className="mt-2 text-[10px] text-slate-500 font-mono bg-slate-50 p-1.5 rounded border border-slate-200 w-max leading-tight space-y-1">
+                                {s.waliNama && <div>Wali: {s.waliNama}</div>}
+                                {s.waliEmail && <div>E: {s.waliEmail}</div>}
+                                {s.waliNoWa && <div>W: {s.waliNoWa}</div>}
+                              </div>
+                            ) : null}
+                          </div>
+                        )
                       }
                     </td>
                     <td className="p-4 text-slate-600">

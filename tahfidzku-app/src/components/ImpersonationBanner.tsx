@@ -11,7 +11,6 @@ interface Props {
 }
 
 export function ImpersonationBanner({ namaTarget, roleTarget, expiresAt }: Props) {
-  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [timeLeft, setTimeLeft] = useState<string>('')
 
@@ -39,14 +38,16 @@ export function ImpersonationBanner({ namaTarget, roleTarget, expiresAt }: Props
     setLoading(true)
     const res = await stopImpersonating()
     setLoading(false)
-    if (res.success && res.data) {
-      // Force reload to clear client-side states
-      window.location.href = res.data.redirectUrl
-    } else {
-      alert(res.error?.message || 'Gagal menghentikan mode menyamar')
-      if (res.error?.message?.includes('dicabut')) {
+    if (!res.success) {
+      alert(res.error.message || 'Gagal menghentikan mode menyamar')
+      if (res.error.message?.includes('dicabut')) {
         window.location.href = '/login'
       }
+      return
+    }
+    if (res.data) {
+      // Force reload to clear client-side states
+      window.location.href = res.data.redirectUrl
     }
   }
 

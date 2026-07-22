@@ -1,3 +1,4 @@
+// @ts-ignore
 import { createAPIFileRoute } from '@tanstack/react-start/api'
 import { db } from '../../db'
 import { tenants, billingLogs } from '../../db/schema'

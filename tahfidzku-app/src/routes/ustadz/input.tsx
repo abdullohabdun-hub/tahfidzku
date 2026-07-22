@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import React, { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { ChevronDown, Loader2, AlertTriangle } from 'lucide-react'
 import { getSantriList } from '../../server-fns/santri'
 import { createSetoran } from '../../server-fns/setoran'

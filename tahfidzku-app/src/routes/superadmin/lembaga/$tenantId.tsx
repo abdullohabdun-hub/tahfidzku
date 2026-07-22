@@ -39,7 +39,7 @@ function LembagaDetail() {
         setNoWa(res.data.tenant.noWa || '')
         setCatatan(res.data.tenant.catatan || '')
       } else {
-        setError(res.error?.message || 'Gagal memuat detail')
+        setError('Gagal memuat detail')
       }
     } catch (err: any) {
       setError(err.message || 'Error jaringan')
@@ -52,7 +52,7 @@ function LembagaDetail() {
     fetchDetail()
   }, [tenantId])
 
-  const handleUpdateStatus = async (status: 'aktif' | 'suspend' | 'trial', catatanLog?: string) => {
+  const handleUpdateStatus = async (status: 'aktif' | 'suspend' | 'trial' | 'rejected', catatanLog?: string) => {
     setActionLoading(true)
     setActionError('')
     setActionSuccess('')

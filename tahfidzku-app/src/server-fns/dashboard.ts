@@ -1,7 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
-import { eq, and, desc, gte } from 'drizzle-orm'
+import { and, eq, desc, gte, lte, sql } from 'drizzle-orm'
 import { db } from '../db'
-import { santri, setoran, users, kelas, tenants } from '../db/schema'
+import { santri, setoran, users, kelas, tenants, waliSantri } from '../db/schema'
 import { getAuthSession, requireRole } from '../middleware/auth.middleware'
 import { success, handleError } from '../lib/response'
 import { AuthenticationError } from '../lib/errors'
@@ -221,3 +221,91 @@ export const getSantriDashboardData = createServerFn({ method: 'POST' }).handler
 
 // Alias untuk konsistensi dengan import yang dipakai di src/routes/santri/index.tsx
 export { getSantriDashboardData as getSantriDashboard }
+
+// ==========================================
+// 4. WALI DASHBOARD
+// ==========================================
+export const getWaliDashboard = createServerFn({ method: 'POST' }).handler(
+  async () => {
+    try {
+      const session = await getAuthSession()
+      if (!session) throw new AuthenticationError()
+      requireRole(session, 'wali')
+
+      let santriIds: string[] = []
+      
+      // Coba cari dari tabel wali_santri terlebih dahulu
+      const anakLinks = await db.select({ santriId: waliSantri.santriId }).from(waliSantri).where(eq(waliSantri.waliUserId, session.user.id))
+      
+      if (anakLinks.length > 0) {
+        santriIds = anakLinks.map(link => link.santriId)
+      } else if (session.user.santriId) {
+        // Fallback untuk backward compatibility jika wali_santri belum terisi tapi user punya santriId
+        santriIds = [session.user.santriId]
+      }
+
+      if (santriIds.length === 0) throw new Error('Akun Wali ini belum terhubung ke data anak (santri).')
+
+      const daftarAnak = []
+
+      for (const santriId of santriIds) {
+        const [profil] = await db.select().from(santri).where(eq(santri.id, santriId)).limit(1)
+        if (!profil) continue;
+
+        // Ambil nama kelas jika ada
+        let namaKelas = null;
+        if (profil.kelasId) {
+          const [kelasObj] = await db.select({ nama: kelas.nama }).from(kelas).where(eq(kelas.id, profil.kelasId)).limit(1)
+          if (kelasObj) namaKelas = kelasObj.nama;
+        }
+
+        // Ambil riwayat setoran dengan nama ustadz
+        const riwayat = await db.query.setoran.findMany({
+          where: eq(setoran.santriId, santriId),
+          orderBy: [desc(setoran.createdAt)],
+          limit: 10,
+          with: {
+            ustadz: { columns: { nama: true } }
+          }
+        })
+
+        const targetJuz = profil.targetJuz || 30
+        const juzSelesai = kalkulasiJuzProgress(profil.urutanHafalan || [], profil.posisiTerakhir, profil.juzUjianPending).length
+        
+        let progressPercentage = Math.round((juzSelesai / targetJuz) * 100)
+        try {
+          if (profil.urutanHafalan && profil.posisiTerakhir) {
+            const progresHal = hitungProgresHalaman(profil.urutanHafalan, profil.posisiTerakhir)
+            progressPercentage = progresHal.persen
+          }
+        } catch (err) {
+          progressPercentage = Math.round((juzSelesai / targetJuz) * 100)
+        }
+
+        daftarAnak.push({
+          profil: {
+            ...profil,
+            namaKelas
+          },
+          riwayat: riwayat.map(r => ({
+            ...r,
+            ustadzNama: r.ustadz?.nama || 'Ustadz'
+          })),
+          progress: {
+            targetJuz,
+            juzSelesai,
+            percentage: progressPercentage,
+          }
+        })
+      }
+      
+      if (daftarAnak.length === 0) throw new Error('Data anak tidak ditemukan.')
+
+      return success({
+        daftarAnak
+      }, "Data dashboard wali berhasil diambil")
+    } catch (err) {
+      return handleError(err)
+    }
+  }
+)

@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Loader2, ArrowLeft } from 'lucide-react'
 import { inputMurojaah } from '../../server-fns/setoran'
 import { getSantriProfile } from '../../server-fns/santri'
@@ -23,7 +23,7 @@ function SantriInputMurojaah() {
         if (res.success && res.data) {
           setProfile(res.data)
         } else {
-          setErrorMsg('Gagal memuat profil: ' + res.error?.message)
+          setErrorMsg('Gagal memuat profil: ' + (res as any).error?.message)
         }
       } catch (err) {
         setErrorMsg('Terjadi kesalahan memuat data')

@@ -13,11 +13,7 @@ export const Route = createFileRoute('/ustadz/riwayat')({
   component: UstadzRiwayatSetoran,
 })
 
-const KUALITAS_MAP = {
-  lancar: { label: 'Lancar', color: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
-  mengulang: { label: 'Mengulang', color: 'text-amber-700 bg-amber-50 border-amber-200' },
-  terbata: { label: 'Terbata', color: 'text-red-700 bg-red-50 border-red-200' },
-}
+
 
 const JENIS_MAP = {
   ziyadah: { label: 'Ziyadah', color: 'bg-purple-100 text-purple-800' },

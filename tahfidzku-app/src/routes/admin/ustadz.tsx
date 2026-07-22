@@ -86,8 +86,9 @@ function DataUstadzPage() {
       const res = await deleteUstadz({ data: { id } })
       if (res.success) {
         loadData()
-      } else {
-        alert(res.error?.message || 'Gagal menghapus')
+      }
+      if (!res.success) {
+        alert((res as any).error?.message || 'Gagal menghapus data')
       }
     }
   }
@@ -97,11 +98,13 @@ function DataUstadzPage() {
     setImpersonating(true)
     const res = await impersonateUser({ data: { targetRole: 'ustadz', targetId: impersonateTarget.id } })
     setImpersonating(false)
-    if (res.success && res.data) {
-      window.location.href = res.data.redirectUrl
-    } else {
-      alert(res.error?.message || 'Gagal memulai mode menyamar')
+    if (!res.success) {
+      alert((res as any).error?.message || 'Gagal memulai mode menyamar')
       setImpersonateTarget(null)
+      return
+    }
+    if (res.data) {
+      window.location.href = res.data.redirectUrl
     }
   }
 

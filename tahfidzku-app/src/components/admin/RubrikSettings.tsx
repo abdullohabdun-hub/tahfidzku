@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Plus, Edit2, Trash2, Loader2, ListTodo, AlertCircle, Save } from 'lucide-react'
-import { getRubrikAktif, getAllRubrikTenant, saveRubrik } from '../../server-fns/rubrik'
+import { getAllRubrikTenant, saveRubrik } from '../../server-fns/rubrik'
 import { Button } from '../ui/button'
 
 export function RubrikSettings() {
