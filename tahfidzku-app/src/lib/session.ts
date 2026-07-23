@@ -3,6 +3,9 @@
 
 import { SignJWT, jwtVerify } from 'jose'
 import { getCookie, setCookie, deleteCookie } from '@tanstack/react-start/server'
+import { eq } from 'drizzle-orm'
+import { db } from '../db'
+import { users } from '../db/schema'
 import type { SessionUser } from '../middleware/auth.middleware'
 
 const secretKey = process.env.AUTH_SECRET
@@ -42,6 +45,18 @@ export async function getSession(): Promise<{ user: SessionUser } | null> {
     const { payload } = await jwtVerify(sessionToken, encodedKey, {
       algorithms: ['HS256'],
     })
+
+    // Validasi Sesi: Cek apakah password sudah diganti setelah token ini dibuat
+    const userId = payload.id as string
+    const [userRecord] = await db.select({ passwordChangedAt: users.passwordChangedAt }).from(users).where(eq(users.id, userId)).limit(1)
+    
+    if (userRecord && userRecord.passwordChangedAt && payload.iat) {
+      // iat adalah detik, getTime adalah milidetik
+      // Kita tolak token jika dibuat (iat) sebelum password diubah
+      if (payload.iat * 1000 < userRecord.passwordChangedAt.getTime()) {
+        return null // Token revoked
+      }
+    }
 
     // Pastikan tipe data sesuai dengan SessionUser
     return {

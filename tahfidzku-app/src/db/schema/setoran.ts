@@ -33,7 +33,9 @@ export const setoran = pgTable('setoran', {
   ayatAwal: integer('ayat_awal'),
   ayatAkhir: integer('ayat_akhir'),
   surahMeta: jsonb('surah_meta').$type<Record<string, any>>(),
-  kualitas: kualitasEnum('kualitas'), // DROP NOT NULL
+  kualitas: kualitasEnum('kualitas'), // DEPRECATED — dipertahankan untuk backward compat data lama
+  skorKualitas: integer('skor_kualitas'),  // 1-5: 5=Mumtaz, 4=JayyidJiddan, 3=Jayyid, 2=Daif, 1=DaifJiddan
+  statusHafalan: varchar('status_hafalan', { length: 20 }), // 'lanjut' | 'mengulang'
   penilaianKustom: jsonb('penilaian_kustom').$type<Record<string, any>>(),
   catatan: text('catatan'),
   sumber: sumberSetoranEnum('sumber').notNull().default('ustadz'),

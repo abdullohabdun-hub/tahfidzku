@@ -931,11 +931,15 @@ export function buatSurahMetaOtomatis(juzMulai, halamanRelatifMulai, juzSelesai,
 export function terapkanOverrideAyat(meta, overrideAwal, overrideAkhir) {
   if (!meta) return meta;
 
+  const surahMulaiNomor = overrideAwal?.surahNomor || meta.surahMulai.nomor;
+  const surahSelesaiNomor = overrideAkhir?.surahNomor || meta.surahSelesai.nomor;
+
   const surahMulai = overrideAwal
-    ? { nomor: overrideAwal.surahNomor, nama: surahByNomor[overrideAwal.surahNomor].nama, ayat: overrideAwal.ayat }
+    ? { nomor: surahMulaiNomor, nama: surahByNomor[surahMulaiNomor]?.nama || meta.surahMulai.nama, ayat: overrideAwal.ayat || meta.surahMulai.ayat }
     : meta.surahMulai;
+    
   const surahSelesai = overrideAkhir
-    ? { nomor: overrideAkhir.surahNomor, nama: surahByNomor[overrideAkhir.surahNomor].nama, ayat: overrideAkhir.ayat }
+    ? { nomor: surahSelesaiNomor, nama: surahByNomor[surahSelesaiNomor]?.nama || meta.surahSelesai.nama, ayat: overrideAkhir.ayat || meta.surahSelesai.ayat }
     : meta.surahSelesai;
 
   let label;

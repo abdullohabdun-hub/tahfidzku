@@ -11,7 +11,8 @@ import {
   labelRentangAyatZiyadah,
   urutanJuzStandar,
 } from '../lib/quranMapper'
-import { getRubrikAktif } from '../server-fns/rubrik'
+import { SKOR_LIST, SKOR_DEFAULT_LABELS, SKOR_WARNA_SOLID, SKOR_WARNA, LEGACY_TO_SKOR } from '../lib/penilaian'
+import type { SkorKualitas, StatusHafalan } from '../lib/penilaian'
 
 // === Styles & Tokens ===
 const ACCENTS = {
@@ -54,12 +55,6 @@ const JENIS_TABS = [
   { id: 'ziyadah', label: 'Ziyadah', desc: 'Hafalan Baru', accent: 'emerald' },
   { id: 'sabqi', label: 'Sabqi', desc: 'Ulang Hafalan Baru', accent: 'amber' },
   { id: 'manzil', label: 'Manzil', desc: 'Ulang Hafalan Lama', accent: 'indigo' }
-]
-
-const KUALITAS_OPTIONS = [
-  { id: 'lancar', label: 'Lancar', color: 'text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100' },
-  { id: 'mengulang', label: 'Mengulang', color: 'text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100' },
-  { id: 'terbata', label: 'Terbata', color: 'text-red-700 bg-red-50 border-red-200 hover:bg-red-100' }
 ]
 
 const SURAH_LIST = Object.values(surahByNomor).sort((a: any, b: any) => a.nomor - b.nomor)
@@ -148,26 +143,28 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
 
   // Hasil Meta Sabqi/Manzil
   const [metaInfo, setMetaInfo] = useState<any>(null)
+  const [metaError, setMetaError] = useState<string | null>(null)
   const [parseError, setParseError] = useState<{mulai?: string, selesai?: string}>({})
 
-  const [kualitas, setKualitas] = useState<'lancar' | 'mengulang' | 'terbata' | null>(null)
+  // Penilaian Baru (Standar)
+  const [skorKualitas, setSkorKualitas] = useState<SkorKualitas | null>(null)
+  const [statusHafalan, setStatusHafalan] = useState<StatusHafalan | null>(null)
   const [catatan, setCatatan] = useState('')
-  const [rubrikAktif, setRubrikAktif] = useState<any[]>([])
-  const [penilaianKustom, setPenilaianKustom] = useState<Record<string, string>>({})
-
-  useEffect(() => {
-    getRubrikAktif().then(res => setRubrikAktif(res || [])).catch(console.error)
-  }, [])
 
   // INISIALISASI DATA
   useEffect(() => {
     if (mode === 'edit' && initialData) {
       setJenisSetoran(initialData.jenis)
-      setKualitas(initialData.kualitas)
       setCatatan(initialData.catatan || '')
-      if (initialData.penilaianKustom) {
-        setPenilaianKustom(initialData.penilaianKustom)
+      
+      // Set skor: pakai skorKualitas baru jika ada, fallback konversi dari kualitas lama
+      if (initialData.skorKualitas) {
+        setSkorKualitas(initialData.skorKualitas as SkorKualitas)
+      } else if (initialData.kualitas && LEGACY_TO_SKOR[initialData.kualitas]) {
+        setSkorKualitas(LEGACY_TO_SKOR[initialData.kualitas])
       }
+      // Set status hafalan
+      if (initialData.statusHafalan) setStatusHafalan(initialData.statusHafalan as StatusHafalan)
 
       if (initialData.jenis === 'ziyadah') {
         const surah = Object.values(surahByNomor).find((s: any) => s.nama === initialData.surah)
@@ -239,8 +236,11 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
 
       if (!awalParsed || !akhirParsed) {
         setMetaInfo(null);
+        setMetaError(null);
         return;
       }
+
+      setMetaError(null);
 
       let metaAuto = null;
       if (!lintasJuz) {
@@ -268,9 +268,12 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
         setMetaInfo(terapkanOverrideAyat(metaAuto, overrideAwal, overrideAkhir))
       } else {
         setMetaInfo(null)
+        setMetaError("Data rentang halaman tidak ditemukan di database atau tidak valid.")
       }
-    } catch (e) {
+    } catch (e: any) {
+      console.error(e)
       setMetaInfo(null)
+      setMetaError(e.message || "Terjadi kesalahan saat membaca rentang ayat.")
     }
   }, [jenisSetoran, lintasJuz, juz, halamanAwal, halamanAkhir, juzMulai, juzSelesai, halMulai, halSelesai, overrideAwal, overrideAkhir, showPresisi, presisiDisentuhManual, mode])
 
@@ -318,21 +321,17 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
     setSuccessMsg('')
 
     if (mode === 'create' && !santri && isUstadz) return setErrorMsg('Pilih santri terlebih dahulu')
-    if (rubrikAktif.length > 0) {
-      const missingRubrik = rubrikAktif.find(r => !penilaianKustom[r.key])
-      if (missingRubrik) return setErrorMsg(`Nilai untuk dimensi "${missingRubrik.label}" belum diisi`)
-    } else {
-      if (!kualitas) return setErrorMsg('Pilih kualitas hafalan')
-    }
+    if (!skorKualitas) return setErrorMsg('Pilih skor kualitas hafalan (1-5)')
+    if (!statusHafalan) return setErrorMsg('Pilih status hafalan (Lanjut atau Mengulang)')
 
     setSubmitting(true)
 
     try {
       let payload: any = {
         jenis: jenisSetoran,
-        kualitas,
+        skorKualitas,
+        statusHafalan,
         catatan,
-        penilaianKustom: rubrikAktif.length > 0 ? penilaianKustom : undefined,
       }
 
       if (mode === 'create') {
@@ -343,7 +342,9 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
       }
 
       if (jenisSetoran === 'ziyadah') {
-        if (!actualSurahMulaiObj || !surahSelesaiObj || !ziyadahLabel) throw new Error('Data Ziyadah tidak valid')
+        if (!actualSurahMulaiObj || !surahSelesaiObj || !ziyadahLabel) {
+            throw new Error('Pastikan surat mulai dan selesai sudah dipilih dengan benar')
+        }
         
         payload.surah = actualSurahMulaiObj.nama
         payload.surahNomor = actualSurahMulaiNomor
@@ -360,7 +361,7 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
             ]
         }
       } else {
-        if (!metaInfo) throw new Error('Data rentang juz/halaman tidak valid')
+        if (!metaInfo) throw new Error(metaError || 'Data rentang juz/halaman tidak valid')
         
         if (lintasJuz) {
            payload.lintasJuz = true
@@ -385,8 +386,8 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
         setSuccessMsg('Setoran berhasil disimpan!')
         if (mode === 'create') {
             setCatatan('')
-            setKualitas(null)
-            setPenilaianKustom({})
+            setSkorKualitas(null)
+            setStatusHafalan(null)
             if (jenisSetoran === 'ziyadah') {
                 setSurahSelesaiNomor(0)
                 setAyatSelesai('')
@@ -422,7 +423,7 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
 
       {/* 2. Tabs Jenis Setoran (Jika Mode Create, atau Edit dengan Jenis Fixed) */}
       <div className="bg-white rounded-xl border border-slate-200 p-1.5 flex gap-1 shadow-sm">
-        {JENIS_TABS.map((tab) => {
+        {JENIS_TABS.filter(t => isUstadz || t.id !== 'ziyadah').map((tab) => {
           const isActive = jenisSetoran === tab.id;
           const isLocked = mode === 'edit' && tab.id !== jenisSetoran; // In edit mode, you cannot change jenis
           const a = ACCENTS[tab.accent as keyof typeof ACCENTS];
@@ -598,6 +599,12 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
                   </div>
                 </div>
               )}
+              
+              {metaError && (
+                <div className="mt-2 text-[12px] text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-lg font-medium">
+                  {metaError}
+                </div>
+              )}
 
               {/* Presisi Ayat Panel */}
               {metaInfo && (
@@ -631,6 +638,7 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
                             className="w-16 text-xs border-slate-200 rounded-md py-1.5"
                             value={overrideAwal?.ayat || metaInfo.surahMulai?.ayat}
                             onChange={(e) => setOverrideAwal({ ...overrideAwal, ayat: Number(e.target.value) })}
+                            max={SURAH_LIST.find((s: any) => s.nomor === (overrideAwal?.surahNomor || metaInfo.surahMulai?.nomor))?.totalAyat || 999}
                           />
                         </div>
                       </div>
@@ -650,6 +658,7 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
                             className="w-16 text-xs border-slate-200 rounded-md py-1.5"
                             value={overrideAkhir?.ayat || metaInfo.surahSelesai?.ayat}
                             onChange={(e) => setOverrideAkhir({ ...overrideAkhir, ayat: Number(e.target.value) })}
+                            max={SURAH_LIST.find((s: any) => s.nomor === (overrideAkhir?.surahNomor || metaInfo.surahSelesai?.nomor))?.totalAyat || 999}
                           />
                         </div>
                       </div>
@@ -681,27 +690,68 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
           )}
         </div>
 
-        {/* 4. Kualitas Hafalan & Catatan */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-          <SectionLabel accent={activeAccent}>Kualitas Hafalan</SectionLabel>
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            {KUALITAS_OPTIONS.map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => setKualitas(opt.id as any)}
-                className={`py-2.5 px-1 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all duration-200 border
-                  ${kualitas === opt.id 
-                    ? `${opt.color} ring-1 ring-current shadow-sm` 
-                    : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
-                  }
-                `}
-              >
-                {opt.label}
-              </button>
-            ))}
+        {/* 4. Penilaian — Skor Kualitas + Status Hafalan */}
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm mb-4">
+          
+          {/* Skor Kualitas 1-5 */}
+          <SectionLabel accent={activeAccent}>Skor Kualitas Hafalan</SectionLabel>
+          <div className="grid grid-cols-5 gap-2 mb-5">
+            {SKOR_LIST.map((skor) => {
+              const isSelected = skorKualitas === skor
+              const warnaSolid = isSelected ? SKOR_WARNA_SOLID[skor] : ''
+              return (
+                <button
+                  key={skor}
+                  type="button"
+                  onClick={() => setSkorKualitas(skor)}
+                  className={`py-3 px-1 rounded-xl text-center transition-all duration-200 border-2 flex flex-col items-center gap-0.5
+                    ${isSelected
+                      ? `${warnaSolid} shadow-md scale-105`
+                      : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50 hover:scale-102'
+                    }
+                  `}
+                >
+                  <span className={`text-lg font-black leading-none ${isSelected ? 'text-white' : 'text-slate-700'}`}>{skor}</span>
+                  <span className={`text-[9px] font-bold uppercase tracking-wide leading-tight text-center ${isSelected ? 'text-white/90' : 'text-slate-400'}`}>
+                    {SKOR_DEFAULT_LABELS[skor]}
+                  </span>
+                </button>
+              )
+            })}
           </div>
 
+          {/* Status Hafalan */}
+          <SectionLabel accent={activeAccent}>Status Hafalan</SectionLabel>
+          <div className="grid grid-cols-2 gap-3 mb-5">
+            <button
+              type="button"
+              onClick={() => setStatusHafalan('lanjut')}
+              className={`py-3 px-4 rounded-xl font-bold text-sm transition-all duration-200 border-2 flex items-center justify-center gap-2
+                ${statusHafalan === 'lanjut'
+                  ? 'bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-200'
+                  : 'bg-white border-slate-200 text-slate-500 hover:bg-emerald-50 hover:border-emerald-200'
+                }
+              `}
+            >
+              <span className="text-base">✓</span>
+              Lanjut
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusHafalan('mengulang')}
+              className={`py-3 px-4 rounded-xl font-bold text-sm transition-all duration-200 border-2 flex items-center justify-center gap-2
+                ${statusHafalan === 'mengulang'
+                  ? 'bg-amber-500 border-amber-500 text-white shadow-md shadow-amber-200'
+                  : 'bg-white border-slate-200 text-slate-500 hover:bg-amber-50 hover:border-amber-200'
+                }
+              `}
+            >
+              <span className="text-base">↩</span>
+              Mengulang
+            </button>
+          </div>
+
+          {/* Catatan Tambahan */}
           <SectionLabel accent={activeAccent}>Catatan Tambahan</SectionLabel>
           <textarea
             rows={2}
@@ -711,6 +761,8 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
             placeholder="Tulis pesan/catatan..."
           />
         </div>
+
+
 
         {/* Submit Button */}
         <div className="flex gap-2 pt-2">
@@ -725,7 +777,7 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
             )}
             <button
             type="submit"
-            disabled={submitting || (mode === 'create' && isUstadz && !santri) || (jenisSetoran === 'ziyadah' ? (!actualSurahMulaiObj || !surahSelesaiObj) : !metaInfo)}
+            disabled={submitting || (mode === 'create' && isUstadz && !santri)}
             className={`flex-1 py-3.5 px-4 ${ACCENTS[activeAccent].solidBg} ${ACCENTS[activeAccent].solidBgHover} text-white font-bold rounded-xl shadow-sm shadow-emerald-200 disabled:opacity-50 flex items-center justify-center gap-2 transition-all duration-200 text-sm tracking-wide`}
             >
             {submitting ? (

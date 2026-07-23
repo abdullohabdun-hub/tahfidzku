@@ -50,10 +50,14 @@ function SantriDashboard() {
       <div className="bg-gradient-to-r from-orange-400 to-amber-500 rounded-2xl p-4 text-white shadow-md flex items-center justify-between">
         <div>
           <h3 className="font-bold text-base opacity-90 flex items-center gap-1.5">
-            <Flame className="w-4 h-4" /> Weekly Streak
+            <Flame className="w-4 h-4" /> {data?.streakMode === 'daily' ? 'Daily' : 'Weekly'} Streak
           </h3>
-          <p className="text-2xl font-bold mt-1">{data?.streak} Hari</p>
-          <p className="text-xs opacity-80 mt-1">Luar biasa! Pertahankan terus.</p>
+          <p className="text-2xl font-bold mt-1">{data?.streak} {data?.streakMode === 'daily' ? 'Hari' : 'Minggu'}</p>
+          <p className="text-xs opacity-80 mt-1">
+            {data?.streakMode === 'daily' 
+              ? 'Setor setiap hari untuk menjaga api!' 
+              : 'Minimal 1x setor per minggu!'}
+          </p>
         </div>
         <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
           <Flame className="w-6 h-6 text-white" />
@@ -78,7 +82,7 @@ function SantriDashboard() {
       )}
 
       {/* Progress Hafalan (Recharts) */}
-      <Card className="rounded-2xl shadow-sm border-slate-200">
+      <Card className="rounded-2xl shadow-sm hover:shadow-md transition-shadow border-slate-100">
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-bold flex items-center gap-2 text-slate-800">
             <Target className="w-4 h-4 text-emerald-600" /> Progres Hafalan
@@ -128,7 +132,7 @@ function SantriDashboard() {
       </Card>
 
       {/* Grafik Murojaah */}
-      <Card className="rounded-2xl shadow-sm border-slate-200">
+      <Card className="rounded-2xl shadow-sm hover:shadow-md transition-shadow border-slate-100">
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-bold flex items-center gap-2 text-slate-800">
             <BookOpen className="w-4 h-4 text-emerald-600" /> Aktivitas Murojaah
@@ -190,7 +194,7 @@ function SantriDashboard() {
                   <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 z-10 ring-4 ring-white">
                     <BookOpen className="w-4 h-4" />
                   </div>
-                  <div className="flex-1 bg-slate-50 rounded-xl p-3 border border-slate-100 relative">
+                  <div className="flex-1 bg-slate-50 hover:bg-white rounded-xl p-3.5 border border-slate-100 hover:border-emerald-100 relative shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
                     <div className="flex justify-between items-start mb-1">
                       <span className="text-xs font-medium uppercase tracking-wider text-emerald-600 bg-emerald-100/50 px-2 py-0.5 rounded-md">
                         {item.jenis}
@@ -202,7 +206,7 @@ function SantriDashboard() {
                     {item.surah && <p className="font-semibold text-slate-800 text-sm">Surat {item.surah}</p>}
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <p className="text-xs text-slate-500">Juz {item.juz} • Hal {item.halamanAwal === item.halamanAkhir ? item.halamanAwal : `${item.halamanAwal}-${item.halamanAkhir}`} •</p>
-                      <FormatPenilaian item={item} rubrikAktif={rubrikAktif} />
+                      <FormatPenilaian item={item} />
                     </div>
                   </div>
                 </div>

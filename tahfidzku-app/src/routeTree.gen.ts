@@ -22,6 +22,9 @@ import { Route as UstadzIndexRouteImport } from './routes/ustadz/index'
 import { Route as SuperadminIndexRouteImport } from './routes/superadmin/index'
 import { Route as SantriIndexRouteImport } from './routes/santri/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as WaliUjianRouteImport } from './routes/wali/ujian'
+import { Route as WaliProfilRouteImport } from './routes/wali/profil'
+import { Route as WaliJadwalRouteImport } from './routes/wali/jadwal'
 import { Route as UstadzUjianRouteImport } from './routes/ustadz/ujian'
 import { Route as UstadzRiwayatRouteImport } from './routes/ustadz/riwayat'
 import { Route as UstadzProfilRouteImport } from './routes/ustadz/profil'
@@ -39,7 +42,9 @@ import { Route as AdminPengaturanRouteImport } from './routes/admin/pengaturan'
 import { Route as AdminLaporanRouteImport } from './routes/admin/laporan'
 import { Route as AdminKelasRouteImport } from './routes/admin/kelas'
 import { Route as SuperadminLembagaIndexRouteImport } from './routes/superadmin/lembaga/index'
+import { Route as AdminRaporIndexRouteImport } from './routes/admin/rapor/index'
 import { Route as SuperadminLembagaTenantIdRouteImport } from './routes/superadmin/lembaga/$tenantId'
+import { Route as AdminRaporSantriIdRouteImport } from './routes/admin/rapor/$santriId'
 
 const WaliRoute = WaliRouteImport.update({
   id: '/wali',
@@ -105,6 +110,21 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const WaliUjianRoute = WaliUjianRouteImport.update({
+  id: '/ujian',
+  path: '/ujian',
+  getParentRoute: () => WaliRoute,
+} as any)
+const WaliProfilRoute = WaliProfilRouteImport.update({
+  id: '/profil',
+  path: '/profil',
+  getParentRoute: () => WaliRoute,
+} as any)
+const WaliJadwalRoute = WaliJadwalRouteImport.update({
+  id: '/jadwal',
+  path: '/jadwal',
+  getParentRoute: () => WaliRoute,
 } as any)
 const UstadzUjianRoute = UstadzUjianRouteImport.update({
   id: '/ujian',
@@ -191,12 +211,22 @@ const SuperadminLembagaIndexRoute = SuperadminLembagaIndexRouteImport.update({
   path: '/lembaga/',
   getParentRoute: () => SuperadminRoute,
 } as any)
+const AdminRaporIndexRoute = AdminRaporIndexRouteImport.update({
+  id: '/rapor/',
+  path: '/rapor/',
+  getParentRoute: () => AdminRoute,
+} as any)
 const SuperadminLembagaTenantIdRoute =
   SuperadminLembagaTenantIdRouteImport.update({
     id: '/lembaga/$tenantId',
     path: '/lembaga/$tenantId',
     getParentRoute: () => SuperadminRoute,
   } as any)
+const AdminRaporSantriIdRoute = AdminRaporSantriIdRouteImport.update({
+  id: '/rapor/$santriId',
+  path: '/rapor/$santriId',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -223,12 +253,17 @@ export interface FileRoutesByFullPath {
   '/ustadz/profil': typeof UstadzProfilRoute
   '/ustadz/riwayat': typeof UstadzRiwayatRoute
   '/ustadz/ujian': typeof UstadzUjianRoute
+  '/wali/jadwal': typeof WaliJadwalRoute
+  '/wali/profil': typeof WaliProfilRoute
+  '/wali/ujian': typeof WaliUjianRoute
   '/admin/': typeof AdminIndexRoute
   '/santri/': typeof SantriIndexRoute
   '/superadmin/': typeof SuperadminIndexRoute
   '/ustadz/': typeof UstadzIndexRoute
   '/wali/': typeof WaliIndexRoute
+  '/admin/rapor/$santriId': typeof AdminRaporSantriIdRoute
   '/superadmin/lembaga/$tenantId': typeof SuperadminLembagaTenantIdRoute
+  '/admin/rapor/': typeof AdminRaporIndexRoute
   '/superadmin/lembaga/': typeof SuperadminLembagaIndexRoute
 }
 export interface FileRoutesByTo {
@@ -251,12 +286,17 @@ export interface FileRoutesByTo {
   '/ustadz/profil': typeof UstadzProfilRoute
   '/ustadz/riwayat': typeof UstadzRiwayatRoute
   '/ustadz/ujian': typeof UstadzUjianRoute
+  '/wali/jadwal': typeof WaliJadwalRoute
+  '/wali/profil': typeof WaliProfilRoute
+  '/wali/ujian': typeof WaliUjianRoute
   '/admin': typeof AdminIndexRoute
   '/santri': typeof SantriIndexRoute
   '/superadmin': typeof SuperadminIndexRoute
   '/ustadz': typeof UstadzIndexRoute
   '/wali': typeof WaliIndexRoute
+  '/admin/rapor/$santriId': typeof AdminRaporSantriIdRoute
   '/superadmin/lembaga/$tenantId': typeof SuperadminLembagaTenantIdRoute
+  '/admin/rapor': typeof AdminRaporIndexRoute
   '/superadmin/lembaga': typeof SuperadminLembagaIndexRoute
 }
 export interface FileRoutesById {
@@ -285,12 +325,17 @@ export interface FileRoutesById {
   '/ustadz/profil': typeof UstadzProfilRoute
   '/ustadz/riwayat': typeof UstadzRiwayatRoute
   '/ustadz/ujian': typeof UstadzUjianRoute
+  '/wali/jadwal': typeof WaliJadwalRoute
+  '/wali/profil': typeof WaliProfilRoute
+  '/wali/ujian': typeof WaliUjianRoute
   '/admin/': typeof AdminIndexRoute
   '/santri/': typeof SantriIndexRoute
   '/superadmin/': typeof SuperadminIndexRoute
   '/ustadz/': typeof UstadzIndexRoute
   '/wali/': typeof WaliIndexRoute
+  '/admin/rapor/$santriId': typeof AdminRaporSantriIdRoute
   '/superadmin/lembaga/$tenantId': typeof SuperadminLembagaTenantIdRoute
+  '/admin/rapor/': typeof AdminRaporIndexRoute
   '/superadmin/lembaga/': typeof SuperadminLembagaIndexRoute
 }
 export interface FileRouteTypes {
@@ -320,12 +365,17 @@ export interface FileRouteTypes {
     | '/ustadz/profil'
     | '/ustadz/riwayat'
     | '/ustadz/ujian'
+    | '/wali/jadwal'
+    | '/wali/profil'
+    | '/wali/ujian'
     | '/admin/'
     | '/santri/'
     | '/superadmin/'
     | '/ustadz/'
     | '/wali/'
+    | '/admin/rapor/$santriId'
     | '/superadmin/lembaga/$tenantId'
+    | '/admin/rapor/'
     | '/superadmin/lembaga/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -348,12 +398,17 @@ export interface FileRouteTypes {
     | '/ustadz/profil'
     | '/ustadz/riwayat'
     | '/ustadz/ujian'
+    | '/wali/jadwal'
+    | '/wali/profil'
+    | '/wali/ujian'
     | '/admin'
     | '/santri'
     | '/superadmin'
     | '/ustadz'
     | '/wali'
+    | '/admin/rapor/$santriId'
     | '/superadmin/lembaga/$tenantId'
+    | '/admin/rapor'
     | '/superadmin/lembaga'
   id:
     | '__root__'
@@ -381,12 +436,17 @@ export interface FileRouteTypes {
     | '/ustadz/profil'
     | '/ustadz/riwayat'
     | '/ustadz/ujian'
+    | '/wali/jadwal'
+    | '/wali/profil'
+    | '/wali/ujian'
     | '/admin/'
     | '/santri/'
     | '/superadmin/'
     | '/ustadz/'
     | '/wali/'
+    | '/admin/rapor/$santriId'
     | '/superadmin/lembaga/$tenantId'
+    | '/admin/rapor/'
     | '/superadmin/lembaga/'
   fileRoutesById: FileRoutesById
 }
@@ -493,6 +553,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/wali/ujian': {
+      id: '/wali/ujian'
+      path: '/ujian'
+      fullPath: '/wali/ujian'
+      preLoaderRoute: typeof WaliUjianRouteImport
+      parentRoute: typeof WaliRoute
+    }
+    '/wali/profil': {
+      id: '/wali/profil'
+      path: '/profil'
+      fullPath: '/wali/profil'
+      preLoaderRoute: typeof WaliProfilRouteImport
+      parentRoute: typeof WaliRoute
+    }
+    '/wali/jadwal': {
+      id: '/wali/jadwal'
+      path: '/jadwal'
+      fullPath: '/wali/jadwal'
+      preLoaderRoute: typeof WaliJadwalRouteImport
+      parentRoute: typeof WaliRoute
     }
     '/ustadz/ujian': {
       id: '/ustadz/ujian'
@@ -613,12 +694,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SuperadminLembagaIndexRouteImport
       parentRoute: typeof SuperadminRoute
     }
+    '/admin/rapor/': {
+      id: '/admin/rapor/'
+      path: '/rapor'
+      fullPath: '/admin/rapor/'
+      preLoaderRoute: typeof AdminRaporIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/superadmin/lembaga/$tenantId': {
       id: '/superadmin/lembaga/$tenantId'
       path: '/lembaga/$tenantId'
       fullPath: '/superadmin/lembaga/$tenantId'
       preLoaderRoute: typeof SuperadminLembagaTenantIdRouteImport
       parentRoute: typeof SuperadminRoute
+    }
+    '/admin/rapor/$santriId': {
+      id: '/admin/rapor/$santriId'
+      path: '/rapor/$santriId'
+      fullPath: '/admin/rapor/$santriId'
+      preLoaderRoute: typeof AdminRaporSantriIdRouteImport
+      parentRoute: typeof AdminRoute
     }
   }
 }
@@ -631,6 +726,8 @@ interface AdminRouteChildren {
   AdminUjianRoute: typeof AdminUjianRoute
   AdminUstadzRoute: typeof AdminUstadzRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminRaporSantriIdRoute: typeof AdminRaporSantriIdRoute
+  AdminRaporIndexRoute: typeof AdminRaporIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
@@ -641,6 +738,8 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminUjianRoute: AdminUjianRoute,
   AdminUstadzRoute: AdminUstadzRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminRaporSantriIdRoute: AdminRaporSantriIdRoute,
+  AdminRaporIndexRoute: AdminRaporIndexRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
@@ -704,10 +803,16 @@ const UstadzRouteWithChildren =
   UstadzRoute._addFileChildren(UstadzRouteChildren)
 
 interface WaliRouteChildren {
+  WaliJadwalRoute: typeof WaliJadwalRoute
+  WaliProfilRoute: typeof WaliProfilRoute
+  WaliUjianRoute: typeof WaliUjianRoute
   WaliIndexRoute: typeof WaliIndexRoute
 }
 
 const WaliRouteChildren: WaliRouteChildren = {
+  WaliJadwalRoute: WaliJadwalRoute,
+  WaliProfilRoute: WaliProfilRoute,
+  WaliUjianRoute: WaliUjianRoute,
   WaliIndexRoute: WaliIndexRoute,
 }
 

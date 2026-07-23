@@ -44,7 +44,7 @@ export const runDbMigration = createServerFn({ method: 'POST' }).handler(
       try {
         await db.execute(sql`ALTER TABLE santri ADD COLUMN IF NOT EXISTS juz_ujian_pending integer`)
       } catch(e) {}
-      
+
       try { await db.execute(sql`CREATE TYPE status_ujian AS ENUM ('lulus', 'tidak_lulus')`) } catch(e) {}
       try { await db.execute(sql`CREATE TYPE skor_kelancaran AS ENUM ('lancar', 'mengulang', 'terbata')`) } catch(e) {}
       try { await db.execute(sql`CREATE TYPE skor_tajwid AS ENUM ('sempurna', 'cukup', 'kurang')`) } catch(e) {}
@@ -68,7 +68,38 @@ export const runDbMigration = createServerFn({ method: 'POST' }).handler(
         `)
       } catch(e) {}
 
+      // 0005 Migration — Tabel rapor_settings
+      try {
+        await db.execute(sql`
+          CREATE TABLE IF NOT EXISTS rapor_settings (
+            id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+            tenant_id       uuid NOT NULL UNIQUE REFERENCES tenants(id) ON DELETE CASCADE,
+            nama_lembaga    varchar(255),
+            alamat_lembaga  text,
+            logo_url        varchar(500),
+            kota_cetak      varchar(100),
+            nama_mudir      varchar(255),
+            nip_mudir       varchar(50),
+            catatan_footer  text,
+            created_at      timestamptz NOT NULL DEFAULT now(),
+            updated_at      timestamptz NOT NULL DEFAULT now()
+          )
+        `)
+      } catch(e) {}
+
+      // 0006 Migration — Kolom skor penilaian standar
+      try {
+        await db.execute(sql`ALTER TABLE setoran ADD COLUMN IF NOT EXISTS skor_kualitas integer`)
+      } catch(e) {}
+      try {
+        await db.execute(sql`ALTER TABLE setoran ADD COLUMN IF NOT EXISTS status_hafalan varchar(20)`)
+      } catch(e) {}
+      try {
+        await db.execute(sql`ALTER TABLE rapor_settings ADD COLUMN IF NOT EXISTS label_penilaian jsonb`)
+      } catch(e) {}
+
       return success(null, 'Migrasi database berhasil dijalankan!')
+
     } catch (err) {
       return handleError(err)
     }

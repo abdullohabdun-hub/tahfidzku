@@ -54,29 +54,27 @@ function UstadzDashboard() {
         </div>
         <div className="space-y-3">
           {data.belumSetor.length === 0 ? (
-            <p className="text-sm text-slate-500 italic text-center py-4">Semua santri sudah setor hari ini 🎉</p>
+            <p className="text-sm text-slate-500 italic text-center py-4 bg-slate-50 rounded-xl border border-dashed border-slate-200">Semua santri sudah setor hari ini 🎉</p>
           ) : data.belumSetor.map((santri) => (
-            <Card key={santri.id} className="border-slate-200 shadow-sm overflow-hidden">
-              <CardContent className="p-0">
-                <div className="flex items-center justify-between p-4 bg-white active:bg-slate-50 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold border border-slate-200 uppercase">
-                      {santri.nama.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="font-bold text-slate-900 text-sm">{santri.nama}</p>
-                      <p className="text-xs text-slate-500">Target: Juz {santri.targetJuz}</p>
-                    </div>
+            <div key={santri.id} className="group bg-white border border-slate-100 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 overflow-hidden">
+              <div className="flex items-center justify-between p-3.5 sm:p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-slate-100/80 flex items-center justify-center text-slate-600 font-bold border border-slate-200/60 uppercase">
+                    {santri.nama.charAt(0)}
                   </div>
-                  <Link 
-                    to="/ustadz/input"
-                    className="bg-emerald-50 text-emerald-700 font-semibold px-3 py-1.5 rounded-lg text-xs hover:bg-emerald-100"
-                  >
-                    Input
-                  </Link>
+                  <div>
+                    <p className="font-bold text-slate-800 text-sm">{santri.nama}</p>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">Target: Juz {santri.targetJuz}</p>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
+                <Link 
+                  to="/ustadz/input"
+                  className="bg-emerald-50 text-emerald-700 font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-emerald-100 transition-colors border border-emerald-100"
+                >
+                  Input
+                </Link>
+              </div>
+            </div>
           ))}
         </div>
       </section>
@@ -88,27 +86,29 @@ function UstadzDashboard() {
         </div>
         <div className="space-y-3">
           {data.setoranTerbaru.length === 0 ? (
-            <p className="text-sm text-slate-500 italic text-center py-4">Belum ada setoran masuk</p>
+            <p className="text-sm text-slate-500 italic text-center py-4 bg-slate-50 rounded-xl border border-dashed border-slate-200">Belum ada setoran masuk</p>
           ) : data.setoranTerbaru.map((s) => (
-            <Card key={s.id} className="border-slate-200 shadow-sm overflow-hidden">
-              <CardContent className="p-0">
-                <div className="flex items-center justify-between p-4 bg-white">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold border border-emerald-200 uppercase">
-                      {s.santriNama?.charAt(0) || 'S'}
-                    </div>
-                    <div>
-                      <p className="font-bold text-slate-900 text-sm">{s.santriNama}</p>
-                      <p className="text-xs text-slate-500 capitalize mb-1">{s.jenis}: {s.surah} ({s.ayatAwal}-{s.ayatAkhir})</p>
-                      <FormatPenilaian item={s} rubrikAktif={rubrikAktif} />
-                    </div>
+            <div key={s.id} className="group bg-white border border-slate-100 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 overflow-hidden">
+              <div className="flex items-center justify-between p-3.5 sm:p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-700 font-bold border border-emerald-100 uppercase">
+                    {s.santriNama?.charAt(0) || 'S'}
                   </div>
-                  <Link to="/ustadz/riwayat" className="flex items-center justify-center gap-1 bg-slate-50 text-slate-600 border border-slate-200 font-semibold px-3 py-1.5 rounded-lg text-xs hover:bg-slate-100 transition-colors">
-                    <Edit className="w-3 h-3" /> Edit
-                  </Link>
+                  <div>
+                    <p className="font-bold text-slate-800 text-sm">{s.santriNama}</p>
+                    <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1 mt-0.5">
+                      <span className="font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider">{s.jenis}</span>
+                      <span>•</span>
+                      <span>{s.surah} ({s.ayatAwal}-{s.ayatAkhir})</span>
+                    </div>
+                    <FormatPenilaian item={s} />
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
+                <Link to="/ustadz/riwayat" className="flex items-center justify-center gap-1 bg-white text-slate-600 border border-slate-200 shadow-sm font-semibold px-3 py-1.5 rounded-lg text-xs hover:bg-slate-50 hover:text-emerald-600 transition-colors">
+                  <Edit className="w-3 h-3" /> Edit
+                </Link>
+              </div>
+            </div>
           ))}
         </div>
       </section>

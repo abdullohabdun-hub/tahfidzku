@@ -1,8 +1,9 @@
 import { useState } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import { Card, CardContent } from "../../components/ui/card"
-import { Clock } from "lucide-react"
+import { Clock, Flame } from "lucide-react"
 import { getWaliDashboard } from "../../server-fns/dashboard"
+import { FormatPenilaian } from "../../components/FormatPenilaian"
 
 export const Route = createFileRoute('/wali/')({
   component: WaliDashboard,
@@ -85,6 +86,24 @@ function WaliDashboard() {
           <p className="text-emerald-700 text-[11px] font-bold pb-1">{today}</p>
         </div>
 
+        {/* Streak Card */}
+        <div className="bg-gradient-to-r from-orange-400 to-amber-500 rounded-2xl p-4 text-white shadow-lg shadow-orange-400/50 flex items-center justify-between">
+          <div>
+            <h3 className="font-bold text-base opacity-90 flex items-center gap-1.5">
+              <Flame className="w-4 h-4 animate-pulse" /> {activeData.streakMode === 'daily' ? 'Daily' : 'Weekly'} Streak
+            </h3>
+            <p className="text-2xl font-bold mt-1">{activeData.streak} {activeData.streakMode === 'daily' ? 'Hari' : 'Minggu'}</p>
+            <p className="text-xs opacity-90 mt-1 font-medium">
+              {activeData.streakMode === 'daily' 
+                ? 'Setor setiap hari untuk menjaga api!' 
+                : 'Minimal 1x setor per minggu!'}
+            </p>
+          </div>
+          <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm shadow-inner">
+            <Flame className="w-6 h-6 text-white animate-pulse" fill="currentColor" />
+          </div>
+        </div>
+
         {/* Motivation Card */}
         <div className="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-2xl p-4 text-white shadow-md">
           <p className="text-emerald-50 text-xs italic text-center">"Siapa yang membaca Al-Qur'an dan mengamalkan isinya, maka Allah akan memakaikan mahkota kepada kedua orang tuanya pada hari kiamat..." (HR. Abu Daud)</p>
@@ -147,10 +166,13 @@ function WaliDashboard() {
           <p className="text-sm font-bold text-slate-800 capitalize">{riwayat.length > 0 ? riwayat[0].surah || '-' : '-'}</p>
           <p className="text-xs text-slate-400">-</p>
         </div>
-        <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
-          <p className="text-xs font-semibold text-slate-500 mb-1">Kelancaran Terakhir</p>
-          <p className="text-sm font-bold text-emerald-600 capitalize">{riwayat.length > 0 ? (riwayat[0].kualitas === 'mengulang' || riwayat[0].kualitas === 'terbata' ? 'Mengulang' : 'Baik') : '-'}</p>
-          <p className="text-xs text-slate-400">{riwayat.length > 0 ? riwayat[0].jenis : '-'}</p>
+        <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex flex-col items-center justify-center">
+          <p className="text-xs font-semibold text-slate-500 mb-2">Penilaian Terakhir</p>
+          {riwayat.length > 0 ? (
+            <FormatPenilaian item={riwayat[0]} />
+          ) : (
+            <p className="text-sm font-bold text-slate-400">-</p>
+          )}
         </div>
       </div>
 
@@ -167,15 +189,6 @@ function WaliDashboard() {
               const date = new Date(item.createdAt)
               const dateStr = date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
               const timeStr = date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
-
-              let kualitasLabel = 'Baik'
-              let kualitasColor = 'text-emerald-600 bg-emerald-100 border-emerald-200'
-              
-              if (item.kualitas === 'mengulang' || item.kualitas === 'terbata') {
-                kualitasLabel = item.kualitas === 'mengulang' ? 'Mengulang' : 'Terbata'
-                kualitasColor = 'text-amber-700 bg-amber-100 border-amber-200'
-              }
-
               return (
                 <div key={item.id} className="relative flex items-start group">
                   {/* Icon / Bullet */}
@@ -187,9 +200,7 @@ function WaliDashboard() {
                   <div className="bg-white p-3.5 rounded-xl border border-slate-100 shadow-sm flex-1 ml-3">
                     <div className="flex justify-between items-start mb-1.5">
                       <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1"><Clock className="w-3 h-3" /> {dateStr}, {timeStr}</span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${kualitasColor}`}>
-                        {kualitasLabel}
-                      </span>
+                      <FormatPenilaian item={item} />
                     </div>
                     <h4 className="font-bold text-slate-800 text-sm mb-0.5 capitalize">{item.jenis}: {item.surah || 'Surah'}</h4>
                     <p className="text-slate-500 text-[11px]">Dinilai oleh: {item.ustadzNama}</p>

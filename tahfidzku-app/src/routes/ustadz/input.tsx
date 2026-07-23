@@ -109,37 +109,37 @@ function InputSetoranPage() {
     <div className="max-w-xl mx-auto space-y-5 pb-8">
       {/* 1. Pemilihan Kelas (hanya muncul jika kelas > 1) */}
       {kelasList.length > 1 && (
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm relative z-20">
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Pilih Kelas / Halaqoh</label>
-          <div className="relative">
+        <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm hover:shadow transition-shadow">
+          <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Pilih Kelas / Halaqoh</label>
+          <div className="relative group">
             <select
               value={selectedKelasNama}
               onChange={(e) => setSelectedKelasNama(e.target.value)}
-              className="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block px-3 py-2.5 pr-8 font-medium"
+              className="w-full appearance-none bg-slate-50/50 border border-slate-200/80 text-slate-800 text-sm rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 block px-4 py-3 pr-10 font-semibold transition-all hover:bg-slate-50"
             >
               <option value="Semua Kelas">-- Semua Kelas --</option>
               {kelasList.map((k) => (
                 <option key={k} value={k}>{k}</option>
               ))}
             </select>
-            <ChevronDown className="h-4 w-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
+            <ChevronDown className="h-4 w-4 text-slate-400 absolute right-4 top-3.5 pointer-events-none group-hover:text-emerald-500 transition-colors" />
           </div>
         </div>
       )}
 
       {/* 2. Pemilihan Santri */}
-      <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm relative z-10">
-        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Santri yang Disimak</label>
+      <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm hover:shadow transition-shadow">
+        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Santri yang Disimak</label>
         {santriFiltered.length === 0 ? (
-          <div className="p-3 text-sm text-slate-500 text-center bg-slate-50 rounded-lg border border-slate-100">
+          <div className="p-4 text-sm text-slate-500 text-center bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
             Tidak ada santri di kelas ini.
           </div>
         ) : (
-          <div className="relative">
+          <div className="relative group">
             <select
               value={santriId}
               onChange={(e) => setSantriId(e.target.value)}
-              className="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block px-3 py-2.5 pr-8 font-medium"
+              className="w-full appearance-none bg-slate-50/50 border border-slate-200/80 text-slate-800 text-sm rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 block px-4 py-3 pr-10 font-semibold transition-all hover:bg-slate-50"
             >
               {santriFiltered.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -147,29 +147,29 @@ function InputSetoranPage() {
                 </option>
               ))}
             </select>
-            <ChevronDown className="h-4 w-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
+            <ChevronDown className="h-4 w-4 text-slate-400 absolute right-4 top-3.5 pointer-events-none group-hover:text-emerald-500 transition-colors" />
           </div>
         )}
       </div>
 
       {/* UJIAN PENDING BANNER */}
       {selectedSantri?.juzUjianPending && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+        <div className="bg-rose-50 border border-rose-200/60 rounded-xl p-4 flex items-start gap-3 shadow-sm">
+          <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="text-sm font-bold text-red-800">
-              ⛔ Ziyadah diblokir — Ujian Kenaikan Juz {selectedSantri.juzUjianPending} belum diselesaikan
+            <p className="text-sm font-bold text-rose-800 tracking-tight">
+              Ziyadah Diblokir
             </p>
-            <p className="text-xs text-red-600 mt-0.5">
-              Santri ini harus lulus ujian terlebih dahulu sebelum bisa melanjutkan hafalan ke juz berikutnya.
+            <p className="text-xs text-rose-600/90 mt-0.5 mb-3 font-medium">
+              Santri ini harus lulus Ujian Kenaikan Juz {selectedSantri.juzUjianPending} terlebih dahulu.
             </p>
+            <Link
+              to="/ustadz/ujian"
+              className="inline-flex items-center text-xs font-bold bg-white text-rose-700 px-4 py-2 rounded-lg shadow-sm border border-rose-100 hover:bg-rose-100 transition-colors"
+            >
+              Buka Ujian →
+            </Link>
           </div>
-          <Link
-            to="/ustadz/ujian"
-            className="shrink-0 text-xs font-bold bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg transition-colors"
-          >
-            Buka Ujian →
-          </Link>
         </div>
       )}
 

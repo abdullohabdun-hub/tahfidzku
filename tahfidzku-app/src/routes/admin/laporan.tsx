@@ -108,7 +108,7 @@ function AdminLaporanBulanan() {
       accessorKey: 'kualitas',
       header: 'Kualitas',
       cell: ({ row }: any) => {
-        return <FormatPenilaian item={row.original} rubrikAktif={rubrikAktif} />
+        return <FormatPenilaian item={row.original} />
       }
     },
     {
@@ -173,25 +173,25 @@ function AdminLaporanBulanan() {
       </div>
 
       {/* TABLE SECTION */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm print:border-none print:shadow-none print:rounded-none">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm print:border-none print:shadow-none print:rounded-none overflow-hidden mt-6">
         
         {loading ? (
-          <div className="flex items-center justify-center p-12 text-emerald-600">
+          <div className="flex items-center justify-center py-20 text-emerald-600">
             <Loader2 className="animate-spin w-8 h-8" />
           </div>
         ) : data.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-16 text-slate-400">
+          <div className="flex flex-col items-center justify-center py-20 text-slate-400">
             <FileText className="w-12 h-12 mb-4 text-slate-200" />
             <p>Tidak ada catatan setoran pada bulan ini.</p>
           </div>
         ) : (
           <div className="overflow-x-auto print:overflow-visible">
-            <table className="w-full text-left text-sm print:text-[11px] print:w-full">
-              <thead className="bg-slate-50 border-b border-slate-200 print:bg-white print:border-b-2 print:border-slate-800">
+            <table className="w-full text-left text-[13px] whitespace-nowrap print:text-[11px] print:w-full">
+              <thead className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-semibold uppercase tracking-[0.04em] text-slate-500 print:bg-white print:border-b-2 print:border-slate-800 print:text-black">
                 {table.getHeaderGroups().map(headerGroup => (
                   <tr key={headerGroup.id}>
                     {headerGroup.headers.map(header => (
-                      <th key={header.id} className="p-3 font-semibold text-slate-700 print:text-black">
+                      <th key={header.id} className="px-4 py-3 print:text-black">
                         {header.isPlaceholder
                           ? null
                           : flexRender(
@@ -205,9 +205,9 @@ function AdminLaporanBulanan() {
               </thead>
               <tbody>
                 {table.getRowModel().rows.map(row => (
-                  <tr key={row.id} className="border-b border-slate-100 hover:bg-slate-50 print:border-b print:border-slate-300 print:hover:bg-transparent">
+                  <tr key={row.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors print:border-b print:border-slate-300 print:hover:bg-transparent">
                     {row.getVisibleCells().map(cell => (
-                      <td key={cell.id} className="p-3 text-slate-700 print:text-black">
+                      <td key={cell.id} className="px-4 py-3 text-slate-700 print:text-black">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
                     ))}

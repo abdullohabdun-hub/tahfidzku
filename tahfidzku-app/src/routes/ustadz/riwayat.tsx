@@ -16,9 +16,9 @@ export const Route = createFileRoute('/ustadz/riwayat')({
 
 
 const JENIS_MAP = {
-  ziyadah: { label: 'Ziyadah', color: 'bg-purple-100 text-purple-800' },
-  sabqi: { label: 'Sabqi', color: 'bg-blue-100 text-blue-800' },
-  manzil: { label: 'Manzil', color: 'bg-indigo-100 text-indigo-800' },
+  ziyadah: { label: 'Ziyadah', color: 'bg-purple-100/60 text-purple-800' },
+  sabqi: { label: 'Sabqi', color: 'bg-blue-100/60 text-blue-800' },
+  manzil: { label: 'Manzil', color: 'bg-indigo-100/60 text-indigo-800' },
 }
 
 function UstadzRiwayatSetoran() {
@@ -159,19 +159,19 @@ function UstadzRiwayatSetoran() {
              const isSelfReport = item.sumber === 'santri_self_report'
 
              return (
-               <div key={item.id} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm relative overflow-hidden flex flex-col gap-3">
+               <div key={item.id} className="bg-white rounded-xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 relative overflow-hidden flex flex-col gap-3">
                  
                  {/* Badges Bar (Atas Kanan) */}
                  <div className="absolute top-0 right-0 flex">
-                   <div className={`text-[9px] font-bold px-2 py-0.5 rounded-bl-lg uppercase tracking-widest ${jm?.color || 'bg-slate-100 text-slate-800'}`}>
+                   <div className={`text-[9px] font-bold px-2.5 py-1 rounded-bl-lg uppercase tracking-widest ${jm?.color || 'bg-slate-100/80 text-slate-800'}`}>
                      {jm?.label || item.jenis}
                    </div>
                    {isSelfReport ? (
-                     <div className="bg-orange-100 text-orange-800 text-[9px] font-bold px-2 py-0.5 uppercase tracking-widest">
+                     <div className="bg-orange-100/70 text-orange-800 text-[9px] font-bold px-2.5 py-1 uppercase tracking-widest">
                        MANDIRI
                      </div>
                    ) : (
-                     <div className="bg-emerald-100 text-emerald-800 text-[9px] font-bold px-2 py-0.5 uppercase tracking-widest">
+                     <div className="bg-emerald-100/70 text-emerald-800 text-[9px] font-bold px-2.5 py-1 uppercase tracking-widest">
                        USTADZ
                      </div>
                    )}
@@ -188,7 +188,7 @@ function UstadzRiwayatSetoran() {
                      </h3>
                    </div>
                    
-                   <FormatPenilaian item={item} rubrikAktif={rubrikAktif} />
+                   <FormatPenilaian item={item} />
                  </div>
 
                  {item.catatan && (
@@ -245,13 +245,13 @@ function UstadzRiwayatSetoran() {
               </div>
             ) : (
               riwayatAbsensi.map(sesi => (
-                <div key={sesi.id} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col gap-3">
-                  <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-                    <div className="font-semibold text-slate-800 flex items-center gap-2">
+                <div key={sesi.id} className="bg-white rounded-xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex flex-col gap-4">
+                  <div className="flex justify-between items-center border-b border-slate-50 pb-3">
+                    <div className="font-bold text-slate-800 flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-emerald-600" />
                       {format(new Date(sesi.tanggal), 'EEEE, dd MMMM yyyy', { locale: id })}
                     </div>
-                    <span className="text-xs text-slate-500">{format(new Date(sesi.createdAt), 'HH:mm')}</span>
+                    <span className="text-xs font-semibold text-slate-400 bg-slate-50 px-2 py-1 rounded-full">{format(new Date(sesi.createdAt), 'HH:mm')}</span>
                   </div>
                   
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-center text-sm">

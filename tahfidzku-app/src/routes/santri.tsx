@@ -69,14 +69,14 @@ function SantriLayout() {
             <Link
               key={item.path}
               to={item.path}
-              className={`flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors ${
-                isActive ? "text-emerald-600" : "text-slate-500 hover:text-emerald-500"
-              }`}
+              className="relative flex flex-col items-center justify-center w-full h-full space-y-1 group"
             >
-              <div className={`${isActive ? "scale-110 transition-transform" : ""}`}>
-                {item.icon}
+              <div className={`relative flex items-center justify-center p-1.5 rounded-full transition-all duration-300 ${isActive ? "text-emerald-700 bg-emerald-100/80 shadow-sm" : "text-slate-500 group-hover:text-emerald-600"}`}>
+                <div className={`${isActive ? "scale-110" : "scale-100"} transition-transform duration-300`}>
+                  {item.icon}
+                </div>
               </div>
-              <span className={`text-[10px] font-medium ${isActive ? "font-bold" : ""}`}>
+              <span className={`text-[10px] transition-all duration-300 ${isActive ? "font-bold text-emerald-800" : "font-medium text-slate-500"}`}>
                 {item.name}
               </span>
             </Link>
@@ -85,12 +85,12 @@ function SantriLayout() {
       </nav>
 
       {/* Desktop Sidebar (Optional, if viewed on PC) */}
-      <aside className="hidden md:flex fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-200 flex-col z-40">
+      <aside className="hidden md:flex fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-200/60 flex-col z-40 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
         <div className="p-6 flex items-center gap-2 border-b border-slate-100">
           <div className="bg-emerald-600 p-1.5 rounded-md">
             <BookOpen className="h-5 w-5 text-white" />
           </div>
-          <span className="font-bold text-xl tracking-tight text-emerald-950">TahfidzKu</span>
+          <span className="font-bold text-xl tracking-tight text-emerald-950 truncate">TahfidzKu</span>
         </div>
         <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
           {navItems.map((item) => {

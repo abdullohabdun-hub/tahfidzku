@@ -152,7 +152,7 @@ function AbsensiUstadzPage() {
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+      <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow transition-shadow">
         <form onSubmit={handleBukaSesi} className="flex flex-col md:flex-row gap-4 items-end">
           <div className="flex-1 w-full">
             <label className="block text-sm font-medium mb-1">Pilih Kelas</label>
@@ -198,9 +198,9 @@ function AbsensiUstadzPage() {
             </Button>
           </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm divide-y divide-slate-100">
+          <div className="bg-white rounded-xl border border-slate-100 overflow-hidden shadow-sm divide-y divide-slate-50">
             {daftarSantri.map((santri, index) => (
-              <div key={santri.id} className="p-4 sm:p-5 flex flex-col sm:flex-row gap-4 items-start sm:items-center hover:bg-slate-50 transition-colors">
+              <div key={santri.id} className="p-5 flex flex-col sm:flex-row gap-4 items-start sm:items-center hover:bg-slate-50/80 transition-colors">
                 <div className="w-full sm:w-1/3 flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-medium text-xs shrink-0">
                     {index + 1}

@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, Link, useLocation, useRouter } from "@tanstack/react-router"
-import { LayoutDashboard, PieChart, GraduationCap, Contact, Users, Library, Settings, LogOut, Menu, ChevronLeft, ChevronRight, Bell, Loader2 } from "lucide-react"
+import { LayoutDashboard, PieChart, GraduationCap, Contact, Users, Library, Settings, LogOut, Menu, ChevronLeft, ChevronRight, Bell, Loader2, Printer } from "lucide-react"
 import { useState, useEffect } from "react"
 import { Button } from "../components/ui/button"
 import { checkAuth, logout } from "../server-fns/auth"
@@ -55,6 +55,7 @@ function AdminLayout() {
     { name: "Riwayat Ujian", path: "/admin/ujian", icon: GraduationCap },
     { name: "Data Ustadz", path: "/admin/ustadz", icon: Contact },
     { name: "Data Santri", path: "/admin/santri", icon: Users },
+    { name: "Cetak Rapor", path: "/admin/rapor", icon: Printer },
     { name: "Kelas / Halaqoh", path: "/admin/kelas", icon: Library },
     { name: "Pengaturan", path: "/admin/pengaturan", icon: Settings },
   ]

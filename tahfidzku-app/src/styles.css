@@ -143,3 +143,38 @@ body {
     @apply font-sans;
   }
 }
+
+/* ─── Aturan Cetak / Print ─────────────────────────────── */
+@media print {
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
+
+  /* Reset background agar tinta tidak boros */
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Sembunyikan elemen UI (sidebar, navbar, toolbar) */
+  aside,
+  header,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Pastikan area konten mengisi seluruh halaman */
+  main {
+    display: block !important;
+    width: 100% !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Pastikan warna border dan teks tetap terlihat di print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

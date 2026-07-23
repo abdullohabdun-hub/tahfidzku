@@ -184,13 +184,13 @@ function DataKelasPage() {
         {loading ? (
           <div className="p-8 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-emerald-600" /></div>
         ) : (
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
+          <table className="w-full text-left text-[13px] whitespace-nowrap">
+            <thead className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-semibold uppercase tracking-[0.04em] text-slate-500">
               <tr>
-                <th className="p-4 font-semibold text-slate-600">Nama Kelas</th>
-                <th className="p-4 font-semibold text-slate-600">Ustadz Pengampu</th>
-                <th className="p-4 font-semibold text-slate-600">Jadwal</th>
-                <th className="p-4 font-semibold text-slate-600 text-right">Aksi</th>
+                <th className="px-4 py-3">Nama Kelas</th>
+                <th className="px-4 py-3">Ustadz Pengampu</th>
+                <th className="px-4 py-3">Jadwal</th>
+                <th className="px-4 py-3 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -201,28 +201,28 @@ function DataKelasPage() {
               ) : (
                 kelasList.map(k => (
                   <tr key={k.id} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="p-4 font-medium flex items-center gap-3">
+                    <td className="px-4 py-3 font-medium flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-700">
                         <BookOpen className="w-4 h-4" />
                       </div>
                       {k.nama}
                     </td>
-                    <td className="p-4 text-slate-600">
+                    <td className="px-4 py-3 text-slate-600">
                       {k.ustadzNama ? <span className="font-medium text-emerald-700">Ust. {k.ustadzNama}</span> : <span className="text-slate-400 italic">Belum ada</span>}
                     </td>
-                    <td className="p-4">
+                    <td className="px-4 py-3">
                       {k.hariPertemuan && k.hariPertemuan.length > 0 ? (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
                           <span className="capitalize">{k.hariPertemuan.join(', ')}</span>
                           {(k.jamMulai || k.jamSelesai) && ` · ${k.jamMulai?.substring(0,5) || ''}–${k.jamSelesai?.substring(0,5) || ''}`}
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
                           Jadwal belum diatur
                         </span>
                       )}
                     </td>
-                    <td className="p-4 text-right flex justify-end gap-2">
+                    <td className="px-4 py-3 text-right flex justify-end gap-2">
                       <Button variant="ghost" size="sm" onClick={() => handleEdit(k)} className="text-blue-500 hover:text-blue-700 hover:bg-blue-50">
                         <Edit className="w-4 h-4" />
                       </Button>

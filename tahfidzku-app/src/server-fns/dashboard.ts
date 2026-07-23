@@ -1,11 +1,12 @@
 import { createServerFn } from '@tanstack/react-start'
-import { and, eq, desc, gte, lte, sql } from 'drizzle-orm'
+import { and, eq, desc, gte } from 'drizzle-orm'
 import { db } from '../db'
 import { santri, setoran, users, kelas, tenants, waliSantri } from '../db/schema'
 import { getAuthSession, requireRole } from '../middleware/auth.middleware'
 import { success, handleError } from '../lib/response'
 import { AuthenticationError } from '../lib/errors'
 import { hitungProgresHalaman, kalkulasiJuzProgress } from '../lib/quranMapper'
+import { hitungDailyStreak, hitungWeeklyStreak } from '../lib/streak'
 
 // ==========================================
 // 1. ADMIN DASHBOARD
@@ -202,6 +203,25 @@ export const getSantriDashboardData = createServerFn({ method: 'POST' }).handler
         }
       }
 
+      // Kalkulasi Streak Cerdas (Daily atau Weekly)
+      const duaTahunLalu = new Date()
+      duaTahunLalu.setDate(duaTahunLalu.getDate() - 730)
+      
+      const riwayatStreak = await db.query.setoran.findMany({
+        where: and(
+          eq(setoran.santriId, santriId),
+          gte(setoran.createdAt, duaTahunLalu)
+        ),
+        orderBy: [desc(setoran.createdAt)],
+        columns: { createdAt: true }
+      })
+
+      const rawDates = riwayatStreak.map(s => s.createdAt)
+      const streakMode = profil?.tipe === 'reguler' ? 'daily' : 'weekly'
+      const calculatedStreak = streakMode === 'daily' 
+        ? hitungDailyStreak(rawDates) 
+        : hitungWeeklyStreak(rawDates)
+
       return success({
         profil,
         riwayat,
@@ -211,7 +231,8 @@ export const getSantriDashboardData = createServerFn({ method: 'POST' }).handler
           percentage: progressPercentage,
         },
         murojaahChart,
-        streak: 5,
+        streak: calculatedStreak,
+        streakMode: streakMode,
       }, "Data dashboard berhasil diambil")
     } catch (err) {
       return handleError(err)
@@ -282,6 +303,25 @@ export const getWaliDashboard = createServerFn({ method: 'POST' }).handler(
           progressPercentage = Math.round((juzSelesai / targetJuz) * 100)
         }
 
+        // Kalkulasi Streak Cerdas (Daily atau Weekly)
+        const duaTahunLalu = new Date()
+        duaTahunLalu.setDate(duaTahunLalu.getDate() - 730)
+        
+        const riwayatStreak = await db.query.setoran.findMany({
+          where: and(
+            eq(setoran.santriId, santriId),
+            gte(setoran.createdAt, duaTahunLalu)
+          ),
+          orderBy: [desc(setoran.createdAt)],
+          columns: { createdAt: true }
+        })
+
+        const rawDates = riwayatStreak.map(s => s.createdAt)
+        const streakMode = profil.tipe === 'reguler' ? 'daily' : 'weekly'
+        const calculatedStreak = streakMode === 'daily' 
+          ? hitungDailyStreak(rawDates) 
+          : hitungWeeklyStreak(rawDates)
+
         daftarAnak.push({
           profil: {
             ...profil,
@@ -295,7 +335,9 @@ export const getWaliDashboard = createServerFn({ method: 'POST' }).handler(
             targetJuz,
             juzSelesai,
             percentage: progressPercentage,
-          }
+          },
+          streak: calculatedStreak,
+          streakMode: streakMode
         })
       }
       

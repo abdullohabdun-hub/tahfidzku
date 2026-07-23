@@ -78,8 +78,8 @@ function UstadzPantauMurojaah() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center gap-2">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
           <Clock className="w-5 h-5 text-emerald-600" />
           <h2 className="font-semibold text-slate-700">50 Laporan Terakhir</h2>
         </div>
@@ -91,15 +91,15 @@ function UstadzPantauMurojaah() {
         ) : (
           <div className="divide-y divide-slate-100">
             {riwayat.map((item: any) => (
-              <div key={item.id} className="p-4 hover:bg-slate-50 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div key={item.id} className="p-5 hover:bg-slate-50/80 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-100">
                     <BookOpen className="w-5 h-5" />
                   </div>
                   <div>
                     <h3 className="font-bold text-slate-800">{item.santriNama}</h3>
-                    <div className="flex items-center gap-2 text-sm text-slate-500 mt-0.5">
-                      <span className="font-medium text-emerald-700 uppercase text-xs bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">{item.jenis}</span>
+                    <div className="flex items-center gap-2 text-sm text-slate-500 mt-1">
+                      <span className="font-bold text-emerald-700 uppercase text-[10px] tracking-wider bg-emerald-100/50 px-2 py-0.5 rounded-full">{item.jenis}</span>
                       <span>•</span>
                       {item.surat ? (
                         <span>Surat {item.surat} (Juz {item.juz})</span>
@@ -114,7 +114,7 @@ function UstadzPantauMurojaah() {
                     <div className="text-xs text-slate-400 mb-1 text-right">
                       {format(new Date(item.tanggal), 'd MMM yyyy, HH:mm', { locale: id })}
                     </div>
-                    <FormatPenilaian item={item} rubrikAktif={rubrikAktif} />
+                    <FormatPenilaian item={item} />
                   </div>
                 </div>
               </div>

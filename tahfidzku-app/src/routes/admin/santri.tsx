@@ -1,6 +1,6 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { Users, Plus, Loader2, Trash2, Edit, VenetianMask } from 'lucide-react'
+import { Users, Plus, Loader2, Trash2, Edit, VenetianMask, Printer, Search } from 'lucide-react'
 import { getSantriList, createSantri, deleteSantri, updateSantri } from '../../server-fns/santri'
 import { getKelasList } from '../../server-fns/kelas'
 import { impersonateUser } from '../../server-fns/impersonate'
@@ -390,19 +390,24 @@ function DataSantriPage() {
       )}
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mt-6">
-        <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row gap-4 justify-between items-center">
-          <input
-            type="text"
-            placeholder="Cari nama santri..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="w-full sm:max-w-xs border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-emerald-500 focus:border-emerald-500"
-          />
+        <div className="p-4 border-b border-slate-100 bg-white flex flex-col sm:flex-row gap-4 justify-between items-center">
+          <div className="relative w-full sm:max-w-xs">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-slate-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="Cari nama santri..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+            />
+          </div>
           <div className="flex gap-2 w-full sm:w-auto">
             <select
               value={filterTipe}
               onChange={e => setFilterTipe(e.target.value as any)}
-              className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-emerald-500 w-full sm:w-auto"
+              className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white w-full sm:w-auto"
             >
               <option value="all">Semua Tipe</option>
               <option value="dewasa">Dewasa / Online</option>
@@ -411,7 +416,7 @@ function DataSantriPage() {
             <select
               value={filterKelas}
               onChange={e => setFilterKelas(e.target.value)}
-              className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-emerald-500 w-full sm:w-auto"
+              className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white w-full sm:w-auto"
             >
               <option value="all">Semua Kelas</option>
               <option value="none">Belum Ada Kelas</option>
@@ -424,17 +429,18 @@ function DataSantriPage() {
         {loading ? (
           <div className="p-8 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-emerald-600" /></div>
         ) : (
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="p-4 font-semibold text-slate-600">Nama Santri</th>
-                <th className="p-4 font-semibold text-slate-600">Tipe</th>
-                <th className="p-4 font-semibold text-slate-600">Kelas</th>
-                <th className="p-4 font-semibold text-slate-600">Hafalan Awal</th>
-                <th className="p-4 font-semibold text-slate-600">Target</th>
-                <th className="p-4 font-semibold text-slate-600 text-right">Aksi</th>
-              </tr>
-            </thead>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-[13px] whitespace-nowrap">
+              <thead className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-semibold uppercase tracking-[0.04em] text-slate-500">
+                <tr>
+                  <th className="px-4 py-3">Nama Santri</th>
+                  <th className="px-4 py-3">Tipe</th>
+                  <th className="px-4 py-3">Kelas</th>
+                  <th className="px-4 py-3">Hafalan Awal</th>
+                  <th className="px-4 py-3">Target</th>
+                  <th className="px-4 py-3 text-right">Aksi</th>
+                </tr>
+              </thead>
             <tbody>
               {santri.length === 0 ? (
                 <tr>
@@ -449,98 +455,78 @@ function DataSantriPage() {
                     return matchSearch && matchTipe && matchKelas
                   })
                   .map(s => (
-                  <tr key={s.id} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="p-4 font-medium flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700">
-                        <Users className="w-4 h-4" />
-                      </div>
-                      {s.nama}
-                    </td>
-                    <td className="p-4">
-                      {s.tipe === 'dewasa' 
-                        ? (
-                          <div>
-                            <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-md text-xs font-medium">Dewasa / Online</span>
-                            {(s.email || s.noWa) && (
-                              <div className="mt-2 text-[10px] text-slate-500 font-mono bg-slate-50 p-1.5 rounded border border-slate-200 w-max leading-tight space-y-1">
-                                {s.email && <div>E: {s.email}</div>}
-                                {s.noWa && <div>W: {s.noWa}</div>}
-                              </div>
-                            )}
+                    <tr key={s.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                            <Users className="w-4 h-4" />
                           </div>
-                        )
-                        : (
-                          <div>
-                            <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded-md text-xs font-medium">Reguler (Anak)</span>
-                            {(s.semuaWali && s.semuaWali.length > 0) ? (
-                              <div className="mt-2 text-[10px] text-slate-500 font-mono bg-slate-50 p-1.5 rounded border border-slate-200 w-max leading-tight space-y-1">
-                                {s.semuaWali.length === 1 ? (
-                                  <>
-                                    <div>Wali: {s.semuaWali[0].nama}</div>
-                                    {s.semuaWali[0].email && <div>E: {s.semuaWali[0].email}</div>}
-                                    {s.semuaWali[0].noWa && <div>W: {s.semuaWali[0].noWa}</div>}
-                                  </>
-                                ) : (
-                                  <details className="cursor-pointer group">
-                                    <summary className="font-semibold text-blue-600 outline-none list-none flex items-center gap-1">
-                                      Wali: {s.semuaWali[0].nama} <span className="bg-blue-100 text-blue-700 px-1 py-0.5 rounded-sm text-[9px]">+{s.semuaWali.length - 1} wali</span>
-                                    </summary>
-                                    <div className="pt-2 space-y-2 pb-1">
-                                      {s.semuaWali.map((w: any, idx: number) => (
-                                        <div key={idx} className="border-l-2 border-blue-200 pl-2">
-                                          <div className="font-semibold text-slate-700">{w.nama}</div>
-                                          {w.email && <div>E: {w.email}</div>}
-                                          {w.noWa && <div>W: {w.noWa}</div>}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </details>
-                                )}
-                              </div>
-                            ) : (s.waliNama || s.waliEmail || s.waliNoWa) ? (
-                              <div className="mt-2 text-[10px] text-slate-500 font-mono bg-slate-50 p-1.5 rounded border border-slate-200 w-max leading-tight space-y-1">
-                                {s.waliNama && <div>Wali: {s.waliNama}</div>}
-                                {s.waliEmail && <div>E: {s.waliEmail}</div>}
-                                {s.waliNoWa && <div>W: {s.waliNoWa}</div>}
-                              </div>
-                            ) : null}
+                          <div className="font-semibold text-slate-800">
+                            {s.nama}
                           </div>
-                        )
-                      }
-                    </td>
-                    <td className="p-4 text-slate-600">
-                      {s.kelasNama ? <span className="bg-slate-100 px-2 py-1 rounded-md text-xs">{s.kelasNama}</span> : <span className="text-slate-400 italic text-xs">Belum ada kelas</span>}
-                    </td>
-                    <td className="p-4 text-slate-600">
-                      {s.juzProgress && s.juzProgress.length > 0 && (
-                        <div className="text-xs font-medium text-emerald-700">Selesai: {s.juzProgress.length} Juz ({s.juzProgress.join(', ')})</div>
-                      )}
-                      {s.batasHafalanJuz && (
-                        <div className="text-xs text-slate-500 mt-1">
-                          Batas: Juz {s.batasHafalanJuz} ({s.batasHafalanSurah} ayat {s.batasHafalanAyat})
                         </div>
-                      )}
-                      {(!s.juzProgress || s.juzProgress.length === 0) && !s.batasHafalanJuz && (
-                        <div className="text-xs text-slate-400 italic">Nol Hafalan</div>
-                      )}
-                    </td>
-                    <td className="p-4 text-slate-600">{s.targetJuz} Juz</td>
-                    <td className="p-4 text-right flex justify-end gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => handleEdit(s)} className="text-blue-500 hover:text-blue-700 hover:bg-blue-50" title="Edit">
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => setImpersonateTarget(s)} className="text-orange-500 hover:text-orange-700 hover:bg-orange-50" title="Menyamar">
-                        <VenetianMask className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleDelete(s.id)} className="text-red-500 hover:text-red-700 hover:bg-red-50" title="Hapus">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col">
+                          <span className={`text-[11px] font-medium px-2 py-0.5 rounded-md w-fit ${s.tipe === 'dewasa' ? 'bg-purple-50 text-purple-700 border border-purple-100' : 'bg-blue-50 text-blue-700 border border-blue-100'}`}>
+                            {s.tipe === 'dewasa' ? 'Dewasa / Online' : 'Reguler / Anak'}
+                          </span>
+                          {s.tipe === 'dewasa' && s.noWa && (
+                            <span className="text-[10px] text-slate-500 mt-1">
+                              WA: {s.noWa}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-slate-600">
+                        <div className="flex flex-col">
+                          <span className="font-medium text-slate-700">
+                            {s.kelasNama ?? <span className="text-slate-400 italic">-</span>}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col gap-0.5 text-xs">
+                          {s.juzProgress && s.juzProgress.length > 0 ? (
+                            <span className="font-semibold text-emerald-600">
+                              Selesai: {s.juzProgress.length} Juz ({s.juzProgress.slice().sort((a,b)=>b-a).join(', ')})
+                            </span>
+                          ) : <span className="text-slate-400 italic">Selesai: 0 Juz</span>}
+                          <span className="text-slate-500">
+                            Batas: {s.batasHafalanJuz ? `Juz ${s.batasHafalanJuz}` : '-'}
+                            {s.batasHafalanSurah && ` (${s.batasHafalanSurah} ayat ${s.batasHafalanAyat || '-'})`}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-slate-600 font-medium">
+                        {s.targetJuz} Juz
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-end items-center gap-1">
+                          {s.tipe === 'dewasa' && (
+                            <Button onClick={() => setImpersonateTarget(s)} variant="ghost" size="icon" className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" title="Mode Menyamar (Akses sebagai Santri)">
+                              <VenetianMask className="w-4 h-4" />
+                            </Button>
+                          )}
+                          <Link to="/admin/rapor/$santriId" params={{ santriId: s.id }}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" title="Cetak Rapor">
+                              <Printer className="w-4 h-4" />
+                            </Button>
+                          </Link>
+                          <Button onClick={() => handleEdit(s)} variant="ghost" size="icon" className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50" title="Edit">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button onClick={() => handleDelete(s.id)} variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" title="Hapus">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
               )}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

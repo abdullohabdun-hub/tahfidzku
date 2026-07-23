@@ -12,26 +12,7 @@ import { cariJuzUntukAyat, getAyatTerakhirJuz, getValidJuzList } from '../lib/qu
 
 
 // Helper for dynamic validation
-async function validatePenilaianKustom(tenantId: string, penilaianKustom: any) {
-  const aktifRubrik = await db.query.rubrikPenilaian.findMany({
-    where: and(
-      eq(rubrikPenilaian.tenantId, tenantId),
-      eq(rubrikPenilaian.aktif, true)
-    )
-  })
-
-  if (aktifRubrik.length > 0) {
-    if (!penilaianKustom || typeof penilaianKustom !== 'object') {
-      throw new ValidationError('Penilaian harus diisi sesuai rubrik yang berlaku.')
-    }
-    for (const r of aktifRubrik) {
-      if (!penilaianKustom[r.key]) {
-        throw new ValidationError(`Nilai untuk dimensi "${r.label}" wajib diisi.`)
-      }
-    }
-  }
-}
-
+// Legacy validatePenilaianKustom removed since we use standard scoring 1-5
 
 // ═══════════════════════════════════════════════════════
 // 1. INPUT SETORAN BARU (USTADZ)
@@ -47,7 +28,7 @@ export const createSetoran = createServerFn({ method: 'POST' })
       const tenantId = session.user.tenantId
 
       // Validasi Wajib-Isi Dinamis
-      await validatePenilaianKustom(tenantId, data.penilaianKustom)
+
 
       // GATING: Blokir Ziyadah baru jika santri masih punya ujian kenaikan pending
       if (data.jenis === 'ziyadah') {
@@ -83,8 +64,10 @@ export const createSetoran = createServerFn({ method: 'POST' })
           ayatAwal: data.ayatAwal ?? null,
           ayatAkhir: data.ayatAkhir ?? null,
           surahMeta: data.surahMeta ?? null,
-          kualitas: data.kualitas,
-          penilaianKustom: data.penilaianKustom,
+          kualitas: data.kualitas ?? null, // DEPRECATED — dipertahankan untuk backward compat
+          skorKualitas: (data as any).skorKualitas ?? null,
+          statusHafalan: (data as any).statusHafalan ?? null,
+          penilaianKustom: data.penilaianKustom ?? null,
           catatan: data.catatan ?? null,
           sumber: 'ustadz',
         })
@@ -130,7 +113,7 @@ export const updateSetoran = createServerFn({ method: 'POST' })
       const tenantId = session.user.tenantId
       
       // Validasi Wajib-Isi Dinamis
-      await validatePenilaianKustom(tenantId, data.penilaianKustom)
+
 
       // Ambil data lama
       const [oldSetoran] = await db.select().from(setoran).where(
@@ -181,7 +164,9 @@ export const updateSetoran = createServerFn({ method: 'POST' })
             "ayat_awal" = ${data.ayatAwal},
             "ayat_akhir" = ${data.ayatAkhir},
             "surah_meta" = ${data.surahMeta}::jsonb,
-            "kualitas" = ${data.kualitas},
+            "kualitas" = ${data.kualitas ?? null},
+            "skor_kualitas" = ${(data as any).skorKualitas ?? null},
+            "status_hafalan" = ${(data as any).statusHafalan ?? null},
             "penilaian_kustom" = ${data.penilaianKustom ? JSON.stringify(data.penilaianKustom) : null}::jsonb,
             "catatan" = ${data.catatan || null},
             "updated_at" = NOW(),
@@ -235,8 +220,10 @@ export const updateSetoran = createServerFn({ method: 'POST' })
             lintasJuz: data.lintasJuz,
             halamanAwal: data.halamanAwal,
             halamanAkhir: data.halamanAkhir,
-            kualitas: data.kualitas,
-            penilaianKustom: data.penilaianKustom,
+            kualitas: data.kualitas ?? null,
+            skorKualitas: (data as any).skorKualitas ?? null,
+            statusHafalan: (data as any).statusHafalan ?? null,
+            penilaianKustom: data.penilaianKustom ?? null,
             catatan: data.catatan || null,
             updatedAt: new Date(),
             updatedBy: session.user.id,
@@ -406,7 +393,7 @@ export const inputMurojaah = createServerFn({ method: 'POST' })
       }
 
       // Validasi Wajib-Isi Dinamis
-      await validatePenilaianKustom(session.user.tenantId, data.penilaianKustom)
+
 
       // Validasi Sabqi/Manzil Juz di backend
       if (data.jenis === 'sabqi' || data.jenis === 'manzil') {
@@ -570,7 +557,7 @@ export const updateSetoranSantri = createServerFn({ method: 'POST' })
       const tenantId = session.user.tenantId
 
       // Validasi Wajib-Isi Dinamis
-      await validatePenilaianKustom(tenantId, data.penilaianKustom)
+
 
       const [oldSetoran] = await db.select().from(setoran).where(
         and(

@@ -177,14 +177,14 @@ function DataUstadzPage() {
         {loading ? (
           <div className="p-8 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-emerald-600" /></div>
         ) : (
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
+          <table className="w-full text-left text-[13px] whitespace-nowrap">
+            <thead className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-semibold uppercase tracking-[0.04em] text-slate-500">
               <tr>
-                <th className="p-4 font-semibold text-slate-600">Nama Ustadz</th>
-                <th className="p-4 font-semibold text-slate-600">Username</th>
-                <th className="p-4 font-semibold text-slate-600">Kontak</th>
-                <th className="p-4 font-semibold text-slate-600">Tanggal Gabung</th>
-                <th className="p-4 font-semibold text-slate-600 text-right">Aksi</th>
+                <th className="px-4 py-3">Nama Ustadz</th>
+                <th className="px-4 py-3">Username</th>
+                <th className="px-4 py-3">Kontak</th>
+                <th className="px-4 py-3">Tanggal Gabung</th>
+                <th className="px-4 py-3 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -195,21 +195,21 @@ function DataUstadzPage() {
               ) : (
                 ustadz.map(u => (
                   <tr key={u.id} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="p-4 font-medium flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700">
+                    <td className="px-4 py-3 font-medium flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
                         <UserSquare2 className="w-4 h-4" />
                       </div>
                       {u.nama}
                     </td>
-                    <td className="p-4 text-slate-600 font-mono text-sm">{u.username || '-'}</td>
-                    <td className="p-4 text-slate-600 text-xs">
+                    <td className="px-4 py-3 text-slate-600 font-mono text-sm">{u.username || '-'}</td>
+                    <td className="px-4 py-3 text-slate-600 text-[11px]">
                       <div>{u.email || '-'}</div>
                       <div className="text-slate-400">{u.noWa || '-'}</div>
                     </td>
-                    <td className="p-4 text-slate-500 text-sm">
+                    <td className="px-4 py-3 text-slate-500">
                       {new Date(u.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                     </td>
-                    <td className="p-4 text-right flex justify-end gap-2">
+                    <td className="px-4 py-3 text-right flex justify-end gap-2">
                       <Button variant="ghost" size="sm" onClick={() => handleEdit(u)} className="text-blue-500 hover:text-blue-700 hover:bg-blue-50" title="Edit">
                         <Edit className="w-4 h-4" />
                       </Button>

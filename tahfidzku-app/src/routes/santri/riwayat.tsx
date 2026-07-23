@@ -141,7 +141,7 @@ function SantriRiwayatSetoran() {
                    </div>
                    
                    {/* Kualitas - Hanya tampil jika ada dan diisi */}
-                   <FormatPenilaian item={item} rubrikAktif={rubrikAktif} />
+                   <FormatPenilaian item={item} />
                  </div>
 
                  {item.catatan && (

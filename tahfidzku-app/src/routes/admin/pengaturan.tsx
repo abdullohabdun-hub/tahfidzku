@@ -1,9 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { Settings, Save, Loader2, Building, Link as LinkIcon } from 'lucide-react'
+import { Settings, Save, Loader2, Building, Link as LinkIcon, FileText, MapPin, User, Hash, AlignLeft, Image } from 'lucide-react'
 import { getTenantInfo, updateTenantInfo, runDbMigration } from '../../server-fns/admin-settings'
+import { getRaporSettings, upsertRaporSettings } from '../../server-fns/rapor'
 import { Button } from '../../components/ui/button'
-import { RubrikSettings } from '../../components/admin/RubrikSettings'
+import { LabelPenilaianSettings } from '../../components/admin/LabelPenilaianSettings'
+import { ChangePasswordForm } from '../../components/ChangePasswordForm'
 
 export const Route = createFileRoute('/admin/pengaturan')({
   component: PengaturanPage,
@@ -16,12 +18,33 @@ function PengaturanPage() {
   const [namaLembaga, setNamaLembaga] = useState('')
   const [slug, setSlug] = useState('')
 
+  // State Pengaturan Rapor
+  const [raporNamaLembaga, setRaporNamaLembaga] = useState('')
+  const [raporAlamat, setRaporAlamat] = useState('')
+  const [raporLogoUrl, setRaporLogoUrl] = useState('')
+  const [raporKota, setRaporKota] = useState('')
+  const [raporNamaMudir, setRaporNamaMudir] = useState('')
+  const [raporNipMudir, setRaporNipMudir] = useState('')
+  const [raporCatatanFooter, setRaporCatatanFooter] = useState('')
+  const [savingRapor, setSavingRapor] = useState(false)
+
   async function loadData() {
     setLoading(true)
     const res = await getTenantInfo()
     if (res.success && res.data) {
       setNamaLembaga(res.data.namaLembaga)
       setSlug(res.data.slug)
+    }
+    const raporRes = await getRaporSettings()
+    if (raporRes.success && raporRes.data) {
+      const d = raporRes.data
+      setRaporNamaLembaga(d.namaLembaga ?? '')
+      setRaporAlamat(d.alamatLembaga ?? '')
+      setRaporLogoUrl(d.logoUrl ?? '')
+      setRaporKota(d.kotaCetak ?? '')
+      setRaporNamaMudir(d.namaMudir ?? '')
+      setRaporNipMudir(d.nipMudir ?? '')
+      setRaporCatatanFooter(d.catatanFooter ?? '')
     }
     setLoading(false)
   }
@@ -114,8 +137,9 @@ function PengaturanPage() {
           </form>
         </div>
       </div>
+      <LabelPenilaianSettings />
 
-      <RubrikSettings />
+      {/* Pengaturan Rapor Digital sudah dipindah ke halaman Cetak Rapor */}
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden p-6 mt-8">
         <h3 className="font-semibold text-lg text-slate-800 mb-2">Sistem Database</h3>
@@ -134,6 +158,8 @@ function PengaturanPage() {
           Sinkronisasi Database
         </Button>
       </div>
+
+      <ChangePasswordForm role="admin" />
     </div>
   )
 }

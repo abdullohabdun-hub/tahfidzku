@@ -1,57 +1,62 @@
+// src/components/FormatPenilaian.tsx
+// Komponen display penilaian setoran — mendukung sistem skor baru (1-5) dan data lama (legacy)
 
+import { getLabelSkor, getWarnaSkor, getSkorEfektif } from '../lib/penilaian'
 
-const LEGACY_KUALITAS_MAP: Record<string, { label: string, color: string }> = {
-  lancar: { label: 'Lancar', color: 'text-emerald-700 bg-emerald-100 border-emerald-200' },
+const STATUS_LABEL: Record<string, { label: string; color: string }> = {
+  lanjut:    { label: 'Lanjut',    color: 'text-emerald-700 bg-emerald-100 border-emerald-200' },
   mengulang: { label: 'Mengulang', color: 'text-amber-700 bg-amber-100 border-amber-200' },
-  terbata: { label: 'Terbata', color: 'text-rose-700 bg-rose-100 border-rose-200' },
 }
 
-export function FormatPenilaian({ item, rubrikAktif }: { item: any, rubrikAktif?: any[] }) {
-  // 1. Jika ada penilaian kustom, render semua key yang ada
-  if (item.penilaianKustom && Object.keys(item.penilaianKustom).length > 0) {
-    return (
-      <div className="flex flex-wrap gap-1 items-center justify-end">
-        {Object.entries(item.penilaianKustom).map(([key, val]) => {
-          // Coba cari label dari rubrikAktif jika tersedia
-          let displayLabel = String(val)
-          if (rubrikAktif) {
-            const rubrik = rubrikAktif.find(r => r.key === key)
-            if (rubrik && rubrik.opsi) {
-              const opsi = rubrik.opsi.find((o: any) => o.value === val)
-              if (opsi) {
-                displayLabel = opsi.label
-              }
-            }
-          }
+interface PenilaianItem {
+  skorKualitas?: number | null
+  statusHafalan?: string | null
+  kualitas?: string | null
+  penilaianKustom?: Record<string, any> | null
+}
 
-          return (
-            <span key={key} className="inline-block px-2 py-0.5 rounded text-[10px] font-bold tracking-wide capitalize bg-slate-100 text-slate-700 border border-slate-200">
-              {displayLabel}
-            </span>
-          )
-        })}
-      </div>
-    )
-  }
+export function FormatPenilaian({
+  item,
+  labelKustom,
+  showStatus = true,
+}: {
+  item: PenilaianItem
+  labelKustom?: Record<string, string> | null
+  showStatus?: boolean
+}) {
+  const skor = getSkorEfektif(item)
+  const hasNew = !!(item.skorKualitas || item.statusHafalan)
 
-  // 2. Fallback ke kualitas lama (legacy)
-  if (item.kualitas) {
-    const legacy = LEGACY_KUALITAS_MAP[item.kualitas.toLowerCase()]
-    if (legacy) {
-      return (
-        <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold tracking-wide capitalize border ${legacy.color}`}>
-          {legacy.label}
+  return (
+    <div className="flex flex-wrap gap-1 items-center justify-end">
+      {/* Badge Skor */}
+      {skor && (
+        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold tracking-wide border ${getWarnaSkor(skor)}`}>
+          <span className="font-black">{skor}</span>
+          <span className="opacity-75">— {getLabelSkor(skor, labelKustom)}</span>
         </span>
-      )
-    }
-    // Jika ada nilai tapi tidak dikenali di map
-    return (
-      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold tracking-wide capitalize bg-slate-100 text-slate-700 border border-slate-200">
-        {item.kualitas}
-      </span>
-    )
-  }
+      )}
 
-  // 3. Keduanya kosong
-  return <span className="text-[10px] text-slate-400 font-bold">-</span>
+      {/* Badge Status Hafalan */}
+      {showStatus && item.statusHafalan && STATUS_LABEL[item.statusHafalan] && (
+        <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold tracking-wide border ${STATUS_LABEL[item.statusHafalan].color}`}>
+          {STATUS_LABEL[item.statusHafalan].label}
+        </span>
+      )}
+
+      {/* Fallback: penilaian kustom lama */}
+      {!hasNew && !skor && item.penilaianKustom && Object.keys(item.penilaianKustom).length > 0 && (
+        Object.values(item.penilaianKustom).map((val, i) => (
+          <span key={i} className="inline-block px-2 py-0.5 rounded text-[10px] font-bold tracking-wide capitalize bg-slate-100 text-slate-700 border border-slate-200">
+            {String(val)}
+          </span>
+        ))
+      )}
+
+      {/* Jika tidak ada data sama sekali */}
+      {!skor && !item.statusHafalan && (!item.penilaianKustom || Object.keys(item.penilaianKustom).length === 0) && (
+        <span className="text-[10px] text-slate-400 font-bold">-</span>
+      )}
+    </div>
+  )
 }

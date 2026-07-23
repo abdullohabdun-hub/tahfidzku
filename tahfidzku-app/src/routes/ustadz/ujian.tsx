@@ -169,8 +169,8 @@ function UjianPage() {
 
               {/* Form Ujian Modal */}
               {selectedSantri && (
-                <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-                  <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-5">
+                <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 transition-all">
+                  <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-slate-100 max-w-md w-full p-6 space-y-5 animate-in zoom-in-95 duration-200">
                     <div>
                       <h2 className="text-lg font-bold text-slate-900">🎓 Ujian Kenaikan Juz {selectedSantri.juzUjianPending}</h2>
                       <p className="text-slate-500 text-sm mt-0.5">Santri: <strong>{selectedSantri.santriNama}</strong></p>
@@ -192,9 +192,9 @@ function UjianPage() {
                             { val: 'mengulang', label: 'Mengulang', poin: 30 },
                             { val: 'terbata', label: 'Terbata-bata', poin: 10 },
                           ] as const).map(opt => (
-                            <label key={opt.val} className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${kelancaran === opt.val ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 hover:border-slate-300'}`}>
-                              <div className="flex items-center gap-2">
-                                <input type="radio" name="kelancaran" value={opt.val} checked={kelancaran === opt.val} onChange={() => setKelancaran(opt.val)} className="accent-emerald-600" />
+                            <label key={opt.val} className={`flex items-center justify-between p-3.5 rounded-xl border-2 cursor-pointer transition-all duration-200 ${kelancaran === opt.val ? 'border-emerald-500 bg-emerald-50/80 shadow-[0_0_0_4px_rgba(16,185,129,0.1)]' : 'border-slate-100 hover:border-slate-300 hover:bg-slate-50'}`}>
+                              <div className="flex items-center gap-3">
+                                <input type="radio" name="kelancaran" value={opt.val} checked={kelancaran === opt.val} onChange={() => setKelancaran(opt.val)} className="accent-emerald-600 w-4 h-4" />
                                 <span className="text-sm font-medium">{opt.label}</span>
                               </div>
                               <span className="text-xs text-slate-400 font-semibold">{opt.poin} poin</span>
@@ -212,9 +212,9 @@ function UjianPage() {
                             { val: 'cukup', label: 'Cukup', poin: 30 },
                             { val: 'kurang', label: 'Kurang', poin: 10 },
                           ] as const).map(opt => (
-                            <label key={opt.val} className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${tajwid === opt.val ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 hover:border-slate-300'}`}>
-                              <div className="flex items-center gap-2">
-                                <input type="radio" name="tajwid" value={opt.val} checked={tajwid === opt.val} onChange={() => setTajwid(opt.val)} className="accent-emerald-600" />
+                            <label key={opt.val} className={`flex items-center justify-between p-3.5 rounded-xl border-2 cursor-pointer transition-all duration-200 ${tajwid === opt.val ? 'border-emerald-500 bg-emerald-50/80 shadow-[0_0_0_4px_rgba(16,185,129,0.1)]' : 'border-slate-100 hover:border-slate-300 hover:bg-slate-50'}`}>
+                              <div className="flex items-center gap-3">
+                                <input type="radio" name="tajwid" value={opt.val} checked={tajwid === opt.val} onChange={() => setTajwid(opt.val)} className="accent-emerald-600 w-4 h-4" />
                                 <span className="text-sm font-medium">{opt.label}</span>
                               </div>
                               <span className="text-xs text-slate-400 font-semibold">{opt.poin} poin</span>

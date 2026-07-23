@@ -29,7 +29,9 @@ export const createSetoranSchema = z
       .max(286)
       .optional(),
     ayatAkhir: z.number().int().min(1).max(286).optional().nullable(),
-    kualitas: z.enum(['lancar', 'mengulang', 'terbata']).optional().nullable(),
+    kualitas: z.enum(['lancar', 'mengulang', 'terbata']).optional().nullable(), // DEPRECATED — hanya untuk backward compat
+    skorKualitas: z.number().int().min(1).max(5, 'Skor maksimal 5').optional().nullable(),
+    statusHafalan: z.enum(['lanjut', 'mengulang']).optional().nullable(),
     penilaianKustom: z.record(z.string(), z.any()).optional().nullable(),
     catatan: z.string().max(500, { message: 'Catatan maksimal 500 karakter' }).optional().nullable(),
   })
@@ -46,7 +48,7 @@ export const createSetoranSchema = z
       if (!data.juzMulai) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Juz wajib diisi untuk Sabqi/Manzil', path: ['juzMulai'] });
       if (!data.halamanAwal) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Halaman awal wajib diisi untuk Sabqi/Manzil', path: ['halamanAwal'] });
       if (!data.halamanAkhir) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Halaman akhir wajib diisi untuk Sabqi/Manzil', path: ['halamanAkhir'] });
-      if (data.halamanAwal && data.halamanAkhir && data.halamanAkhir < data.halamanAwal) {
+      if (!data.lintasJuz && data.halamanAwal && data.halamanAkhir && data.halamanAkhir < data.halamanAwal) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Halaman akhir tidak boleh kurang dari halaman awal', path: ['halamanAkhir'] });
       }
     }
@@ -124,3 +126,9 @@ export const registerTenantSchema = z.object({
 })
 
 export type RegisterTenantInput = z.infer<typeof registerTenantSchema>
+
+export const changePasswordSchema = z.object({
+  oldPassword: z.string().min(1, 'Password lama wajib diisi'),
+  newPassword: z.string().min(4, 'Password baru minimal 4 karakter'),
+})
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>

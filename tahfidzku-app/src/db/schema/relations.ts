@@ -9,7 +9,8 @@ import { impersonationLogs } from './impersonation'
 import { billingLogs } from './billing-logs'
 import { absensi, sesiKelas } from './absensi'
 import { waliSantri } from './wali-santri'
-export const tenantsRelations = relations(tenants, ({ many }) => ({
+import { raporSettings } from './rapor-settings'
+export const tenantsRelations = relations(tenants, ({ one, many }) => ({
   users: many(users),
   kelas: many(kelas),
   santri: many(santri),
@@ -17,6 +18,10 @@ export const tenantsRelations = relations(tenants, ({ many }) => ({
   ujian: many(ujian),
   impersonationLogs: many(impersonationLogs),
   billingLogs: many(billingLogs),
+  raporSettings: one(raporSettings, {
+    fields: [tenants.id],
+    references: [raporSettings.tenantId],
+  }),
 }))
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -172,3 +177,11 @@ export const waliSantriRelations = relations(waliSantri, ({ one }) => ({
     references: [santri.id],
   }),
 }))
+
+export const raporSettingsRelations = relations(raporSettings, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [raporSettings.tenantId],
+    references: [tenants.id],
+  }),
+}))
+

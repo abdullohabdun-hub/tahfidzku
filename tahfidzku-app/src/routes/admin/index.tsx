@@ -175,7 +175,7 @@ function Dashboard() {
                       <p className="text-xs text-slate-500 capitalize mt-0.5 group-hover:text-slate-600 transition-colors">{item.jenis} • {infoTarget}</p>
                     </div>
                     <div className="text-right flex flex-col items-end">
-                      <FormatPenilaian item={item} rubrikAktif={rubrikAktif} />
+                      <FormatPenilaian item={item} />
                       <p className="text-[10px] text-slate-400 mt-1">{formatRelativeTime(item.createdAt)}</p>
                     </div>
                   </div>

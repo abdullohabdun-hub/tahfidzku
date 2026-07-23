@@ -10,7 +10,7 @@ const connectionString = process.env.DATABASE_URL!
 // --- SAFEGUARD ENVIRONMENT PRODUKSI ---
 // Jika connection string mengandung host production Neon, 
 // pastikan kita BENAR-BENAR ada di environment Production (bukan Preview, bukan Lokal).
-const PROD_HOST = 'ep-late-cell-aoor6dr4';
+const PROD_HOST = 'ep-twilight-feather-ao5fmi2r';
 if (connectionString && connectionString.includes(PROD_HOST)) {
   const isVercelProd = process.env.VERCEL_ENV === 'production';
   const isVercelPreview = process.env.VERCEL_ENV === 'preview';
