@@ -2,7 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { eq, and, desc, asc, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '../db'
-import { absensi, sesiKelas, statusAbsensiEnum, waktuSesiEnum } from '../db/schema/absensi'
+import { absensi, sesiKelas, statusAbsensiEnum, waktuSesiEnum, rekapMingguanSantri } from '../db/schema/absensi'
 import { kelas, santri } from '../db/schema'
 import { getAuthSession, requireRole } from '../middleware/auth.middleware'
 import { success, handleError } from '../lib/response'
@@ -374,6 +374,65 @@ export const getRekapMingguan = createServerFn({ method: 'POST' })
         .limit(4) // Ambil 4 minggu terakhir
 
       return success(rekap, 'Berhasil memuat rekap mingguan')
+    } catch (err) {
+      return handleError(err)
+    }
+  })
+
+// ==========================================
+// GET REKAP MINGGUAN SANTRI (UNTUK DASHBOARD)
+// ==========================================
+export const getRekapMingguanSantri = createServerFn({ method: 'GET' })
+  .validator((data: unknown) =>
+    z.object({
+      santriId: z.string().uuid(),
+      tanggalAwal: z.string().optional(),
+    }).parse(data)
+  )
+  .handler(async ({ data }) => {
+    try {
+      const session = await getAuthSession()
+      if (!session) throw new AuthenticationError()
+
+      const { role, tenantId, santriId: sessionSantriId } = session.user
+
+      // 1. OTORISASI & OWNERSHIP CHECK (Mencegah IDOR)
+      if (role === 'santri' || role === 'wali') {
+        // Santri/Wali HANYA boleh melihat data yang terkait dengan profil mereka
+        if (data.santriId !== sessionSantriId) {
+          throw new ForbiddenError('Anda tidak berhak mengakses data santri ini.')
+        }
+      } else if (role !== 'ustadz' && role !== 'admin') {
+        throw new ForbiddenError('Role tidak diizinkan.')
+      }
+
+      // 2. PERBAIKAN BUG TANGGAL (Hanya 1x Normalisasi)
+      const filterTanggal = data.tanggalAwal ? new Date(data.tanggalAwal) : new Date()
+
+      // Normalisasi ke awal minggu (Senin)
+      const startOfWeek = new Date(filterTanggal)
+      const day = startOfWeek.getDay()
+      const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1) // Mundur ke Senin
+      startOfWeek.setDate(diff)
+      startOfWeek.setHours(0, 0, 0, 0)
+      
+      const isoDateString = startOfWeek.toISOString().split('T')[0] // Hasil format: 'YYYY-MM-DD'
+
+      const [rekap] = await db
+        .select()
+        .from(rekapMingguanSantri)
+        .where(
+          and(
+            eq(rekapMingguanSantri.tenantId, tenantId),
+            eq(rekapMingguanSantri.santriId, data.santriId),
+            eq(rekapMingguanSantri.mingguMulai, isoDateString)
+          )
+        )
+        .limit(1)
+
+      return success({
+        rekap: rekap || null
+      }, 'Berhasil mengambil rekap mingguan santri')
     } catch (err) {
       return handleError(err)
     }
