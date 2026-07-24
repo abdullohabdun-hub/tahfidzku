@@ -1,8 +1,9 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { getKelasYangDiampu, bukaSesiAbsensi, simpanAbsensi } from '../../server-fns/absensi'
 import { Loader2, Calendar, Users, CheckCircle2, Info, AlertTriangle } from 'lucide-react'
 import { Button } from '../../components/ui/button'
+import { AuthErrorAlert } from '../../components/AuthErrorAlert'
 
 export const Route = createFileRoute('/ustadz/absensi')({
   component: AbsensiUstadzPage,
@@ -18,6 +19,9 @@ type SantriAbsensi = {
 const HARI_MAP = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu']
 
 function AbsensiUstadzPage() {
+  const navigate = useNavigate()
+  const [authError, setAuthError] = useState<{ message: string, code?: string } | null>(null)
+
   const [kelasList, setKelasList] = useState<any[]>([])
   const [loadingInitial, setLoadingInitial] = useState(true)
   
@@ -40,12 +44,25 @@ function AbsensiUstadzPage() {
 
   useEffect(() => {
     async function init() {
-      const res = await getKelasYangDiampu()
-      if (res.success && res.data) {
-        setKelasList(res.data)
-        if (res.data.length > 0) setSelectedKelasId(res.data[0].id)
+      try {
+        const res = await getKelasYangDiampu()
+        if (!res.success) {
+          if (res.error?.code === 'UNAUTHENTICATED') {
+            navigate({ to: '/login' })
+            return
+          }
+          setAuthError({ message: res.error?.message || 'Akses ditolak', code: res.error?.code })
+          return
+        }
+        if (res.data) {
+          setKelasList(res.data)
+          if (res.data.length > 0) setSelectedKelasId(res.data[0].id)
+        }
+      } catch (err: any) {
+        setAuthError({ message: 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.', code: 'NETWORK_ERROR' })
+      } finally {
+        setLoadingInitial(false)
       }
-      setLoadingInitial(false)
     }
     init()
   }, [])
@@ -120,17 +137,18 @@ function AbsensiUstadzPage() {
       catatan: s.catatan
     }))
 
-    const res = await simpanAbsensi({ data: { sesiKelasId: sesiId, daftarStatus } })
-    if (res.success) {
-      setSuccessMsg('Absensi berhasil disimpan')
-    } else {
-      setErrorMsg(res.error?.message || 'Gagal menyimpan absensi')
+    try {
+      const res = await simpanAbsensi({ data: { sesiKelasId: sesiId, daftarStatus } })
+      if (res.success) {
+        setSuccessMsg('Absensi berhasil disimpan')
+      } else {
+        setErrorMsg(res.error?.message || 'Gagal menyimpan absensi')
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Gagal terhubung ke server')
+    } finally {
+      setSubmitting(false)
     }
-    setSubmitting(false)
-  }
-
-  if (loadingInitial) {
-    return <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-emerald-600" /></div>
   }
 
   const STATUS_CONFIG = [
@@ -141,6 +159,14 @@ function AbsensiUstadzPage() {
     { value: 'alpa', label: 'Alpa', bg: 'bg-red-500 hover:bg-red-600', text: 'text-white' },
     { value: 'terlambat', label: 'Terlambat', bg: 'bg-orange-500 hover:bg-orange-600', text: 'text-white' },
   ] as const
+
+  if (authError) {
+    return <AuthErrorAlert error={authError} />
+  }
+
+  if (loadingInitial) {
+    return <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-emerald-600" /></div>
+  }
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-20">

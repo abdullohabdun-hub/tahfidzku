@@ -1,9 +1,10 @@
-import { createFileRoute, useRouter } from '@tanstack/react-router'
+import { createFileRoute, useRouter, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { getRiwayatUjianSantri } from '../../server-fns/ujian'
 import { Loader2, History, AlertCircle, Calendar, GraduationCap } from 'lucide-react'
 import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
+import { AuthErrorAlert } from '../../components/AuthErrorAlert'
 
 export const Route = createFileRoute('/santri/ujian')({
   component: SantriRiwayatUjian,
@@ -27,23 +28,29 @@ const TAJWID_MAP = {
 }
 
 function SantriRiwayatUjian() {
+  const navigate = useNavigate()
+  const [authError, setAuthError] = useState<{ message: string, code?: string } | null>(null)
+  
   const [data, setData] = useState<any[]>([])
   const [juzPending, setJuzPending] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
-  const [errorMsg, setErrorMsg] = useState('')
 
   const loadData = async () => {
     try {
       setLoading(true)
       const res = await getRiwayatUjianSantri()
-      if (res.success) {
-        setData(res.data.riwayat)
-        setJuzPending(res.data.juzUjianPending)
-      } else {
-        setErrorMsg(res.error?.message || 'Gagal memuat riwayat ujian')
+      if (!res.success) {
+        if (res.error?.code === 'UNAUTHENTICATED') {
+          navigate({ to: '/login' })
+          return
+        }
+        setAuthError({ message: res.error?.message || 'Akses ditolak', code: res.error?.code })
+        return
       }
+      setData(res.data.riwayat)
+      setJuzPending(res.data.juzUjianPending)
     } catch (err: any) {
-      setErrorMsg(err.message || 'Terjadi kesalahan')
+      setAuthError({ message: 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.', code: 'NETWORK_ERROR' })
     } finally {
       setLoading(false)
     }
@@ -52,6 +59,10 @@ function SantriRiwayatUjian() {
   useEffect(() => {
     loadData()
   }, [])
+
+  if (authError) {
+    return <AuthErrorAlert error={authError} />
+  }
 
   if (loading) {
     return (
@@ -91,13 +102,8 @@ function SantriRiwayatUjian() {
           </div>
         )}
 
-        {errorMsg && (
-          <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm border border-red-100 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4" /> {errorMsg}
-          </div>
-        )}
 
-        {data.length === 0 && !errorMsg ? (
+        {data.length === 0 ? (
           <div className="text-center py-10 bg-white rounded-xl border border-slate-100 shadow-sm mt-6">
             <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
               <History className="w-6 h-6 text-slate-400" />

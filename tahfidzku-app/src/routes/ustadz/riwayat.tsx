@@ -1,12 +1,13 @@
-import { createFileRoute, useRouter } from '@tanstack/react-router'
+import { createFileRoute, useRouter, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { getSetoranRiwayat, updateSetoran } from '../../server-fns/setoran'
-import { Loader2, History, AlertCircle, Calendar, User, Edit2 } from 'lucide-react'
+import { Loader2, History, Calendar, User, Edit2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
 import { EditSetoranModal } from '../../components/EditSetoranModal'
 import { getKelasYangDiampu, getRiwayatAbsensiKelas } from '../../server-fns/absensi'
 import { FormatPenilaian } from '../../components/FormatPenilaian'
+import { AuthErrorAlert } from '../../components/AuthErrorAlert'
 
 export const Route = createFileRoute('/ustadz/riwayat')({
   component: UstadzRiwayatSetoran,
@@ -22,12 +23,13 @@ const JENIS_MAP = {
 
 function UstadzRiwayatSetoran() {
   const router = useRouter()
+  const navigate = useNavigate()
+  const [authError, setAuthError] = useState<{ message: string, code?: string } | null>(null)
   const [activeTab, setActiveTab] = useState<'setoran' | 'absensi'>('setoran')
   
   // State Setoran
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [errorMsg, setErrorMsg] = useState('')
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [selectedSetoran, setSelectedSetoran] = useState<any>(null)
 
@@ -41,23 +43,39 @@ function UstadzRiwayatSetoran() {
     try {
       setLoading(true)
       const res = await getSetoranRiwayat()
-      if (res.success) {
-        setData(res.data)
-      } else {
-        setErrorMsg(res.error?.message || 'Gagal memuat riwayat')
+      if (!res.success) {
+        if (res.error?.code === 'UNAUTHENTICATED') {
+          navigate({ to: '/login' })
+          return
+        }
+        setAuthError({ message: res.error?.message || 'Akses ditolak', code: res.error?.code })
+        return
       }
+      setData(res.data)
     } catch (err: any) {
-      setErrorMsg(err.message || 'Terjadi kesalahan')
+      setAuthError({ message: 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.', code: 'NETWORK_ERROR' })
     } finally {
       setLoading(false)
     }
   }
 
   const loadKelas = async () => {
-    const res = await getKelasYangDiampu()
-    if (res.success && res.data) {
-      setKelasList(res.data)
-      if (res.data.length > 0) setSelectedKelasId(res.data[0].id)
+    try {
+      const res = await getKelasYangDiampu()
+      if (!res.success) {
+        if (res.error?.code === 'UNAUTHENTICATED') {
+          navigate({ to: '/login' })
+          return
+        }
+        setAuthError({ message: res.error?.message || 'Akses ditolak', code: res.error?.code })
+        return
+      }
+      if (res.data) {
+        setKelasList(res.data)
+        if (res.data.length > 0) setSelectedKelasId(res.data[0].id)
+      }
+    } catch (err: any) {
+      setAuthError({ message: 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.', code: 'NETWORK_ERROR' })
     }
   }
 
@@ -93,6 +111,10 @@ function UstadzRiwayatSetoran() {
       router.invalidate()
     }
     return res
+  }
+
+  if (authError) {
+    return <AuthErrorAlert error={authError} />
   }
 
   if (loading) {
@@ -135,13 +157,8 @@ function UstadzRiwayatSetoran() {
       <div className="px-4 space-y-3">
         {activeTab === 'setoran' && (
           <>
-            {errorMsg && (
-          <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm border border-red-100 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4" /> {errorMsg}
-          </div>
-        )}
 
-        {data.length === 0 && !errorMsg ? (
+        {data.length === 0 ? (
           <div className="text-center py-10 bg-white rounded-xl border border-slate-100 shadow-sm">
             <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
               <History className="w-6 h-6 text-slate-400" />

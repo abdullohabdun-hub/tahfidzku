@@ -4,6 +4,7 @@ import { Loader2, ArrowLeft } from 'lucide-react'
 import { inputMurojaah } from '../../server-fns/setoran'
 import { getSantriProfile } from '../../server-fns/santri'
 import { SetoranForm } from '../../components/SetoranForm'
+import { AuthErrorAlert } from '../../components/AuthErrorAlert'
 
 export const Route = createFileRoute('/santri/input')({
   component: SantriInputMurojaah,
@@ -11,22 +12,28 @@ export const Route = createFileRoute('/santri/input')({
 
 function SantriInputMurojaah() {
   const navigate = useNavigate()
+  const [authError, setAuthError] = useState<{ message: string, code?: string } | null>(null)
   
   const [loadingInitial, setLoadingInitial] = useState(true)
   const [profile, setProfile] = useState<any>(null)
-  const [errorMsg, setErrorMsg] = useState('')
 
   useEffect(() => {
     async function init() {
       try {
         const res = await getSantriProfile()
-        if (res.success && res.data) {
-          setProfile(res.data)
-        } else {
-          setErrorMsg('Gagal memuat profil: ' + (res as any).error?.message)
+        if (!res.success) {
+          if (res.error?.code === 'UNAUTHENTICATED') {
+            navigate({ to: '/login' })
+            return
+          }
+          setAuthError({ message: res.error?.message || 'Akses ditolak', code: res.error?.code })
+          return
         }
-      } catch (err) {
-        setErrorMsg('Terjadi kesalahan memuat data')
+        if (res.data) {
+          setProfile(res.data)
+        }
+      } catch (err: any) {
+        setAuthError({ message: 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.', code: 'NETWORK_ERROR' })
       } finally {
         setLoadingInitial(false)
       }
@@ -38,6 +45,10 @@ function SantriInputMurojaah() {
     return await inputMurojaah({ data: payload })
   }
 
+  if (authError) {
+    return <AuthErrorAlert error={authError} />
+  }
+
   if (loadingInitial) {
     return (
       <div className="flex justify-center items-center h-[50vh]">
@@ -46,17 +57,7 @@ function SantriInputMurojaah() {
     )
   }
 
-  if (errorMsg) {
-    return (
-      <div className="p-4 text-center">
-        <h2 className="text-lg font-bold text-slate-800">Error</h2>
-        <p className="text-sm text-red-500">{errorMsg}</p>
-        <button onClick={() => navigate({ to: '/santri' })} className="mt-4 text-sm font-bold text-emerald-600">
-          Kembali ke Beranda
-        </button>
-      </div>
-    )
-  }
+
 
   return (
     <div className="max-w-xl mx-auto space-y-5 pb-8 relative">

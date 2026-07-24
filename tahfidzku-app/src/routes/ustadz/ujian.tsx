@@ -1,10 +1,11 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { GraduationCap, Clock, CheckCircle, XCircle, AlertTriangle, ChevronRight, BookOpen } from 'lucide-react'
 import { getUjianPending, getUjianList, createUjian } from '../../server-fns/ujian'
 import { hitungSkorUjian, rekomendasiLulus, labelSkor, warnaBadgeStatus, labelStatus } from '../../lib/ujianLogic'
 import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
+import { AuthErrorAlert } from '../../components/AuthErrorAlert'
 
 export const Route = createFileRoute('/ustadz/ujian')({
   component: UjianPage,
@@ -33,6 +34,8 @@ type UjianRecord = {
 }
 
 function UjianPage() {
+  const navigate = useNavigate()
+  const [authError, setAuthError] = useState<{ message: string, code?: string } | null>(null)
   const [activeTab, setActiveTab] = useState<'pending' | 'riwayat'>('pending')
   const [pending, setPending] = useState<PendingItem[]>([])
   const [riwayat, setRiwayat] = useState<UjianRecord[]>([])
@@ -51,11 +54,27 @@ function UjianPage() {
   const rekLulus = skorRef !== null ? rekomendasiLulus(skorRef) : null
 
   async function loadData() {
-    setLoading(true)
-    const [pRes, rRes] = await Promise.all([getUjianPending(), getUjianList()])
-    if (pRes.success && pRes.data) setPending(pRes.data as PendingItem[])
-    if (rRes.success && rRes.data) setRiwayat(rRes.data as UjianRecord[])
-    setLoading(false)
+    try {
+      setLoading(true)
+      const [pRes, rRes] = await Promise.all([getUjianPending(), getUjianList()])
+      
+      if (!pRes.success || !rRes.success) {
+        const err = (!pRes.success ? (pRes as any).error : (!rRes.success ? (rRes as any).error : null))
+        if (err?.code === 'UNAUTHENTICATED') {
+          navigate({ to: '/login' })
+          return
+        }
+        setAuthError({ message: err?.message || 'Akses ditolak', code: err?.code })
+        return
+      }
+
+      if (pRes.data) setPending(pRes.data as PendingItem[])
+      if (rRes.data) setRiwayat(rRes.data as UjianRecord[])
+    } catch (err: any) {
+      setAuthError({ message: 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.', code: 'NETWORK_ERROR' })
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => { loadData() }, [])
@@ -84,6 +103,10 @@ function UjianPage() {
     } else {
       setSubmitMsg({ ok: false, msg: (res as any).error?.message || 'Gagal menyimpan ujian' })
     }
+  }
+
+  if (authError) {
+    return <AuthErrorAlert error={authError} />
   }
 
   return (
@@ -127,7 +150,9 @@ function UjianPage() {
       </div>
 
       {loading ? (
-        <div className="py-12 text-center text-slate-400">Memuat data...</div>
+        <div className="flex justify-center items-center h-[50vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+        </div>
       ) : (
         <>
           {/* ── TAB PENDING ── */}

@@ -1,16 +1,20 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect, useMemo } from 'react'
 import { ChevronDown, Loader2, AlertTriangle } from 'lucide-react'
 import { getSantriList, setupSantriInitialHafalan } from '../../server-fns/santri'
 import { createSetoran } from '../../server-fns/setoran'
 import { SetoranForm } from '../../components/SetoranForm'
 import { getSurahByJuz, getAyatRangeInJuz, bangunPosisiDariAdminInput } from '../../lib/quranMapper'
+import { AuthErrorAlert } from '../../components/AuthErrorAlert'
 
 export const Route = createFileRoute('/ustadz/input')({
   component: InputSetoranPage,
 })
 
 function InputSetoranPage() {
+  const navigate = useNavigate()
+  const [authError, setAuthError] = useState<{ message: string, code?: string } | null>(null)
+
   const [santriList, setSantriList] = useState<any[]>([])
   const [loadingInitial, setLoadingInitial] = useState(true)
   
@@ -69,12 +73,21 @@ function InputSetoranPage() {
     async function init() {
       try {
         const res = await getSantriList()
-        if (res.success && res.data) {
+        if (!res.success) {
+          if (res.error?.code === 'UNAUTHENTICATED') {
+            navigate({ to: '/login' })
+            return
+          }
+          setAuthError({ message: res.error?.message || 'Akses ditolak', code: res.error?.code })
+          return
+        }
+        if (res.data) {
           setSantriList(res.data)
           if (res.data.length > 0) setSantriId(res.data[0].id)
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to load santri', err)
+        setAuthError({ message: 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.', code: 'NETWORK_ERROR' })
       } finally {
         setLoadingInitial(false)
       }
@@ -142,6 +155,10 @@ function InputSetoranPage() {
       }
     }
     return res
+  }
+
+  if (authError) {
+    return <AuthErrorAlert error={authError} />
   }
 
   if (loadingInitial) {
