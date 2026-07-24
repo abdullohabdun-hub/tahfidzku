@@ -5,6 +5,7 @@ import { pgTable, uuid, varchar, integer, text, timestamp, pgEnum, real, boolean
 import { tenants } from './tenants'
 import { santri } from './santri'
 import { users } from './users'
+import { sesiKelas } from './absensi'
 import { uniqueIndex } from 'drizzle-orm/pg-core'
 
 export const jenisSetoranEnum = pgEnum('jenis_setoran', ['ziyadah', 'sabqi', 'manzil'])
@@ -16,6 +17,7 @@ export const setoran = pgTable('setoran', {
   tenantId: uuid('tenant_id')
     .notNull()
     .references(() => tenants.id, { onDelete: 'cascade' }),
+  sesiKelasId: uuid('sesi_kelas_id').references(() => sesiKelas.id),
   santriId: uuid('santri_id')
     .notNull()
     .references(() => santri.id, { onDelete: 'cascade' }),

@@ -6,7 +6,6 @@ import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
 import { EditSetoranModal } from '../../components/EditSetoranModal'
 import { getKelasYangDiampu, getRiwayatAbsensiKelas } from '../../server-fns/absensi'
-import { getAllRubrikTenant } from '../../server-fns/rubrik'
 import { FormatPenilaian } from '../../components/FormatPenilaian'
 
 export const Route = createFileRoute('/ustadz/riwayat')({
@@ -27,7 +26,6 @@ function UstadzRiwayatSetoran() {
   
   // State Setoran
   const [data, setData] = useState<any[]>([])
-  const [rubrikAktif, setRubrikAktif] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
   const [editModalOpen, setEditModalOpen] = useState(false)
@@ -43,10 +41,8 @@ function UstadzRiwayatSetoran() {
     try {
       setLoading(true)
       const res = await getSetoranRiwayat()
-      const rubrikRes = await getAllRubrikTenant()
       if (res.success) {
         setData(res.data)
-        setRubrikAktif(rubrikRes)
       } else {
         setErrorMsg(res.error?.message || 'Gagal memuat riwayat')
       }
@@ -198,6 +194,16 @@ function UstadzRiwayatSetoran() {
                    </div>
                  )}
 
+                 {item.ditinjauOlehUstadz && item.responUstadz && (
+                   <div className="bg-blue-50 rounded-lg p-3 text-sm text-blue-800 border border-blue-100 mt-1 flex items-start gap-2">
+                     <span className="text-base mt-0.5">{item.responUstadz.tipe === 'jempol' ? '👍' : '💬'}</span>
+                     <div>
+                       <p className="text-[10px] font-bold text-blue-500 uppercase mb-0.5">Telah Anda Respon</p>
+                       <p className="font-medium text-blue-900">{item.responUstadz.tipe === 'jempol' ? 'Mantap!' : item.responUstadz.teks}</p>
+                     </div>
+                   </div>
+                 )}
+
                  <div className="pt-2 border-t border-slate-50 flex items-center justify-between gap-2 text-sm text-slate-700">
                     <div className="flex items-center gap-2">
                       <User className="w-4 h-4 text-slate-400" />
@@ -250,14 +256,21 @@ function UstadzRiwayatSetoran() {
                     <div className="font-bold text-slate-800 flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-emerald-600" />
                       {format(new Date(sesi.tanggal), 'EEEE, dd MMMM yyyy', { locale: id })}
+                      <span className="bg-slate-100 text-slate-600 text-xs px-2 py-0.5 rounded ml-2 capitalize">
+                        Sesi {sesi.waktuSesi}
+                      </span>
                     </div>
                     <span className="text-xs font-semibold text-slate-400 bg-slate-50 px-2 py-1 rounded-full">{format(new Date(sesi.createdAt), 'HH:mm')}</span>
                   </div>
                   
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-center text-sm">
+                  <div className="grid grid-cols-2 md:grid-cols-6 gap-2 text-center text-sm">
                     <div className="bg-emerald-50 rounded p-2 border border-emerald-100">
                       <div className="text-lg font-bold text-emerald-700">{sesi.summary.hadir}</div>
                       <div className="text-[10px] uppercase font-bold text-emerald-600">Hadir</div>
+                    </div>
+                    <div className="bg-teal-50 rounded p-2 border border-teal-100">
+                      <div className="text-lg font-bold text-teal-700">{sesi.summary.hadir_tanpa_setoran || 0}</div>
+                      <div className="text-[10px] uppercase font-bold text-teal-600 text-nowrap">Hadir (Non-Setor)</div>
                     </div>
                     <div className="bg-blue-50 rounded p-2 border border-blue-100">
                       <div className="text-lg font-bold text-blue-700">{sesi.summary.izin}</div>

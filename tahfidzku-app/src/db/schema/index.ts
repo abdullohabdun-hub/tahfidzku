@@ -9,7 +9,7 @@ export { ujian, statusUjianEnum, skorKelancaranEnum, skorTajwidEnum } from './uj
 export { kelas, hariEnum } from './kelas'
 export { impersonationLogs, impersonationTargetRoleEnum } from './impersonation'
 export { billingLogs, billingActionEnum } from './billing-logs'
-export { sesiKelas, absensi, statusAbsensiEnum } from './absensi'
+export { sesiKelas, absensi, statusAbsensiEnum, rekapMingguanSantri } from './absensi'
 export { waliSantri } from './wali-santri'
 export { raporSettings } from './rapor-settings'
 export * from './relations'

@@ -11,7 +11,7 @@ export const Route = createFileRoute('/ustadz/absensi')({
 type SantriAbsensi = {
   id: string
   nama: string
-  status?: 'hadir' | 'izin' | 'sakit' | 'alpa' | 'terlambat'
+  status?: 'hadir' | 'izin' | 'sakit' | 'alpa' | 'terlambat' | 'hadir_tanpa_setoran'
   catatan?: string
 }
 
@@ -24,10 +24,12 @@ function AbsensiUstadzPage() {
   // Sesi config
   const [selectedKelasId, setSelectedKelasId] = useState('')
   const [tanggal, setTanggal] = useState(new Date().toISOString().split('T')[0])
+  const [waktuSesi, setWaktuSesi] = useState<'subuh' | 'dhuha' | 'dzuhur' | 'ashar' | 'maghrib' | 'isya'>('subuh')
   
   // Status sesi aktif
   const [loadingSesi, setLoadingSesi] = useState(false)
   const [sesiId, setSesiId] = useState<string | null>(null)
+  const [isEditMode, setIsEditMode] = useState(false)
   const [daftarSantri, setDaftarSantri] = useState<SantriAbsensi[]>([])
 
 
@@ -66,13 +68,12 @@ function AbsensiUstadzPage() {
     setSuccessMsg('')
     setSesiId(null)
 
-    const res = await bukaSesiAbsensi({ data: { kelasId: selectedKelasId, tanggal } })
+    const res = await bukaSesiAbsensi({ data: { kelasId: selectedKelasId, tanggal, waktuSesi } })
     if (res.success && res.data) {
       setSesiId(res.data.sesiId)
-
       
-      // Merge daftar santri dengan absensi tersimpan
       const tersimpan = res.data.absensiTersimpan || []
+      setIsEditMode(tersimpan.length > 0)
       const merged = res.data.daftarSantri.map((s: any) => {
         const d = tersimpan.find((t: any) => t.santriId === s.id)
         return {
@@ -134,6 +135,7 @@ function AbsensiUstadzPage() {
 
   const STATUS_CONFIG = [
     { value: 'hadir', label: 'Hadir', bg: 'bg-emerald-500 hover:bg-emerald-600', text: 'text-white' },
+    { value: 'hadir_tanpa_setoran', label: 'Hadir (Tanpa Setor)', bg: 'bg-teal-500 hover:bg-teal-600', text: 'text-white' },
     { value: 'izin', label: 'Izin', bg: 'bg-blue-500 hover:bg-blue-600', text: 'text-white' },
     { value: 'sakit', label: 'Sakit', bg: 'bg-yellow-500 hover:bg-yellow-600', text: 'text-white' },
     { value: 'alpa', label: 'Alpa', bg: 'bg-red-500 hover:bg-red-600', text: 'text-white' },
@@ -171,9 +173,20 @@ function AbsensiUstadzPage() {
             )}
             {getJadwalStatus() === 'belum_diatur' && (
               <span className="absolute -bottom-5 left-0 text-xs text-slate-500 font-medium flex items-center gap-1">
-                <Info className="w-3 h-3" /> Kelas belum punya jadwal reguler
+                <Info className="w-3 h-3" /> Kelas belum diatur
               </span>
             )}
+          </div>
+          <div className="flex-1 w-full">
+            <label className="block text-sm font-medium mb-1">Waktu Sesi</label>
+            <select required value={waktuSesi} onChange={e => setWaktuSesi(e.target.value as any)} className="w-full border p-2.5 rounded-lg bg-slate-50">
+              <option value="subuh">Subuh</option>
+              <option value="dhuha">Dhuha</option>
+              <option value="dzuhur">Dzuhur</option>
+              <option value="ashar">Ashar</option>
+              <option value="maghrib">Maghrib</option>
+              <option value="isya">Isya</option>
+            </select>
           </div>
           <Button type="submit" disabled={loadingSesi || !selectedKelasId} className="w-full md:w-auto bg-slate-900 hover:bg-slate-800 text-white h-[46px] px-8">
             {loadingSesi ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Calendar className="w-4 h-4 mr-2" />}
@@ -191,9 +204,16 @@ function AbsensiUstadzPage() {
 
       {sesiId && (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-lg text-slate-800">Daftar Santri <span className="text-slate-400 font-normal ml-2">({daftarSantri.length} orang)</span></h3>
-            <Button variant="outline" size="sm" onClick={tandaiSemuaHadir} className="text-emerald-700 border-emerald-200 hover:bg-emerald-50">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h3 className="font-semibold text-lg text-slate-800">Daftar Santri <span className="text-slate-400 font-normal ml-2">({daftarSantri.length} orang)</span></h3>
+              {isEditMode && (
+                <p className="text-sm text-blue-600 flex items-center gap-1 mt-1">
+                  <Info className="w-4 h-4" /> Anda sedang mengedit data yang sudah pernah diisi
+                </p>
+              )}
+            </div>
+            <Button variant="outline" size="sm" onClick={tandaiSemuaHadir} className="text-emerald-700 border-emerald-200 hover:bg-emerald-50 shrink-0">
               <CheckCircle2 className="w-4 h-4 mr-2" /> Tandai Semua Hadir
             </Button>
           </div>

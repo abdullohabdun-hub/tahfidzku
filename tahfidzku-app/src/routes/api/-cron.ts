@@ -4,6 +4,7 @@ import { db } from '../../db'
 import { tenants, billingLogs } from '../../db/schema'
 import { and, eq, lte, sql } from 'drizzle-orm'
 import { sendEmail } from '../../lib/email'
+import { precomputeRekapMingguan } from '../../server-fns/cron'
 
 export const APIRoute = createAPIFileRoute('/api/cron')({
   POST: async ({ request }) => {
@@ -96,10 +97,21 @@ export const APIRoute = createAPIFileRoute('/api/cron')({
         await db.insert(billingLogs).values(logs)
       }
 
+      // ════════════════════════════════════════════════════════
+      // TUGAS 3: PRECOMPUTE REKAP MINGGUAN SANTRI
+      // ════════════════════════════════════════════════════════
+      let precomputeResult = null
+      try {
+        precomputeResult = await precomputeRekapMingguan({ data: {} })
+      } catch (err: any) {
+        console.error('Failed to precompute rekap mingguan:', err)
+      }
+
       return new Response(JSON.stringify({
         success: true,
         warningsSent: tenantsToWarn.length,
-        accountsSuspended: tenantsToSuspend.length
+        accountsSuspended: tenantsToSuspend.length,
+        precomputeMingguan: precomputeResult
       }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }

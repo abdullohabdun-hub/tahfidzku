@@ -2,7 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { eq, and, desc, asc, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '../db'
-import { absensi, sesiKelas, statusAbsensiEnum } from '../db/schema/absensi'
+import { absensi, sesiKelas, statusAbsensiEnum, waktuSesiEnum } from '../db/schema/absensi'
 import { kelas, santri } from '../db/schema'
 import { getAuthSession, requireRole } from '../middleware/auth.middleware'
 import { success, handleError } from '../lib/response'
@@ -44,7 +44,8 @@ export const getKelasYangDiampu = createServerFn({ method: 'POST' })
 export const bukaSesiAbsensi = createServerFn({ method: 'POST' })
   .validator((d: unknown) => z.object({
     kelasId: z.string().uuid(),
-    tanggal: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format tanggal YYYY-MM-DD')
+    tanggal: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format tanggal YYYY-MM-DD'),
+    waktuSesi: z.enum(waktuSesiEnum.enumValues)
   }).parse(d))
   .handler(async ({ data }) => {
     try {
@@ -74,6 +75,7 @@ export const bukaSesiAbsensi = createServerFn({ method: 'POST' })
           tenantId,
           kelasId: data.kelasId,
           tanggal: data.tanggal,
+          waktuSesi: data.waktuSesi,
           createdBy: userId
         }).returning({ id: sesiKelas.id })
         sesiId = newSesi.id
@@ -88,7 +90,8 @@ export const bukaSesiAbsensi = createServerFn({ method: 'POST' })
             .from(sesiKelas)
             .where(and(
               eq(sesiKelas.kelasId, data.kelasId),
-              eq(sesiKelas.tanggal, data.tanggal)
+              eq(sesiKelas.tanggal, data.tanggal),
+              eq(sesiKelas.waktuSesi, data.waktuSesi)
             ))
             .limit(1)
           
@@ -312,6 +315,7 @@ export const getRiwayatAbsensiKelas = createServerFn({ method: 'POST' })
         const summary = {
           total: absensiSesi.length,
           hadir: absensiSesi.filter(a => a.status === 'hadir').length,
+          hadir_tanpa_setoran: absensiSesi.filter(a => a.status === 'hadir_tanpa_setoran').length,
           izin: absensiSesi.filter(a => a.status === 'izin').length,
           sakit: absensiSesi.filter(a => a.status === 'sakit').length,
           alpa: absensiSesi.filter(a => a.status === 'alpa').length,
@@ -321,12 +325,55 @@ export const getRiwayatAbsensiKelas = createServerFn({ method: 'POST' })
         return {
           id: s.id,
           tanggal: s.tanggal,
+          waktuSesi: s.waktuSesi,
           createdAt: s.createdAt,
           summary
         }
       })
 
       return success({ kelasNama: kelasTarget.nama, riwayat }, 'Berhasil mengambil riwayat absensi')
+    } catch (err) {
+      return handleError(err)
+    }
+  })
+
+// ==========================================
+// 4. GET REKAP MINGGUAN (SANTRI / WALI)
+// ==========================================
+export const getRekapMingguan = createServerFn({ method: 'POST' })
+  .validator((d: unknown) => z.object({
+    santriId: z.string().uuid().optional() // Jika kosong, gunakan user.santriId (dari login)
+  }).optional().default({}).parse(d))
+  .handler(async ({ data }) => {
+    try {
+      const session = await getAuthSession()
+      if (!session) throw new AuthenticationError()
+
+      const tenantId = session.user.tenantId
+      let targetSantriId = data?.santriId
+
+      if (session.user.role === 'santri') {
+        targetSantriId = session.user.santriId!
+      } else if (session.user.role === 'wali') {
+        targetSantriId = session.user.santriId!
+        // TODO: Handle multiple santri if wali has multiple
+      }
+
+      if (!targetSantriId) {
+        throw new ValidationError('Santri ID tidak valid')
+      }
+
+      const rekap = await db
+        .select()
+        .from(rekapMingguanSantri)
+        .where(and(
+          eq(rekapMingguanSantri.santriId, targetSantriId),
+          eq(rekapMingguanSantri.tenantId, tenantId)
+        ))
+        .orderBy(desc(rekapMingguanSantri.mingguMulai))
+        .limit(4) // Ambil 4 minggu terakhir
+
+      return success(rekap, 'Berhasil memuat rekap mingguan')
     } catch (err) {
       return handleError(err)
     }

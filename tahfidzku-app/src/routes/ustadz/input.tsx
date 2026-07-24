@@ -1,10 +1,10 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useEffect, useMemo } from 'react'
 import { ChevronDown, Loader2, AlertTriangle } from 'lucide-react'
-import { getSantriList } from '../../server-fns/santri'
+import { getSantriList, setupSantriInitialHafalan } from '../../server-fns/santri'
 import { createSetoran } from '../../server-fns/setoran'
 import { SetoranForm } from '../../components/SetoranForm'
-import { posisiTerakhirDariJumlahJuzSelesai, urutanJuzStandar } from '../../lib/quranMapper'
+import { getSurahByJuz, getAyatRangeInJuz, bangunPosisiDariAdminInput } from '../../lib/quranMapper'
 
 export const Route = createFileRoute('/ustadz/input')({
   component: InputSetoranPage,
@@ -39,8 +39,31 @@ function InputSetoranPage() {
 
   // Setup Hafalan Awal (Santri Baru)
   const [showSetup, setShowSetup] = useState(false)
-  const [jumlahJuzSelesai, setJumlahJuzSelesai] = useState(0)
-  const urutanHafalan = useMemo(() => selectedSantri?.urutanHafalan ?? urutanJuzStandar(), [selectedSantri])
+  const [isApplyingSetup, setIsApplyingSetup] = useState(false)
+  const [juzProgress, setJuzProgress] = useState<number[]>([])
+  const [batasHafalanJuz, setBatasHafalanJuz] = useState<number | ''>('')
+  const [batasHafalanSurah, setBatasHafalanSurah] = useState<string>('')
+  const [batasHafalanAyat, setBatasHafalanAyat] = useState<number | ''>('')
+  const [surahOptions, setSurahOptions] = useState<any[]>([])
+  const [ayatMax, setAyatMax] = useState<number>(999)
+
+  useEffect(() => {
+    if (batasHafalanJuz !== '') {
+      setSurahOptions(getSurahByJuz(Number(batasHafalanJuz)))
+    } else {
+      setSurahOptions([])
+      setBatasHafalanSurah('')
+    }
+  }, [batasHafalanJuz])
+
+  useEffect(() => {
+    if (batasHafalanJuz !== '' && batasHafalanSurah) {
+      const range = getAyatRangeInJuz(Number(batasHafalanJuz), batasHafalanSurah)
+      setAyatMax(range.ayatAkhir)
+    } else {
+      setAyatMax(999)
+    }
+  }, [batasHafalanJuz, batasHafalanSurah])
 
   useEffect(() => {
     async function init() {
@@ -59,15 +82,48 @@ function InputSetoranPage() {
     init()
   }, [])
 
-  const handleApplySetupAwal = () => {
-    const posisiAwal = posisiTerakhirDariJumlahJuzSelesai(urutanHafalan, jumlahJuzSelesai);
-    setSantriList(prev => prev.map(s => {
-      if (s.id === santriId) {
-        return { ...s, posisiTerakhir: posisiAwal }
+  const handleApplySetupAwal = async () => {
+    // Validasi dasar
+    if (juzProgress.length === 0 && (batasHafalanJuz === '' || !batasHafalanSurah || batasHafalanAyat === '')) {
+      alert('Harap isi Juz yang selesai dihafal ATAU batas hafalan terakhir.')
+      return
+    }
+    
+    setIsApplyingSetup(true)
+    try {
+      const payload = {
+        santriId,
+        juzProgress,
+        batasHafalanJuz: batasHafalanJuz !== '' ? Number(batasHafalanJuz) : null,
+        batasHafalanSurah: batasHafalanSurah ? batasHafalanSurah : null,
+        batasHafalanAyat: batasHafalanAyat !== '' ? Number(batasHafalanAyat) : null
       }
-      return s
-    }))
-    setShowSetup(false)
+
+      const res = await setupSantriInitialHafalan({ data: payload })
+      if (!res.success) {
+        throw new Error(res.error?.message || 'Gagal menyimpan posisi awal')
+      }
+
+      // Hitung posisi lokal untuk update state
+      const { posisiTerakhir: posisiAwal, urutanHafalan } = bangunPosisiDariAdminInput(
+        payload.juzProgress,
+        payload.batasHafalanJuz,
+        payload.batasHafalanSurah,
+        payload.batasHafalanAyat
+      )
+
+      setSantriList(prev => prev.map(s => {
+        if (s.id === santriId) {
+          return { ...s, posisiTerakhir: posisiAwal, urutanHafalan, juzProgress }
+        }
+        return s
+      }))
+      setShowSetup(false)
+    } catch (err: any) {
+      alert(err.message || 'Terjadi kesalahan')
+    } finally {
+      setIsApplyingSetup(false)
+    }
   }
 
   const handleCreateSetoran = async (payload: any) => {
@@ -187,26 +243,98 @@ function InputSetoranPage() {
               Atur Posisi Sekarang
             </button>
           ) : (
-            <div className="flex gap-2 items-end">
-               <div className="flex-1">
-                 <label className="block text-[10px] font-bold text-emerald-700 uppercase tracking-wider mb-1">Sudah Hafal Berapa Juz?</label>
-                 <select 
-                   value={jumlahJuzSelesai}
-                   onChange={e => setJumlahJuzSelesai(Number(e.target.value))}
-                   className="w-full text-sm border-emerald-200 rounded-lg py-2"
-                 >
-                   {Array.from({length: 31}, (_, i) => i).map(n => (
-                     <option key={n} value={n}>{n} Juz</option>
-                   ))}
-                 </select>
+             <div className="space-y-4">
+               
+               <div>
+                 <label className="block text-[10px] font-bold text-emerald-700 uppercase tracking-wider mb-2">
+                   Pilih Juz yang Sudah Selesai Dihafal (Bila Ada)
+                 </label>
+                 <div className="grid grid-cols-5 sm:grid-cols-6 gap-2">
+                    {Array.from({length: 30}, (_, i) => i + 1).map(j => (
+                      <label key={j} className={`
+                        flex items-center justify-center py-1.5 rounded-lg border cursor-pointer transition-colors text-xs font-bold
+                        ${juzProgress.includes(j) ? 'bg-emerald-500 border-emerald-600 text-white shadow-inner' : 'bg-white border-emerald-200 text-emerald-700 hover:bg-emerald-50'}
+                      `}>
+                        <input 
+                          type="checkbox" 
+                          className="hidden"
+                          checked={juzProgress.includes(j)}
+                          onChange={e => {
+                            if (e.target.checked) setJuzProgress([...juzProgress, j].sort((a,b) => a-b))
+                            else setJuzProgress(juzProgress.filter(x => x !== j))
+                          }}
+                        />
+                        {j}
+                      </label>
+                    ))}
+                 </div>
                </div>
-               <button 
-                  onClick={handleApplySetupAwal}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2.5 rounded-lg h-[38px]"
-               >
-                 Terapkan
-               </button>
-            </div>
+
+               <div className="pt-3 border-t border-emerald-200/50">
+                 <label className="block text-[10px] font-bold text-emerald-700 uppercase tracking-wider mb-2">
+                   Batas Hafalan Terakhir Santri (Opsional)
+                 </label>
+                 <div className="grid grid-cols-3 gap-2">
+                   <select 
+                     value={batasHafalanJuz} 
+                     onChange={e => {
+                       setBatasHafalanJuz(e.target.value ? Number(e.target.value) : '')
+                       setBatasHafalanSurah('')
+                       setBatasHafalanAyat('')
+                     }}
+                     className="text-sm border-emerald-200 rounded-lg py-2"
+                   >
+                     <option value="">Juz</option>
+                     {Array.from({length: 30}, (_, i) => i + 1).map(j => (
+                       <option key={j} value={j}>Juz {j}</option>
+                     ))}
+                   </select>
+                   
+                   <select 
+                     value={batasHafalanSurah} 
+                     onChange={e => {
+                       setBatasHafalanSurah(e.target.value)
+                       setBatasHafalanAyat('')
+                     }}
+                     disabled={batasHafalanJuz === ''}
+                     className="text-sm border-emerald-200 rounded-lg py-2 disabled:bg-emerald-50 disabled:text-emerald-400"
+                   >
+                     <option value="">Surah</option>
+                     {surahOptions.map(s => (
+                       <option key={s.nomor} value={s.nama}>{s.nama}</option>
+                     ))}
+                   </select>
+
+                   <input 
+                     type="number" 
+                     min={1} max={ayatMax}
+                     placeholder="Ayat"
+                     value={batasHafalanAyat}
+                     onChange={e => setBatasHafalanAyat(e.target.value ? Number(e.target.value) : '')}
+                     disabled={batasHafalanJuz === '' || !batasHafalanSurah}
+                     className="text-sm border-emerald-200 rounded-lg py-2 px-3 disabled:bg-emerald-50"
+                   />
+                 </div>
+               </div>
+               
+               <div className="flex justify-end gap-2 pt-2">
+                 <button 
+                    onClick={() => setShowSetup(false)}
+                    disabled={isApplyingSetup}
+                    className="text-emerald-700 font-medium text-xs px-3 py-2 disabled:opacity-50"
+                 >
+                   Batal
+                 </button>
+                 <button 
+                    onClick={handleApplySetupAwal}
+                    disabled={isApplyingSetup}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded-lg flex items-center disabled:opacity-50"
+                 >
+                   {isApplyingSetup ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : null}
+                   Simpan ke Database
+                 </button>
+               </div>
+             </div>
           )}
         </div>
       )}
