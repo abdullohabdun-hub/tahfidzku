@@ -8,12 +8,9 @@ export const Route = createFileRoute('/ustadz/profil')({
   component: ProfilPage,
   loader: async () => {
     try {
-      const res = await checkAuth()
-      if (!res.success) {
-        if (res.error?.code === 'UNAUTHENTICATED') throw redirect({ to: '/login' })
-        return { user: null, authError: { message: res.error?.message, code: res.error?.code } }
-      }
-      return { user: res.data, authError: null }
+      const user = await checkAuth()
+      if (!user) throw redirect({ to: '/login' })
+      return { user, authError: null }
     } catch (err: any) {
       if (isRedirect(err)) throw err
       return { user: null, authError: { message: 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.', code: 'NETWORK_ERROR' } }

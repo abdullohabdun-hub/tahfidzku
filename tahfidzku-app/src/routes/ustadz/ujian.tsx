@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { GraduationCap, Clock, CheckCircle, XCircle, AlertTriangle, ChevronRight, BookOpen } from 'lucide-react'
+import { GraduationCap, Clock, CheckCircle, XCircle, AlertTriangle, ChevronRight, BookOpen, Loader2 } from 'lucide-react'
 import { getUjianPending, getUjianList, createUjian } from '../../server-fns/ujian'
 import { hitungSkorUjian, rekomendasiLulus, labelSkor, warnaBadgeStatus, labelStatus } from '../../lib/ujianLogic'
 import { format } from 'date-fns'

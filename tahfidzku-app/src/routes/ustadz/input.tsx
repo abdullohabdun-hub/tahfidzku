@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect, useMemo } from 'react'
 import { ChevronDown, Loader2, AlertTriangle } from 'lucide-react'
-import { getSantriList, setupSantriInitialHafalan } from '../../server-fns/santri'
+import { getSantriList } from '../../server-fns/santri'
 import { createSetoran } from '../../server-fns/setoran'
 import { SetoranForm } from '../../components/SetoranForm'
 import { getSurahByJuz, getAyatRangeInJuz, bangunPosisiDariAdminInput } from '../../lib/quranMapper'
