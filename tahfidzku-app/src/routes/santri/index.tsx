@@ -246,8 +246,9 @@ import { GrafikAnalitikSantri } from '../../components/dashboard/GrafikAnalitikS
 
 function DashboardAnalitikContainer({ santriId }: { santriId: string }) {
   const [data, setData] = useState<{grafik?: any, peta?: any, estimasi?: any} | null>(null)
+  const [errors, setErrors] = useState<{grafik?: any, peta?: any, estimasi?: any}>({})
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<{ message: string, code?: string } | null>(null)
+  const [globalError, setGlobalError] = useState<{ message: string, code?: string } | null>(null)
 
   useEffect(() => {
     async function fetchAnalitik() {
@@ -265,16 +266,13 @@ function DashboardAnalitikContainer({ santriId }: { santriId: string }) {
           estimasi: resAnalitik.status === 'fulfilled' && resAnalitik.value.success ? resAnalitik.value.data?.estimasiKhatam : null
         })
         
-        // Handle global error only if ALL endpoints fail
-        if (
-          resGrafik.status === 'rejected' && 
-          resPeta.status === 'rejected' && 
-          resAnalitik.status === 'rejected'
-        ) {
-          setError({ message: 'Semua layanan analitik gagal dimuat', code: 'NETWORK_ERROR' })
-        }
+        setErrors({
+          grafik: resGrafik.status === 'rejected' ? { message: 'Koneksi terputus', code: 'NETWORK_ERROR' } : (!resGrafik.value.success ? resGrafik.value.error : null),
+          peta: resPeta.status === 'rejected' ? { message: 'Koneksi terputus', code: 'NETWORK_ERROR' } : (!resPeta.value.success ? resPeta.value.error : null),
+          estimasi: resAnalitik.status === 'rejected' ? { message: 'Koneksi terputus', code: 'NETWORK_ERROR' } : (!resAnalitik.value.success ? resAnalitik.value.error : null)
+        })
       } catch (err: any) {
-        setError({ message: 'Tidak dapat terhubung ke server', code: 'NETWORK_ERROR' })
+        setGlobalError({ message: 'Tidak dapat terhubung ke server', code: 'NETWORK_ERROR' })
       } finally {
         setIsLoading(false)
       }
@@ -284,9 +282,9 @@ function DashboardAnalitikContainer({ santriId }: { santriId: string }) {
 
   return (
     <div className="space-y-6 mt-6">
-      <EstimasiKhatam data={data?.estimasi} isLoading={isLoading} error={error} />
-      <PetaKualitasJuz data={data?.peta} isLoading={isLoading} error={error} />
-      <GrafikAnalitikSantri data={data?.grafik} isLoading={isLoading} error={error} />
+      <EstimasiKhatam data={data?.estimasi} isLoading={isLoading} error={globalError || errors.estimasi} />
+      <PetaKualitasJuz data={data?.peta} isLoading={isLoading} error={globalError || errors.peta} />
+      <GrafikAnalitikSantri data={data?.grafik} isLoading={isLoading} error={globalError || errors.grafik} />
     </div>
   )
 }
