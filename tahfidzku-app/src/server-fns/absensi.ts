@@ -6,6 +6,7 @@ import { absensi, sesiKelas, statusAbsensiEnum, waktuSesiEnum, rekapMingguanSant
 import { kelas, santri } from '../db/schema'
 import { getAuthSession, requireRole } from '../middleware/auth.middleware'
 import { verifyAksesSantri } from '../lib/authz'
+import { getLegacyMingguMulaiKey } from '../lib/dateUtils'
 import { success, handleError } from '../lib/response'
 import { AuthenticationError, ForbiddenError, ValidationError } from '../lib/errors'
 import { MAX_EDIT_AGE_MS } from '../lib/constants'
@@ -401,14 +402,8 @@ export const getRekapMingguanSantri = createServerFn({ method: 'GET' })
       // 2. PERBAIKAN BUG TANGGAL (Hanya 1x Normalisasi)
       const filterTanggal = data.tanggalAwal ? new Date(data.tanggalAwal) : new Date()
 
-      // Normalisasi ke awal minggu (Senin)
-      const startOfWeek = new Date(filterTanggal)
-      const day = startOfWeek.getDay()
-      const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1) // Mundur ke Senin
-      startOfWeek.setDate(diff)
-      startOfWeek.setHours(0, 0, 0, 0)
-      
-      const isoDateString = startOfWeek.toISOString().split('T')[0] // Hasil format: 'YYYY-MM-DD'
+      // Memakai helper legacy karena ada bug toISOString di tabel ini
+      const isoDateString = getLegacyMingguMulaiKey(filterTanggal)
 
       const [rekap] = await db
         .select()
