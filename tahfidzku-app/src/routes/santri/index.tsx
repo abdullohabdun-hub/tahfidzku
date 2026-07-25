@@ -175,6 +175,9 @@ function SantriDashboard() {
         </CardContent>
       </Card>
 
+      {/* Dashboard Analitik Fase 4 */}
+      <DashboardAnalitikContainer santriId={profil.id} />
+
       {/* Timeline Riwayat Murojaah */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -229,6 +232,44 @@ function SantriDashboard() {
         )}
       </div>
 
+    </div>
+  )
+}
+
+import { useEffect, useState } from 'react'
+import { getGrafikDanSummarySantri } from '../../server-fns/grafik-santri'
+import { EstimasiKhatam } from '../../components/dashboard/EstimasiKhatam'
+import { PetaKualitasJuz } from '../../components/dashboard/PetaKualitasJuz'
+import { GrafikAnalitikSantri } from '../../components/dashboard/GrafikAnalitikSantri'
+
+function DashboardAnalitikContainer({ santriId }: { santriId: string }) {
+  const [data, setData] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<{ message: string, code?: string } | null>(null)
+
+  useEffect(() => {
+    async function fetchAnalitik() {
+      try {
+        const res = await getGrafikDanSummarySantri({ data: { santriId } })
+        if (!res.success) {
+          setError({ message: res.error?.message || 'Gagal memuat analitik', code: res.error?.code })
+          return
+        }
+        setData(res.data)
+      } catch (err: any) {
+        setError({ message: 'Tidak dapat terhubung ke server', code: 'NETWORK_ERROR' })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchAnalitik()
+  }, [santriId])
+
+  return (
+    <div className="space-y-6 mt-6">
+      <EstimasiKhatam data={data} isLoading={isLoading} error={error} />
+      <PetaKualitasJuz data={data} isLoading={isLoading} error={error} />
+      <GrafikAnalitikSantri data={data} isLoading={isLoading} error={error} />
     </div>
   )
 }
