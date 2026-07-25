@@ -238,24 +238,38 @@ function SantriDashboard() {
 
 import { useEffect, useState } from 'react'
 import { getGrafikDanSummarySantri } from '../../server-fns/grafik-santri'
+import { getPetaKualitasJuz } from '../../server-fns/peta-juz'
+import { getSantriAnalitik } from '../../server-fns/analitik'
 import { EstimasiKhatam } from '../../components/dashboard/EstimasiKhatam'
 import { PetaKualitasJuz } from '../../components/dashboard/PetaKualitasJuz'
 import { GrafikAnalitikSantri } from '../../components/dashboard/GrafikAnalitikSantri'
 
 function DashboardAnalitikContainer({ santriId }: { santriId: string }) {
-  const [data, setData] = useState<any>(null)
+  const [data, setData] = useState<{grafik?: any, peta?: any, estimasi?: any} | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<{ message: string, code?: string } | null>(null)
 
   useEffect(() => {
     async function fetchAnalitik() {
       try {
-        const res = await getGrafikDanSummarySantri({ data: { santriId } })
-        if (!res.success) {
-          setError({ message: res.error?.message || 'Gagal memuat analitik', code: res.error?.code })
+        const payload = { data: { santriId } }
+        const [resGrafik, resPeta, resAnalitik] = await Promise.all([
+          getGrafikDanSummarySantri(payload),
+          getPetaKualitasJuz(payload),
+          getSantriAnalitik(payload)
+        ])
+        
+        if (!resGrafik.success || !resPeta.success || !resAnalitik.success) {
+          const firstErr = [resGrafik, resPeta, resAnalitik].find(r => !r.success)?.error
+          setError({ message: firstErr?.message || 'Gagal memuat analitik', code: firstErr?.code })
           return
         }
-        setData(res.data)
+        
+        setData({
+          grafik: resGrafik.data,
+          peta: resPeta.data?.peta,
+          estimasi: resAnalitik.data?.estimasiKhatam
+        })
       } catch (err: any) {
         setError({ message: 'Tidak dapat terhubung ke server', code: 'NETWORK_ERROR' })
       } finally {
@@ -267,9 +281,9 @@ function DashboardAnalitikContainer({ santriId }: { santriId: string }) {
 
   return (
     <div className="space-y-6 mt-6">
-      <EstimasiKhatam data={data} isLoading={isLoading} error={error} />
-      <PetaKualitasJuz data={data} isLoading={isLoading} error={error} />
-      <GrafikAnalitikSantri data={data} isLoading={isLoading} error={error} />
+      <EstimasiKhatam data={data?.estimasi} isLoading={isLoading} error={error} />
+      <PetaKualitasJuz data={data?.peta} isLoading={isLoading} error={error} />
+      <GrafikAnalitikSantri data={data?.grafik} isLoading={isLoading} error={error} />
     </div>
   )
 }
