@@ -253,23 +253,26 @@ function DashboardAnalitikContainer({ santriId }: { santriId: string }) {
     async function fetchAnalitik() {
       try {
         const payload = { data: { santriId } }
-        const [resGrafik, resPeta, resAnalitik] = await Promise.all([
+        const [resGrafik, resPeta, resAnalitik] = await Promise.allSettled([
           getGrafikDanSummarySantri(payload),
           getPetaKualitasJuz(payload),
           getSantriAnalitik(payload)
         ])
         
-        if (!resGrafik.success || !resPeta.success || !resAnalitik.success) {
-          const firstErr = [resGrafik, resPeta, resAnalitik].find(r => !r.success)?.error
-          setError({ message: firstErr?.message || 'Gagal memuat analitik', code: firstErr?.code })
-          return
-        }
-        
         setData({
-          grafik: resGrafik.data,
-          peta: resPeta.data?.peta,
-          estimasi: resAnalitik.data?.estimasiKhatam
+          grafik: resGrafik.status === 'fulfilled' && resGrafik.value.success ? resGrafik.value.data : null,
+          peta: resPeta.status === 'fulfilled' && resPeta.value.success ? resPeta.value.data?.peta : null,
+          estimasi: resAnalitik.status === 'fulfilled' && resAnalitik.value.success ? resAnalitik.value.data?.estimasiKhatam : null
         })
+        
+        // Handle global error only if ALL endpoints fail
+        if (
+          resGrafik.status === 'rejected' && 
+          resPeta.status === 'rejected' && 
+          resAnalitik.status === 'rejected'
+        ) {
+          setError({ message: 'Semua layanan analitik gagal dimuat', code: 'NETWORK_ERROR' })
+        }
       } catch (err: any) {
         setError({ message: 'Tidak dapat terhubung ke server', code: 'NETWORK_ERROR' })
       } finally {
