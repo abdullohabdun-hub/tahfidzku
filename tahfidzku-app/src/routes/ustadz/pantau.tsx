@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect, isRedirect } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { db } from '../../db'
 import { setoran, santri, kelas } from '../../db/schema'
@@ -56,18 +56,29 @@ export const getPantauanMurojaah = createServerFn({ method: 'GET' })
 export const Route = createFileRoute('/ustadz/pantau')({
   component: UstadzPantauMurojaah,
   loader: async () => {
-    const res = await getPantauanMurojaah()
-    if (!res.success) throw new Error(res.error?.message)
-    const rubrikRes = await getAllRubrikTenant()
-    return {
-      riwayat: res.data,
-      rubrikAktif: rubrikRes
+    try {
+      const res = await getPantauanMurojaah()
+      if (!res.success) {
+        if (res.error?.code === 'UNAUTHENTICATED') throw redirect({ to: '/login' })
+        return { riwayat: [], rubrikAktif: [], authError: { message: res.error?.message, code: res.error?.code } }
+      }
+      const rubrikRes = await getAllRubrikTenant()
+      return {
+        riwayat: res.data,
+        rubrikAktif: rubrikRes,
+        authError: null
+      }
+    } catch (err: any) {
+      if (isRedirect(err)) throw err
+      return { riwayat: [], rubrikAktif: [], authError: { message: 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.', code: 'NETWORK_ERROR' } }
     }
   }
 })
 
 function UstadzPantauMurojaah() {
-  const { riwayat, rubrikAktif } = Route.useLoaderData() || { riwayat: [], rubrikAktif: [] }
+  const { riwayat, rubrikAktif, authError } = Route.useLoaderData() || { riwayat: [], rubrikAktif: [], authError: null }
+
+  if (authError) return <AuthErrorAlert error={authError} />
 
   return (
     <div className="space-y-6">

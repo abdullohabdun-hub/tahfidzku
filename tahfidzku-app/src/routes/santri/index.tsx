@@ -1,30 +1,43 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link, redirect, isRedirect } from '@tanstack/react-router'
 import { getSantriDashboard } from '../../server-fns/dashboard'
 import { getAllRubrikTenant } from '../../server-fns/rubrik'
 import { FormatPenilaian } from '../../components/FormatPenilaian'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Flame, Target, BookOpen, Clock, GraduationCap } from 'lucide-react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, CartesianGrid } from 'recharts'
-import { Link } from '@tanstack/react-router'
 import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
 import { Button } from '../../components/ui/button'
+import { AuthErrorAlert } from '../../components/AuthErrorAlert'
 
 export const Route = createFileRoute('/santri/')({
   component: SantriDashboard,
   loader: async () => {
-    const res = await getSantriDashboard()
-    if (!res.success) throw new Error(res.error?.message || 'Gagal memuat data')
-    const rubrikRes = await getAllRubrikTenant()
-    return {
-      data: res.data!,
-      rubrikAktif: rubrikRes
+    try {
+      const res = await getSantriDashboard()
+      if (!res.success) {
+        if (res.error?.code === 'UNAUTHENTICATED') throw redirect({ to: '/login' })
+        return { data: null, rubrikAktif: null, authError: { message: res.error?.message, code: res.error?.code } }
+      }
+      const rubrikRes = await getAllRubrikTenant()
+      return {
+        data: res.data!,
+        rubrikAktif: rubrikRes,
+        authError: null
+      }
+    } catch (err: any) {
+      if (isRedirect(err)) throw err
+      return { data: null, rubrikAktif: null, authError: { message: 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.', code: 'NETWORK_ERROR' } }
     }
   }
 })
 
 function SantriDashboard() {
-  const { data, rubrikAktif } = Route.useLoaderData()
+  const { data, rubrikAktif, authError } = Route.useLoaderData()
+
+  if (authError) return <AuthErrorAlert error={authError} />
+  if (!data) return null
+
   const profil = data?.profil
   const riwayat = data?.riwayat || []
   const progress = data?.progress

@@ -1,27 +1,40 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, redirect, isRedirect } from "@tanstack/react-router"
 import { useState, useEffect } from "react"
 import { Users, Contact, Activity, TrendingUp, Loader2, AlertTriangle } from "lucide-react"
 import { Card, CardContent } from "../../components/ui/card"
 import { getAdminDashboardStats } from "../../server-fns/dashboard"
 import { getAllRubrikTenant } from "../../server-fns/rubrik"
 import { FormatPenilaian } from "../../components/FormatPenilaian"
+import { AuthErrorAlert } from "../../components/AuthErrorAlert"
 
 export const Route = createFileRoute('/admin/')({
   component: Dashboard,
   loader: async () => {
-    const rubrikRes = await getAllRubrikTenant()
-    return {
-      rubrikAktif: rubrikRes
+    try {
+      const rubrikRes = await getAllRubrikTenant()
+      // Note: If rubrikRes has an error mechanism we should check it here too
+      // But typically it returns an array directly based on current code.
+      // We will wrap with try-catch for NETWORK_ERROR.
+      return {
+        rubrikAktif: rubrikRes,
+        authError: null
+      }
+    } catch (err: any) {
+      if (isRedirect(err)) throw err
+      return { rubrikAktif: [], authError: { message: 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.', code: 'NETWORK_ERROR' } }
     }
   }
 })
 
 function Dashboard() {
-  const { rubrikAktif } = Route.useLoaderData()
+  const { rubrikAktif, authError } = Route.useLoaderData()
+
   const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
   
   const [statsData, setStatsData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+
+  if (authError) return <AuthErrorAlert error={authError} />
 
   useEffect(() => {
     async function fetchStats() {

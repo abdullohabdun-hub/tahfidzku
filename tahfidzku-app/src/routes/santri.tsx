@@ -14,18 +14,27 @@ function SantriLayout() {
 
   useEffect(() => {
     async function loadProfile() {
-      const auth = await checkAuth()
-      if (auth) {
-        setUser(auth)
+      try {
+        const auth = await checkAuth()
+        if (auth) {
+          setUser(auth)
+        }
+      } catch (err) {
+        console.error('Failed to load santri profile:', err)
       }
     }
     loadProfile()
   }, [])
 
   const handleLogout = async () => {
-    await logout()
-    router.invalidate()
-    router.navigate({ to: '/login' })
+    try {
+      await logout()
+    } catch (err) {
+      console.error('Logout failed:', err)
+    } finally {
+      router.invalidate()
+      router.navigate({ to: '/login' })
+    }
   }
 
   const navItems = [

@@ -1,24 +1,42 @@
-import { createFileRoute, useRouter } from '@tanstack/react-router'
+import { createFileRoute, useRouter, redirect, isRedirect } from '@tanstack/react-router'
 import { LogOut } from 'lucide-react'
 import { checkAuth, logout } from '../../server-fns/auth'
 import { ChangePasswordForm } from '../../components/ChangePasswordForm'
+import { AuthErrorAlert } from '../../components/AuthErrorAlert'
 
 export const Route = createFileRoute('/ustadz/profil')({
   component: ProfilPage,
   loader: async () => {
-    const user = await checkAuth()
-    return { user }
+    try {
+      const res = await checkAuth()
+      if (!res.success) {
+        if (res.error?.code === 'UNAUTHENTICATED') throw redirect({ to: '/login' })
+        return { user: null, authError: { message: res.error?.message, code: res.error?.code } }
+      }
+      return { user: res.data, authError: null }
+    } catch (err: any) {
+      if (isRedirect(err)) throw err
+      return { user: null, authError: { message: 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.', code: 'NETWORK_ERROR' } }
+    }
   }
 })
 
 function ProfilPage() {
   const router = useRouter()
-  const { user } = Route.useLoaderData()
+  const { user, authError } = Route.useLoaderData()
+
+  if (authError) return <AuthErrorAlert error={authError} />
+  if (!user) return null
 
   const handleLogout = async () => {
-    await logout()
-    router.invalidate()
-    router.navigate({ to: '/login' })
+    try {
+      await logout()
+    } catch (err) {
+      console.error('Logout failed:', err)
+    } finally {
+      router.invalidate()
+      router.navigate({ to: '/login' })
+    }
   }
 
   const initial = user?.nama ? user.nama.substring(0, 2).toUpperCase() : "US"

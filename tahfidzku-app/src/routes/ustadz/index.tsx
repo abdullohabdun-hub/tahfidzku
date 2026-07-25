@@ -1,25 +1,39 @@
-import { createFileRoute, Link } from "@tanstack/react-router"
+import { createFileRoute, Link, redirect, isRedirect } from "@tanstack/react-router"
 import { Card, CardContent } from "../../components/ui/card"
 import { Edit } from "lucide-react"
 import { getUstadzDashboard } from "../../server-fns/dashboard"
 import { getAllRubrikTenant } from "../../server-fns/rubrik"
 import { FormatPenilaian } from "../../components/FormatPenilaian"
+import { AuthErrorAlert } from "../../components/AuthErrorAlert"
 
 export const Route = createFileRoute('/ustadz/')({
   component: UstadzDashboard,
   loader: async () => {
-    const res = await getUstadzDashboard()
-    if (!res.success) throw new Error(res.error?.message)
-    const rubrikRes = await getAllRubrikTenant()
-    return {
-      data: res.data!,
-      rubrikAktif: rubrikRes
+    try {
+      const res = await getUstadzDashboard()
+      if (!res.success) {
+        if (res.error?.code === 'UNAUTHENTICATED') throw redirect({ to: '/login' })
+        return { data: null, rubrikAktif: null, authError: { message: res.error?.message, code: res.error?.code } }
+      }
+      const rubrikRes = await getAllRubrikTenant()
+      return {
+        data: res.data!,
+        rubrikAktif: rubrikRes,
+        authError: null
+      }
+    } catch (err: any) {
+      if (isRedirect(err)) throw err
+      return { data: null, rubrikAktif: null, authError: { message: 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.', code: 'NETWORK_ERROR' } }
     }
   }
 })
 
 function UstadzDashboard() {
-  const { data, rubrikAktif } = Route.useLoaderData()
+  const { data, rubrikAktif, authError } = Route.useLoaderData()
+  
+  if (authError) return <AuthErrorAlert error={authError} />
+  if (!data) return null
+
   const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
   const persentase = data.totalSantri > 0 ? Math.round((data.totalSetoran / data.totalSantri) * 100) : 0
 

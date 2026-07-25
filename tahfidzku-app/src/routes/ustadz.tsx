@@ -16,22 +16,32 @@ function UstadzLayout() {
 
   useEffect(() => {
     async function loadProfile() {
-      const auth = await checkAuth()
-      if (auth) {
-        setUser(auth)
-        const tenantRes = await getTenantInfo()
-        if (tenantRes.success && tenantRes.data) {
-          setTenantName(tenantRes.data.namaLembaga)
+      try {
+        const auth = await checkAuth()
+        if (auth) {
+          setUser(auth)
+          const tenantRes = await getTenantInfo()
+          if (tenantRes.success && tenantRes.data) {
+            setTenantName(tenantRes.data.namaLembaga)
+          }
         }
+      } catch (err) {
+        console.error('Failed to load layout profile:', err)
+        setTenantName('TahfidzKu')
       }
     }
     loadProfile()
   }, [])
 
   const handleLogout = async () => {
-    await logout()
-    router.invalidate()
-    router.navigate({ to: '/login' })
+    try {
+      await logout()
+    } catch (err) {
+      console.error('Logout failed:', err)
+    } finally {
+      router.invalidate()
+      router.navigate({ to: '/login' })
+    }
   }
 
   const navItems = [

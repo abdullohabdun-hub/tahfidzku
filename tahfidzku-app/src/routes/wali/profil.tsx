@@ -13,8 +13,13 @@ function ProfilPage() {
 
   const handleLogout = async () => {
     if (!confirm('Apakah Anda yakin ingin keluar?')) return
-    await logout()
-    navigate({ to: '/login', replace: true })
+    try {
+      await logout()
+    } catch (err) {
+      console.error('Logout failed:', err)
+    } finally {
+      navigate({ to: '/login', replace: true })
+    }
   }
 
   return (

@@ -1,23 +1,42 @@
 import { useState } from "react"
-import { createFileRoute } from "@tanstack/react-router"
-import { Card, CardContent } from "../../components/ui/card"
-import { Clock, Flame } from "lucide-react"
-import { getWaliDashboard } from "../../server-fns/dashboard"
-import { FormatPenilaian } from "../../components/FormatPenilaian"
+import { createFileRoute, Link, redirect, isRedirect } from '@tanstack/react-router'
+import { getWaliDashboard } from '../../server-fns/dashboard'
+import { getAllRubrikTenant } from '../../server-fns/rubrik'
+import { FormatPenilaian } from '../../components/FormatPenilaian'
+import { Card, CardContent } from '../../components/ui/card'
+import { Flame, Target, BookOpen, Clock, GraduationCap, ChevronRight, CheckCircle, AlertTriangle } from 'lucide-react'
+import { format } from 'date-fns'
+import { id } from 'date-fns/locale'
+import { AuthErrorAlert } from '../../components/AuthErrorAlert'
 
 export const Route = createFileRoute('/wali/')({
   component: WaliDashboard,
   loader: async () => {
-    const res = await getWaliDashboard()
-    if (!res.success || !res.data) {
-      throw new Error('Gagal memuat data')
+    try {
+      const res = await getWaliDashboard()
+      if (!res.success) {
+        if (res.error?.code === 'UNAUTHENTICATED') throw redirect({ to: '/login' })
+        return { data: null, rubrikAktif: null, authError: { message: res.error?.message, code: res.error?.code } }
+      }
+      const rubrikRes = await getAllRubrikTenant()
+      return {
+        data: res.data!,
+        rubrikAktif: rubrikRes,
+        authError: null
+      }
+    } catch (err: any) {
+      if (isRedirect(err)) throw err
+      return { data: null, rubrikAktif: null, authError: { message: 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.', code: 'NETWORK_ERROR' } }
     }
-    return res.data
   }
 })
 
 function WaliDashboard() {
-  const { daftarAnak } = Route.useLoaderData()
+  const { data, rubrikAktif, authError } = Route.useLoaderData()
+
+  if (authError) return <AuthErrorAlert error={authError} />
+  if (!data) return null
+  const { daftarAnak } = data
   const [activeIndex, setActiveIndex] = useState(0)
 
   // Pastikan data valid
