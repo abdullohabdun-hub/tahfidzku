@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { db } from '../db'
 import { sql } from 'drizzle-orm'
 import { getAuthSession } from '../middleware/auth.middleware'
+import { verifyAksesSantri } from '../lib/authz'
 import { AuthenticationError, ForbiddenError, NotFoundError } from '../lib/errors'
 import { success, handleError } from '../lib/response'
 import { cariHalamanAbsolutUntukAyat } from '../lib/quranMapper'
@@ -14,16 +15,9 @@ export const getSantriAnalitik = createServerFn({ method: 'POST' })
       const session = await getAuthSession()
       if (!session) throw new AuthenticationError()
 
-      const { role, tenantId, santriId: sessionSantriId } = session.user
-
       // 1. OTORISASI & OWNERSHIP CHECK (Mencegah IDOR, berlaku untuk SEMUA role)
-      if (role === 'santri' || role === 'wali') {
-        if (data.santriId !== sessionSantriId) {
-          throw new ForbiddenError('Anda tidak berhak mengakses data santri ini.')
-        }
-      } else if (role !== 'ustadz' && role !== 'admin') {
-        throw new ForbiddenError('Role tidak diizinkan.')
-      }
+      const tenantId = await verifyAksesSantri(session, data.santriId)
+
 
       // 2. FETCH PROFIL SANTRI (Strict Tenant Isolation)
       const profil = await db.query.santri.findFirst({
