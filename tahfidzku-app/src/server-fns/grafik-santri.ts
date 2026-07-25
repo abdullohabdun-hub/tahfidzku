@@ -121,6 +121,7 @@ export const getGrafikDanSummarySantri = createServerFn({ method: 'POST' })
       }
 
       return success({
+        tipeSantri: profil.tipe,
         grafikHarian,
         rasioMingguan,
         smartSummary
