@@ -54,6 +54,13 @@ export const getSantriList = createServerFn({ method: 'POST' }).handler(
       })
 
       const mapped = results.map(s => {
+        let safeJuzProgress = s.juzProgress || []
+        try {
+          safeJuzProgress = kalkulasiJuzProgress(s.urutanHafalan || [], s.posisiTerakhir, s.juzUjianPending)
+        } catch (err) {
+          console.error(`[Data Integrity Error] Gagal menghitung juzProgress untuk santri ID ${s.id}:`, err)
+        }
+
         const akunSantri = s.akun?.find(a => a.role === 'santri')
         const akunWali = s.akun?.find(a => a.role === 'wali')
         
@@ -76,7 +83,7 @@ export const getSantriList = createServerFn({ method: 'POST' }).handler(
           targetJuz: s.targetJuz,
           kelasId: s.kelasId,
           kelasNama: s.kelas?.nama || null,
-          juzProgress: kalkulasiJuzProgress(s.urutanHafalan || [], s.posisiTerakhir, s.juzUjianPending),
+          juzProgress: safeJuzProgress,
           batasHafalanJuz: s.batasHafalanJuz,
           batasHafalanSurah: s.batasHafalanSurah,
           batasHafalanAyat: s.batasHafalanAyat,
