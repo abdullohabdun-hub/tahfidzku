@@ -1,10 +1,12 @@
 import { createServerFn } from '@tanstack/react-start'
-import { eq, and, desc, asc, inArray } from 'drizzle-orm'
+import { eq, and, desc, asc, inArray, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '../db'
 import { absensi, sesiKelas, statusAbsensiEnum, waktuSesiEnum, rekapMingguanSantri } from '../db/schema/absensi'
 import { kelas, santri } from '../db/schema'
 import { getAuthSession, requireRole } from '../middleware/auth.middleware'
+import { verifyAksesSantri } from '../lib/authz'
+import { getLegacyMingguMulaiKey } from '../lib/dateUtils'
 import { success, handleError } from '../lib/response'
 import { AuthenticationError, ForbiddenError, ValidationError } from '../lib/errors'
 import { MAX_EDIT_AGE_MS } from '../lib/constants'
@@ -394,29 +396,14 @@ export const getRekapMingguanSantri = createServerFn({ method: 'GET' })
       const session = await getAuthSession()
       if (!session) throw new AuthenticationError()
 
-      const { role, tenantId, santriId: sessionSantriId } = session.user
-
       // 1. OTORISASI & OWNERSHIP CHECK (Mencegah IDOR)
-      if (role === 'santri' || role === 'wali') {
-        // Santri/Wali HANYA boleh melihat data yang terkait dengan profil mereka
-        if (data.santriId !== sessionSantriId) {
-          throw new ForbiddenError('Anda tidak berhak mengakses data santri ini.')
-        }
-      } else if (role !== 'ustadz' && role !== 'admin') {
-        throw new ForbiddenError('Role tidak diizinkan.')
-      }
+      const tenantId = await verifyAksesSantri(session, data.santriId)
 
       // 2. PERBAIKAN BUG TANGGAL (Hanya 1x Normalisasi)
       const filterTanggal = data.tanggalAwal ? new Date(data.tanggalAwal) : new Date()
 
-      // Normalisasi ke awal minggu (Senin)
-      const startOfWeek = new Date(filterTanggal)
-      const day = startOfWeek.getDay()
-      const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1) // Mundur ke Senin
-      startOfWeek.setDate(diff)
-      startOfWeek.setHours(0, 0, 0, 0)
-      
-      const isoDateString = startOfWeek.toISOString().split('T')[0] // Hasil format: 'YYYY-MM-DD'
+      // Memakai helper legacy karena ada bug toISOString di tabel ini
+      const isoDateString = getLegacyMingguMulaiKey(filterTanggal)
 
       const [rekap] = await db
         .select()
