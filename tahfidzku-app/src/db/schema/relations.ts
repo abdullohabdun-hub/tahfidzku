@@ -5,6 +5,8 @@ import { kelas } from './kelas'
 import { santri } from './santri'
 import { setoran, rubrikPenilaian, rubrikOpsi } from './setoran'
 import { ujian } from './ujian'
+import { setoranIqra } from './setoranIqra'
+import { ujianIqra } from './ujianIqra'
 import { impersonationLogs } from './impersonation'
 import { billingLogs } from './billing-logs'
 import { absensi, sesiKelas } from './absensi'
@@ -16,6 +18,8 @@ export const tenantsRelations = relations(tenants, ({ one, many }) => ({
   santri: many(santri),
   setoran: many(setoran),
   ujian: many(ujian),
+  setoranIqra: many(setoranIqra),
+  ujianIqra: many(ujianIqra),
   impersonationLogs: many(impersonationLogs),
   billingLogs: many(billingLogs),
   raporSettings: one(raporSettings, {
@@ -31,6 +35,8 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   }),
   kelasDiampu: many(kelas), // Sebagai Ustadz
   setoranDiterima: many(setoran), // Sebagai Ustadz
+  setoranIqraDiterima: many(setoranIqra), // Sebagai Ustadz
+  ujianIqraDiterima: many(ujianIqra), // Sebagai Ustadz
   santriTerkait: one(santri, { // Untuk role wali/santri
     fields: [users.santriId],
     references: [santri.id],
@@ -61,6 +67,8 @@ export const santriRelations = relations(santri, ({ one, many }) => ({
   }),
   setoran: many(setoran),
   ujian: many(ujian),
+  setoranIqra: many(setoranIqra),
+  ujianIqra: many(ujianIqra),
   akun: many(users), // Akun wali / santri yang terhubung ke santri ini
   daftarWali: many(waliSantri), // Relasi ke wali (many-to-many)
 }))
@@ -138,6 +146,7 @@ export const sesiKelasRelations = relations(sesiKelas, ({ one, many }) => ({
     references: [users.id],
   }),
   absensi: many(absensi),
+  setoranIqra: many(setoranIqra),
 }))
 
 export const absensiRelations = relations(absensi, ({ one }) => ({
@@ -182,6 +191,40 @@ export const raporSettingsRelations = relations(raporSettings, ({ one }) => ({
   tenant: one(tenants, {
     fields: [raporSettings.tenantId],
     references: [tenants.id],
+  }),
+}))
+
+export const setoranIqraRelations = relations(setoranIqra, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [setoranIqra.tenantId],
+    references: [tenants.id],
+  }),
+  santri: one(santri, {
+    fields: [setoranIqra.santriId],
+    references: [santri.id],
+  }),
+  sesiKelas: one(sesiKelas, {
+    fields: [setoranIqra.sesiKelasId],
+    references: [sesiKelas.id],
+  }),
+  createdBy: one(users, {
+    fields: [setoranIqra.createdBy],
+    references: [users.id],
+  }),
+}))
+
+export const ujianIqraRelations = relations(ujianIqra, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [ujianIqra.tenantId],
+    references: [tenants.id],
+  }),
+  santri: one(santri, {
+    fields: [ujianIqra.santriId],
+    references: [santri.id],
+  }),
+  ujiOlehUstadz: one(users, {
+    fields: [ujianIqra.ujiOlehUstadzId],
+    references: [users.id],
   }),
 }))
 

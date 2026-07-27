@@ -3,8 +3,10 @@
 
 export { tenants, statusEnum as tenantStatusEnum } from './tenants'
 export { users, roleEnum } from './users'
-export { santri, tipeSantriEnum } from './santri'
+export { santri, tipeSantriEnum, tahapSantriEnum } from './santri'
 export { setoran, jenisSetoranEnum, kualitasEnum, sumberSetoranEnum, rubrikPenilaian, rubrikOpsi } from './setoran'
+export { setoranIqra } from './setoranIqra'
+export { ujianIqra } from './ujianIqra'
 export { ujian, statusUjianEnum, skorKelancaranEnum, skorTajwidEnum } from './ujian'
 export { kelas, hariEnum } from './kelas'
 export { impersonationLogs, impersonationTargetRoleEnum } from './impersonation'

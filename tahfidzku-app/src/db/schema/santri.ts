@@ -4,8 +4,10 @@
 import { pgTable, uuid, varchar, integer, timestamp, pgEnum, jsonb } from 'drizzle-orm/pg-core'
 import { tenants } from './tenants'
 import { kelas } from './kelas'
+import { users } from './users'
 
 export const tipeSantriEnum = pgEnum('tipe_santri', ['reguler', 'dewasa'])
+export const tahapSantriEnum = pgEnum('tahap_santri', ['iqra', 'tahfidz'])
 
 export const santri = pgTable('santri', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -14,6 +16,11 @@ export const santri = pgTable('santri', {
     .references(() => tenants.id, { onDelete: 'cascade' }),
   nama: varchar('nama', { length: 255 }).notNull(),
   tipe: tipeSantriEnum('tipe').notNull().default('dewasa'),
+  tahapSantri: tahapSantriEnum('tahap_santri').notNull().default('tahfidz'),
+  jilidIqraTerakhir: integer('jilid_iqra_terakhir'),
+  halamanIqraTerakhir: integer('halaman_iqra_terakhir'),
+  tahapSantriUpdatedBy: uuid('tahap_santri_updated_by').references(() => users.id),
+  tahapSantriUpdatedAt: timestamp('tahap_santri_updated_at', { withTimezone: true }),
   kelasId: uuid('kelas_id').references(() => kelas.id, { onDelete: 'set null' }),
   targetJuz: integer('target_juz').notNull().default(30),
   juzProgress: integer('juz_progress').array().default([]), // Juz yang sudah diselesaikan (contoh: [30, 29])
