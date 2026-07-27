@@ -175,6 +175,9 @@ function SantriDashboard() {
         </CardContent>
       </Card>
 
+      {/* Dashboard Analitik Fase 4 */}
+      <DashboardAnalitikContainer santriId={profil.id} />
+
       {/* Timeline Riwayat Murojaah */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -229,6 +232,59 @@ function SantriDashboard() {
         )}
       </div>
 
+    </div>
+  )
+}
+
+import { useEffect, useState } from 'react'
+import { getGrafikDanSummarySantri } from '../../server-fns/grafik-santri'
+import { getPetaKualitasJuz } from '../../server-fns/peta-juz'
+import { getSantriAnalitik } from '../../server-fns/analitik'
+import { EstimasiKhatam } from '../../components/dashboard/EstimasiKhatam'
+import { PetaKualitasJuz } from '../../components/dashboard/PetaKualitasJuz'
+import { GrafikAnalitikSantri } from '../../components/dashboard/GrafikAnalitikSantri'
+
+function DashboardAnalitikContainer({ santriId }: { santriId: string }) {
+  const [data, setData] = useState<{grafik?: any, peta?: any, estimasi?: any} | null>(null)
+  const [errors, setErrors] = useState<{grafik?: any, peta?: any, estimasi?: any}>({})
+  const [isLoading, setIsLoading] = useState(true)
+  const [globalError, setGlobalError] = useState<{ message: string, code?: string } | null>(null)
+
+  useEffect(() => {
+    async function fetchAnalitik() {
+      try {
+        const payload = { data: { santriId } }
+        const [resGrafik, resPeta, resAnalitik] = await Promise.allSettled([
+          getGrafikDanSummarySantri(payload),
+          getPetaKualitasJuz(payload),
+          getSantriAnalitik(payload)
+        ])
+        
+        setData({
+          grafik: resGrafik.status === 'fulfilled' && resGrafik.value.success ? resGrafik.value.data : null,
+          peta: resPeta.status === 'fulfilled' && resPeta.value.success ? resPeta.value.data?.peta : null,
+          estimasi: resAnalitik.status === 'fulfilled' && resAnalitik.value.success ? resAnalitik.value.data?.estimasiKhatam : null
+        })
+        
+        setErrors({
+          grafik: resGrafik.status === 'rejected' ? { message: 'Koneksi terputus', code: 'NETWORK_ERROR' } : (!resGrafik.value.success ? resGrafik.value.error : null),
+          peta: resPeta.status === 'rejected' ? { message: 'Koneksi terputus', code: 'NETWORK_ERROR' } : (!resPeta.value.success ? resPeta.value.error : null),
+          estimasi: resAnalitik.status === 'rejected' ? { message: 'Koneksi terputus', code: 'NETWORK_ERROR' } : (!resAnalitik.value.success ? resAnalitik.value.error : null)
+        })
+      } catch (err: any) {
+        setGlobalError({ message: 'Tidak dapat terhubung ke server', code: 'NETWORK_ERROR' })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchAnalitik()
+  }, [santriId])
+
+  return (
+    <div className="space-y-6 mt-6">
+      <EstimasiKhatam data={data?.estimasi} isLoading={isLoading} error={globalError || errors.estimasi} />
+      <PetaKualitasJuz data={data?.peta} isLoading={isLoading} error={globalError || errors.peta} />
+      <GrafikAnalitikSantri data={data?.grafik} isLoading={isLoading} error={globalError || errors.grafik} />
     </div>
   )
 }
