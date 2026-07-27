@@ -20,6 +20,11 @@ function DataSantriPage() {
   // Form State
   const [editingId, setEditingId] = useState<string | null>(null)
   const [nama, setNama] = useState('')
+  const [tahapSantri, setTahapSantri] = useState<'tahfidz' | 'iqra'>('tahfidz')
+  const [initialTahapSantri, setInitialTahapSantri] = useState<'tahfidz' | 'iqra'>('tahfidz')
+  const [jilidIqraTerakhir, setJilidIqraTerakhir] = useState<number | ''>('')
+  const [halamanIqraTerakhir, setHalamanIqraTerakhir] = useState<number | ''>('')
+  
   const [targetJuz, setTargetJuz] = useState<number>(30)
   const [juzProgress, setJuzProgress] = useState<number[]>([])
   const [batasHafalanJuz, setBatasHafalanJuz] = useState<number | ''>('')
@@ -99,16 +104,33 @@ function DataSantriPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Konfirmasi perubahan tahapSantri jika di mode Edit
+    if (editingId && tahapSantri !== initialTahapSantri) {
+      if (initialTahapSantri === 'tahfidz' && tahapSantri === 'iqra') {
+        if (!confirm('PERINGATAN: Anda mengubah status santri dari Tahfidz menjadi Iqra.\n\nData hafalan sebelumnya (juz, riwayat setoran) TIDAK akan terhapus, tetapi dashboard santri/wali akan berubah menjadi tampilan Iqra.\n\nApakah Anda yakin ingin melanjutkan?')) {
+          return;
+        }
+      } else {
+        if (!confirm('Anda mengubah Tahap Santri. Lanjutkan?')) {
+          return;
+        }
+      }
+    }
+
     setSubmitting(true)
 
     const payload = { 
       data: { 
         nama, 
+        tahapSantri,
+        jilidIqraTerakhir: tahapSantri === 'iqra' && jilidIqraTerakhir !== '' ? Number(jilidIqraTerakhir) : undefined,
+        halamanIqraTerakhir: tahapSantri === 'iqra' && halamanIqraTerakhir !== '' ? Number(halamanIqraTerakhir) : undefined,
         targetJuz: Number(targetJuz), 
-        juzProgress,
-        batasHafalanJuz: batasHafalanJuz !== '' ? Number(batasHafalanJuz) : undefined,
-        batasHafalanSurah: batasHafalanSurah ? batasHafalanSurah : undefined,
-        batasHafalanAyat: batasHafalanAyat !== '' ? Number(batasHafalanAyat) : undefined,
+        juzProgress: tahapSantri === 'tahfidz' ? juzProgress : [],
+        batasHafalanJuz: tahapSantri === 'tahfidz' && batasHafalanJuz !== '' ? Number(batasHafalanJuz) : undefined,
+        batasHafalanSurah: tahapSantri === 'tahfidz' && batasHafalanSurah ? batasHafalanSurah : undefined,
+        batasHafalanAyat: tahapSantri === 'tahfidz' && batasHafalanAyat !== '' ? Number(batasHafalanAyat) : undefined,
         kelasId: kelasId ? kelasId : undefined,
         tipe,
         email: tipe === 'dewasa' ? (email || undefined) : undefined,
@@ -141,6 +163,11 @@ function DataSantriPage() {
   const handleEdit = (s: any) => {
     setEditingId(s.id)
     setNama(s.nama)
+    setTahapSantri(s.tahapSantri || 'tahfidz')
+    setInitialTahapSantri(s.tahapSantri || 'tahfidz')
+    setJilidIqraTerakhir(s.jilidIqraTerakhir || '')
+    setHalamanIqraTerakhir(s.halamanIqraTerakhir === 0 ? 0 : (s.halamanIqraTerakhir || ''))
+    
     setTargetJuz(s.targetJuz)
     setJuzProgress(s.juzProgress || [])
     setBatasHafalanJuz(s.batasHafalanJuz || '')
@@ -170,6 +197,10 @@ function DataSantriPage() {
     setShowForm(false)
     setEditingId(null)
     setNama('')
+    setTahapSantri('tahfidz')
+    setInitialTahapSantri('tahfidz')
+    setJilidIqraTerakhir('')
+    setHalamanIqraTerakhir('')
     setTargetJuz(30)
     setJuzProgress([])
     setBatasHafalanJuz('')
@@ -231,13 +262,29 @@ function DataSantriPage() {
               <input required value={nama} onChange={e => setNama(e.target.value)} className="w-full border p-2 rounded-lg" placeholder="Nama Santri" />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Target Hafalan (Juz)</label>
-              <input required type="number" min={1} max={30} value={targetJuz} onChange={e => setTargetJuz(Number(e.target.value))} className="w-full border p-2 rounded-lg" />
+              <label className="block text-sm font-medium mb-1">Tahap Santri</label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" value="tahfidz" checked={tahapSantri === 'tahfidz'} onChange={() => setTahapSantri('tahfidz')} className="w-4 h-4 text-emerald-600 focus:ring-emerald-500" />
+                  <span>Tahfidz (Hafalan Qur'an)</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" value="iqra" checked={tahapSantri === 'iqra'} onChange={() => setTahapSantri('iqra')} className="w-4 h-4 text-emerald-600 focus:ring-emerald-500" />
+                  <span>Iqra (Tahsin Dasar)</span>
+                </label>
+              </div>
             </div>
-            
-            <div className="border border-slate-200 rounded-lg p-4 bg-slate-50 space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Juz yang Telah Selesai (Mutqin)</label>
+
+            {tahapSantri === 'tahfidz' && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Target Hafalan (Juz)</label>
+                  <input required type="number" min={1} max={30} value={targetJuz} onChange={e => setTargetJuz(Number(e.target.value))} className="w-full border p-2 rounded-lg" />
+                </div>
+                
+                <div className="border border-slate-200 rounded-lg p-4 bg-slate-50 space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Juz yang Telah Selesai (Mutqin)</label>
                 <div className="flex flex-wrap gap-1">
                   {Array.from({length: 30}, (_, i) => i + 1).map(j => (
                     <button 
@@ -290,6 +337,43 @@ function DataSantriPage() {
                 </div>
               </div>
             </div>
+          </>
+        )}
+
+            {tahapSantri === 'iqra' && (
+              <div className="border border-slate-200 rounded-lg p-4 bg-slate-50 space-y-4">
+                <label className="block text-sm font-medium mb-2">Posisi Iqra Awal (Opsional, khusus santri pindahan)</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <select 
+                    value={jilidIqraTerakhir} 
+                    onChange={e => setJilidIqraTerakhir(e.target.value ? Number(e.target.value) : '')} 
+                    className="border p-2 rounded-lg text-sm bg-white"
+                    disabled={!!editingId}
+                  >
+                    <option value="">Pilih Jilid Iqra</option>
+                    {[1,2,3,4,5,6].map(j => (
+                      <option key={j} value={j}>Jilid {j}</option>
+                    ))}
+                  </select>
+                  <input 
+                    type="number" 
+                    placeholder="Halaman Terakhir" 
+                    min={0} 
+                    max={50}
+                    value={halamanIqraTerakhir} 
+                    onChange={e => setHalamanIqraTerakhir(e.target.value ? Number(e.target.value) : '')} 
+                    disabled={!!editingId || jilidIqraTerakhir === ''}
+                    className="border p-2 rounded-lg text-sm" 
+                  />
+                </div>
+                {editingId && (
+                  <p className="text-xs text-amber-600 mt-2">
+                    Posisi Iqra awal tidak dapat diubah setelah data tersimpan.
+                  </p>
+                )}
+              </div>
+            )}
+
             <div>
               <label className="block text-sm font-medium mb-1">Pilih Kelas / Halaqoh</label>
               <select value={kelasId} onChange={e => setKelasId(e.target.value)} className="w-full border p-2 rounded-lg bg-white">

@@ -122,6 +122,9 @@ export const createSantri = createServerFn({ method: 'POST' })
       batasHafalanJuz: z.number().optional().nullable(),
       batasHafalanSurah: z.string().optional().nullable(),
       batasHafalanAyat: z.number().optional().nullable(),
+      tahapSantri: z.enum(['tahfidz', 'iqra']).optional().default('tahfidz'),
+      jilidIqraTerakhir: z.number().int().min(1).max(6).optional().nullable(),
+      halamanIqraTerakhir: z.number().int().min(0).max(50).optional().nullable(),
       kelasId: z.string().optional(),
       tipe: z.enum(['reguler', 'dewasa']).default('dewasa'),
       email: z.string().optional().nullable(),
@@ -155,15 +158,18 @@ export const createSantri = createServerFn({ method: 'POST' })
       const [newSantri] = await db.insert(santri).values({
         tenantId,
         nama: data.nama,
+        tahapSantri: data.tahapSantri ?? 'tahfidz',
+        jilidIqraTerakhir: data.tahapSantri === 'iqra' ? (data.jilidIqraTerakhir ?? null) : null,
+        halamanIqraTerakhir: data.tahapSantri === 'iqra' ? (data.halamanIqraTerakhir ?? null) : null,
         targetJuz: data.targetJuz,
-        juzProgress: data.juzProgress,
-        batasHafalanJuz: data.batasHafalanJuz,
-        batasHafalanSurah: data.batasHafalanSurah,
-        batasHafalanAyat: data.batasHafalanAyat,
-        kelasId: data.kelasId || null,
+        juzProgress: data.juzProgress ?? [],
+        batasHafalanJuz: data.batasHafalanJuz ?? null,
+        batasHafalanSurah: data.batasHafalanSurah ?? null,
+        batasHafalanAyat: data.batasHafalanAyat ?? null,
+        kelasId: data.kelasId ?? null,
         tipe: data.tipe,
-        posisiTerakhir: defaultPosisi,
-        urutanHafalan: defaultUrutan,
+        posisiTerakhir: data.tahapSantri === 'tahfidz' ? defaultPosisi : null,
+        urutanHafalan: data.tahapSantri === 'tahfidz' ? defaultUrutan : [],
       }).returning({ id: santri.id, nama: santri.nama, tipe: santri.tipe })
 
       if (data.tipe === 'dewasa') {
@@ -251,6 +257,9 @@ export const updateSantri = createServerFn({ method: 'POST' })
   .validator((data: unknown) => z.object({
     id: z.string(),
     nama: z.string().min(1, 'Nama santri wajib diisi'),
+    tahapSantri: z.enum(['tahfidz', 'iqra']).optional(),
+    jilidIqraTerakhir: z.number().int().min(1).max(6).optional().nullable(),
+    halamanIqraTerakhir: z.number().int().min(0).max(50).optional().nullable(),
     targetJuz: z.number().min(1).max(30),
     juzProgress: z.array(z.number().int().min(1).max(30)).transform(val => Array.from(new Set(val))).default([]),
     batasHafalanJuz: z.number().optional().nullable(),
@@ -300,17 +309,39 @@ export const updateSantri = createServerFn({ method: 'POST' })
         newUrutanHafalan = buildPosisi.urutanHafalan;
       }
 
+      const effectiveTahapSantri = data.tahapSantri !== undefined ? data.tahapSantri : (currentSantri?.tahapSantri ?? 'tahfidz');
+
+      // Hitung perubahan tahapSantri
+      let tahapSantriUpdatedBy = undefined;
+      let tahapSantriUpdatedAt = undefined;
+      if (data.tahapSantri && data.tahapSantri !== currentSantri?.tahapSantri) {
+        tahapSantriUpdatedBy = session.user.id;
+        tahapSantriUpdatedAt = new Date();
+      }
+
+      const effectiveJilid = effectiveTahapSantri === 'iqra' 
+        ? (data.jilidIqraTerakhir !== undefined ? data.jilidIqraTerakhir : (currentSantri?.jilidIqraTerakhir ?? null))
+        : null;
+        
+      const effectiveHalaman = effectiveTahapSantri === 'iqra'
+        ? (data.halamanIqraTerakhir !== undefined ? data.halamanIqraTerakhir : (currentSantri?.halamanIqraTerakhir ?? null))
+        : null;
+
       await db.update(santri).set({
         nama: data.nama,
+        tahapSantri: effectiveTahapSantri,
+        jilidIqraTerakhir: effectiveJilid,
+        halamanIqraTerakhir: effectiveHalaman,
         targetJuz: data.targetJuz,
-        juzProgress: data.juzProgress,
-        batasHafalanJuz: data.batasHafalanJuz,
-        batasHafalanSurah: data.batasHafalanSurah,
-        batasHafalanAyat: data.batasHafalanAyat,
-        kelasId: data.kelasId || null,
+        juzProgress: data.juzProgress ?? [],
+        batasHafalanJuz: data.batasHafalanJuz ?? null,
+        batasHafalanSurah: data.batasHafalanSurah ?? null,
+        batasHafalanAyat: data.batasHafalanAyat ?? null,
+        kelasId: data.kelasId ?? null,
         tipe: data.tipe,
         posisiTerakhir: newPosisiTerakhir,
         urutanHafalan: newUrutanHafalan,
+        ...(tahapSantriUpdatedBy ? { tahapSantriUpdatedBy, tahapSantriUpdatedAt } : {})
       }).where(and(eq(santri.id, data.id), eq(santri.tenantId, tenantId)))
 
       if (data.tipe === 'dewasa') {
