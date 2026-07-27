@@ -112,6 +112,34 @@ export const loginSchema = z.object({
 
 export type LoginInput = z.infer<typeof loginSchema>
 
+// ── Setoran Iqra (Input oleh Ustadz) ──────────────────
+export const createSetoranIqraSchema = z.object({
+  santriId: z.string().uuid('ID Santri tidak valid'),
+  sesiKelasId: z.string().uuid().optional().nullable(),
+  jilid: z.number().int().min(1).max(6),
+  halamanAwal: z.number().int().min(1).max(50),
+  halamanAkhir: z.number().int().min(1).max(50),
+  skorKualitas: z.number().int().min(1).max(5).optional().nullable(),
+  statusHafalan: z.enum(['lanjut', 'mengulang']).optional().nullable(),
+  catatan: z.string().max(500, { message: 'Catatan maksimal 500 karakter' }).optional().nullable(),
+}).refine(data => data.halamanAkhir >= data.halamanAwal, {
+  message: 'Halaman akhir tidak boleh kurang dari halaman awal',
+  path: ['halamanAkhir']
+})
+
+export type CreateSetoranIqraInput = z.infer<typeof createSetoranIqraSchema>
+
+// ── Ujian Iqra (Input oleh Ustadz) ────────────────────
+export const createUjianIqraSchema = z.object({
+  santriId: z.string().uuid('ID Santri tidak valid'),
+  jilidDiuji: z.number().int().min(1).max(6),
+  skor: z.number().int().optional().nullable(),
+  lulus: z.boolean(),
+  catatan: z.string().max(500).optional().nullable(),
+})
+
+export type CreateUjianIqraInput = z.infer<typeof createUjianIqraSchema>
+
 export const registerTenantSchema = z.object({
   namaLembaga: z
     .string()
