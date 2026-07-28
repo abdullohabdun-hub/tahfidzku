@@ -30,6 +30,7 @@ function DataSantriPage() {
   const [batasHafalanJuz, setBatasHafalanJuz] = useState<number | ''>('')
   const [batasHafalanSurah, setBatasHafalanSurah] = useState<string>('')
   const [batasHafalanAyat, setBatasHafalanAyat] = useState<number | ''>('')
+  const [hasPosisiTerakhir, setHasPosisiTerakhir] = useState(false)
   const [surahOptions, setSurahOptions] = useState<any[]>([])
   const [ayatMax, setAyatMax] = useState<number>(999)
 
@@ -162,6 +163,7 @@ function DataSantriPage() {
 
   const handleEdit = (s: any) => {
     setEditingId(s.id)
+    setHasPosisiTerakhir(s.posisiTerakhir !== null && s.posisiTerakhir !== undefined)
     setNama(s.nama)
     setTahapSantri(s.tahapSantri || 'tahfidz')
     setInitialTahapSantri(s.tahapSantri || 'tahfidz')
@@ -196,6 +198,7 @@ function DataSantriPage() {
   const handleCloseForm = () => {
     setShowForm(false)
     setEditingId(null)
+    setHasPosisiTerakhir(false)
     setNama('')
     setTahapSantri('tahfidz')
     setInitialTahapSantri('tahfidz')
@@ -310,14 +313,25 @@ function DataSantriPage() {
               <div className="pt-2 border-t border-slate-200">
                 <label className="block text-sm font-medium mb-2">Batas Hafalan Saat Ini (Parsial/Opsional)</label>
                 <div className="grid grid-cols-3 gap-2">
-                  <select value={batasHafalanJuz} onChange={e => setBatasHafalanJuz(e.target.value ? Number(e.target.value) : '')} className="border p-2 rounded-lg text-sm bg-white">
+                  <select 
+                    value={batasHafalanJuz} 
+                    onChange={e => setBatasHafalanJuz(e.target.value ? Number(e.target.value) : '')} 
+                    disabled={hasPosisiTerakhir}
+                    title={hasPosisiTerakhir ? "Batas hafalan tidak dapat diubah dari sini karena santri sudah memiliki progres riwayat hafalan berjalan. Edit riwayat hafalan terakhir untuk mengoreksi." : ""}
+                    className={`border p-2 rounded-lg text-sm ${hasPosisiTerakhir ? 'bg-slate-100 cursor-not-allowed' : 'bg-white'}`}
+                  >
                     <option value="">Pilih Juz</option>
                     {Array.from({length: 30}, (_, i) => i + 1).map(j => (
                       <option key={j} value={j}>Juz {j}</option>
                     ))}
                   </select>
 
-                  <select value={batasHafalanSurah} onChange={e => setBatasHafalanSurah(e.target.value)} disabled={batasHafalanJuz === ''} className="border p-2 rounded-lg text-sm bg-white">
+                  <select 
+                    value={batasHafalanSurah} 
+                    onChange={e => setBatasHafalanSurah(e.target.value)} 
+                    disabled={batasHafalanJuz === '' || hasPosisiTerakhir} 
+                    className={`border p-2 rounded-lg text-sm ${batasHafalanJuz === '' || hasPosisiTerakhir ? 'bg-slate-100 cursor-not-allowed' : 'bg-white'}`}
+                  >
                     <option value="">Pilih Surah</option>
                     {surahOptions.map(s => (
                       <option key={s.nomor} value={s.nama}>{s.nama}</option>
@@ -331,8 +345,8 @@ function DataSantriPage() {
                     max={ayatMax}
                     value={batasHafalanAyat} 
                     onChange={e => setBatasHafalanAyat(e.target.value ? Number(e.target.value) : '')} 
-                    disabled={batasHafalanJuz === '' || !batasHafalanSurah}
-                    className="border p-2 rounded-lg text-sm" 
+                    disabled={batasHafalanJuz === '' || !batasHafalanSurah || hasPosisiTerakhir}
+                    className={`border p-2 rounded-lg text-sm ${batasHafalanJuz === '' || !batasHafalanSurah || hasPosisiTerakhir ? 'bg-slate-100 cursor-not-allowed' : 'bg-white'}`} 
                   />
                 </div>
               </div>

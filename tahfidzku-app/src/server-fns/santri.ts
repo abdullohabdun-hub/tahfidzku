@@ -5,7 +5,7 @@ import { db } from '../db'
 import { santri, users, waliSantri } from '../db/schema'
 import { getAuthSession, requireRole } from '../middleware/auth.middleware'
 import { success, handleError } from '../lib/response'
-import { AuthenticationError, ValidationError } from '../lib/errors'
+import { AuthenticationError, ValidationError, ForbiddenError, NotFoundError } from '../lib/errors'
 import { bangunUrutanHafalan, bangunPosisiDariAdminInput, kalkulasiJuzProgress } from '../lib/quranMapper'
 import { inArray } from 'drizzle-orm'
 import { kelas } from '../db/schema'
@@ -537,3 +537,54 @@ export const getSantriProfile = createServerFn({ method: 'POST' }).handler(async
     return handleError(err)
   }
 })
+
+// ==========================================
+// 7. SETUP SANTRI INITIAL HAFALAN (USTADZ & ADMIN)
+// ==========================================
+export const setupSantriInitialHafalan = createServerFn({ method: 'POST' })
+  .validator((data: unknown) => z.object({
+    santriId: z.string(),
+    juzProgress: z.array(z.number().int().min(1).max(30)),
+    batasHafalanJuz: z.number().optional().nullable(),
+    batasHafalanSurah: z.string().optional().nullable(),
+    batasHafalanAyat: z.number().optional().nullable(),
+  }).parse(data))
+  .handler(async ({ data }) => {
+    try {
+      const session = await getAuthSession()
+      if (!session) throw new AuthenticationError()
+      if (session.user.role !== 'admin' && session.user.role !== 'ustadz') {
+        throw new ForbiddenError('Akses ditolak')
+      }
+
+      const [currentSantri] = await db.select().from(santri).where(eq(santri.id, data.santriId)).limit(1)
+      if (!currentSantri || currentSantri.tenantId !== session.user.tenantId) {
+        throw new NotFoundError('Santri')
+      }
+
+      if (currentSantri.posisiTerakhir) {
+        throw new ValidationError('Santri ini sudah memiliki riwayat hafalan')
+      }
+
+      const buildPosisi = bangunPosisiDariAdminInput(
+         data.juzProgress,
+         data.batasHafalanJuz,
+         data.batasHafalanSurah,
+         data.batasHafalanAyat
+      );
+
+      await db.update(santri).set({
+        juzProgress: data.juzProgress,
+        batasHafalanJuz: data.batasHafalanJuz ?? null,
+        batasHafalanSurah: data.batasHafalanSurah ?? null,
+        batasHafalanAyat: data.batasHafalanAyat ?? null,
+        posisiTerakhir: buildPosisi.posisiTerakhir,
+        urutanHafalan: buildPosisi.urutanHafalan,
+      }).where(eq(santri.id, data.santriId))
+
+      return success(null, 'Posisi hafalan awal berhasil disimpan')
+    } catch (err) {
+      return handleError(err)
+    }
+  })
+

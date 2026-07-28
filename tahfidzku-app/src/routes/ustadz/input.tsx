@@ -1,9 +1,12 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect, useMemo } from 'react'
 import { ChevronDown, Loader2, AlertTriangle } from 'lucide-react'
-import { getSantriList } from '../../server-fns/santri'
+import { getSantriList, setupSantriInitialHafalan } from '../../server-fns/santri'
 import { createSetoran } from '../../server-fns/setoran'
 import { SetoranForm } from '../../components/SetoranForm'
+import { SetoranIqraForm } from '../../components/SetoranIqraForm'
+import { UjianIqraForm } from '../../components/UjianIqraForm'
+import { createSetoranIqra, createUjianIqra } from '../../server-fns/setoran-iqra'
 import { getSurahByJuz, getAyatRangeInJuz, bangunPosisiDariAdminInput } from '../../lib/quranMapper'
 import { AuthErrorAlert } from '../../components/AuthErrorAlert'
 
@@ -69,30 +72,34 @@ function InputSetoranPage() {
     }
   }, [batasHafalanJuz, batasHafalanSurah])
 
-  useEffect(() => {
-    async function init() {
-      try {
-        const res = await getSantriList()
-        if (!res.success) {
-          if (res.error?.code === 'UNAUTHENTICATED') {
-            navigate({ to: '/login' })
-            return
-          }
-          setAuthError({ message: res.error?.message || 'Akses ditolak', code: res.error?.code })
+  const fetchSantriList = async () => {
+    try {
+      const res = await getSantriList()
+      if (!res.success) {
+        if (res.error?.code === 'UNAUTHENTICATED') {
+          navigate({ to: '/login' })
           return
         }
-        if (res.data) {
-          setSantriList(res.data)
-          if (res.data.length > 0) setSantriId(res.data[0].id)
-        }
-      } catch (err: any) {
-        console.error('Failed to load santri', err)
-        setAuthError({ message: 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.', code: 'NETWORK_ERROR' })
-      } finally {
-        setLoadingInitial(false)
+        setAuthError({ message: res.error?.message || 'Akses ditolak', code: res.error?.code })
+        return
       }
+      if (res.data) {
+        setSantriList(res.data)
+        setSantriId(prev => {
+          if (prev && res.data.find(s => s.id === prev)) return prev
+          return res.data.length > 0 ? res.data[0].id : ''
+        })
+      }
+    } catch (err: any) {
+      console.error('Failed to load santri', err)
+      setAuthError({ message: 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.', code: 'NETWORK_ERROR' })
+    } finally {
+      setLoadingInitial(false)
     }
-    init()
+  }
+
+  useEffect(() => {
+    fetchSantriList()
   }, [])
 
   const handleApplySetupAwal = async () => {
@@ -149,6 +156,36 @@ function InputSetoranPage() {
         setSantriList(prev => prev.map(s => {
           if (s.id === santriId) {
             return { ...s, posisiTerakhir: { surahNomor: surahSelesaiNomor, ayat: ayatSelesai } }
+          }
+          return s
+        }))
+      }
+    }
+    return res
+  }
+
+  const handleCreateSetoranIqra = async (payload: any) => {
+    const res = await createSetoranIqra({ data: payload })
+    if (res.success) {
+      setSantriList(prev => prev.map(s => {
+        if (s.id === santriId) {
+          return { ...s, jilidIqraTerakhir: payload.jilid, halamanIqraTerakhir: payload.halamanAkhir }
+        }
+        return s
+      }))
+    }
+    return res
+  }
+
+  const handleCreateUjianIqra = async (payload: any) => {
+    const res = await createUjianIqra({ data: payload })
+    if (res.success) {
+      if (payload.lulus && payload.jilidDiuji === 6) {
+        await fetchSantriList()
+      } else if (payload.lulus) {
+        setSantriList(prev => prev.map(s => {
+          if (s.id === santriId) {
+            return { ...s, jilidIqraTerakhir: payload.jilidDiuji + 1, halamanIqraTerakhir: 0 }
           }
           return s
         }))
@@ -225,8 +262,8 @@ function InputSetoranPage() {
         )}
       </div>
 
-      {/* UJIAN PENDING BANNER */}
-      {selectedSantri?.juzUjianPending && (
+      {/* UJIAN PENDING BANNER (Khusus Tahfidz) */}
+      {selectedSantri?.tahapSantri === 'tahfidz' && selectedSantri?.juzUjianPending && (
         <div className="bg-rose-50 border border-rose-200/60 rounded-xl p-4 flex items-start gap-3 shadow-sm">
           <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
           <div className="flex-1">
@@ -246,8 +283,20 @@ function InputSetoranPage() {
         </div>
       )}
 
-      {/* 1.5 Setup Hafalan Awal untuk Santri Baru */}
-      {!selectedSantri?.posisiTerakhir && (
+      {/* Indikator Iqra */}
+      {selectedSantri?.tahapSantri === 'iqra' && (
+        <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 shadow-sm mb-4">
+          <h3 className="font-bold text-purple-800 text-sm mb-1">Posisi Iqra Saat Ini</h3>
+          {selectedSantri.jilidIqraTerakhir == null ? (
+            <p className="text-purple-700 text-xs font-medium">Santri ini belum memiliki riwayat Iqra. Catat setoran pertama untuk memulai.</p>
+          ) : (
+            <p className="text-purple-700 text-sm font-medium">Jilid {selectedSantri.jilidIqraTerakhir}, Halaman {selectedSantri.halamanIqraTerakhir === 0 ? '-' : selectedSantri.halamanIqraTerakhir}</p>
+          )}
+        </div>
+      )}
+
+      {/* 1.5 Setup Hafalan Awal untuk Santri Baru (Khusus Tahfidz) */}
+      {selectedSantri?.tahapSantri === 'tahfidz' && !selectedSantri?.posisiTerakhir && (
         <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 shadow-sm">
           <h3 className="font-bold text-emerald-800 text-sm mb-1">Posisi Hafalan Awal</h3>
           <p className="text-emerald-700 text-xs mb-3">Santri ini belum memiliki riwayat hafalan. Tentukan titik awal agar sistem bisa memandu secara otomatis.</p>
@@ -356,12 +405,26 @@ function InputSetoranPage() {
         </div>
       )}
 
-      {/* Form Setoran Utama */}
-      <SetoranForm
-        mode="create"
-        santri={selectedSantri}
-        onSubmit={handleCreateSetoran}
-      />
+      {/* Form Setoran */}
+      {selectedSantri?.tahapSantri === 'iqra' ? (
+        <div className="space-y-6">
+          <SetoranIqraForm
+            santri={selectedSantri}
+            onSubmit={handleCreateSetoranIqra}
+          />
+          <hr className="border-slate-200" />
+          <UjianIqraForm
+            santri={selectedSantri}
+            onSubmit={handleCreateUjianIqra}
+          />
+        </div>
+      ) : (
+        <SetoranForm
+          mode="create"
+          santri={selectedSantri}
+          onSubmit={handleCreateSetoran}
+        />
+      )}
     </div>
   )
 }
