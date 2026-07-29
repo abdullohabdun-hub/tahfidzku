@@ -60,6 +60,6 @@ export function handleError(err: unknown): ApiError {
   // Fallback: error generik
   return error(
     'INTERNAL_ERROR',
-    'Terjadi kesalahan pada server. Silakan coba lagi nanti.',
+    `Dev Error: ${err instanceof Error ? err.message : String(err)}`
   )
 }
