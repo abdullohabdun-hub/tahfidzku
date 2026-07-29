@@ -118,7 +118,7 @@ function UstadzDashboard() {
                         <span className={`font-bold px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider ${isIqra ? 'text-violet-700 bg-violet-50' : 'text-emerald-700 bg-emerald-50'}`}>
                           {isIqra ? 'Iqra' : (s as any).jenis}
                         </span>
-                        <span>•</span>
+                        <span>â€¢</span>
                         <span>{isIqra ? `Jilid ${(s as any).jilid}` : (s as any).surah} ({isIqra ? 'Hal ' : ''}{isIqra && (s as any).halamanAwal === (s as any).halamanAkhir ? (s as any).halamanAwal : `${(s as any).halamanAwal ?? (s as any).ayatAwal}-${(s as any).halamanAkhir ?? (s as any).ayatAkhir}`})</span>
                       </div>
                       <FormatPenilaian item={s} />

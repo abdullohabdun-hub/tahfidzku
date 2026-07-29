@@ -86,7 +86,7 @@ function SantriDashboard() {
         </div>
       </div>
 
-      {/* Ujian Kenaikan Juz — tampil jika ada pending (hanya tahfidz) */}
+      {/* Ujian Kenaikan Juz â€” tampil jika ada pending (hanya tahfidz) */}
       {profil?.juzUjianPending && !isIqra && (
         <div className="bg-amber-50 border border-amber-300 rounded-2xl p-4 flex items-center gap-3 shadow-sm">
           <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center shrink-0">
@@ -251,7 +251,7 @@ function SantriDashboard() {
                       <>
                         {item.surah && <p className="font-semibold text-slate-800 text-sm">{item.surah}</p>}
                         <div className="flex items-center gap-1.5 mt-0.5">
-                          <p className="text-xs text-slate-500">Juz {item.juz} • Hal {item.halamanAwal === item.halamanAkhir ? item.halamanAwal : `${item.halamanAwal}-${item.halamanAkhir}`} •</p>
+                          <p className="text-xs text-slate-500">Juz {item.juz} â€¢ Hal {item.halamanAwal === item.halamanAkhir ? item.halamanAwal : `${item.halamanAwal}-${item.halamanAkhir}`} â€¢</p>
                           <FormatPenilaian item={item} />
                         </div>
                       </>
