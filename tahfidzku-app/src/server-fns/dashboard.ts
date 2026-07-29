@@ -1,12 +1,13 @@
 import { createServerFn } from '@tanstack/react-start'
-import { and, eq, desc, gte } from 'drizzle-orm'
+import { and, eq, desc, gte, sql } from 'drizzle-orm'
 import { db } from '../db'
-import { santri, setoran, users, kelas, tenants, waliSantri } from '../db/schema'
+import { santri, setoran, setoranIqra, users, kelas, tenants, waliSantri } from '../db/schema'
 import { getAuthSession, requireRole } from '../middleware/auth.middleware'
 import { success, handleError } from '../lib/response'
 import { AuthenticationError } from '../lib/errors'
 import { hitungProgresHalaman, kalkulasiJuzProgress } from '../lib/quranMapper'
 import { hitungDailyStreak, hitungWeeklyStreak } from '../lib/streak'
+import { getSantriDisplayMode } from '../lib/santri-display'
 
 // ==========================================
 // 1. ADMIN DASHBOARD
@@ -33,28 +34,45 @@ export const getAdminDashboardStats = createServerFn({ method: 'POST' }).handler
         .from(setoran)
         .where(and(eq(setoran.tenantId, tenantId), gte(setoran.createdAt, today)))
 
-      // Menggunakan Relational Query Drizzle
-      const recentSetoran = await db.query.setoran.findMany({
-        where: eq(setoran.tenantId, tenantId),
-        orderBy: [desc(setoran.createdAt)],
-        limit: 5,
-        with: {
-          santri: {
-            columns: { nama: true }
-          }
-        }
-      })
+      const setoranIqraHariIniList = await db
+        .select({ id: setoranIqra.id })
+        .from(setoranIqra)
+        .where(and(eq(setoranIqra.tenantId, tenantId), gte(setoranIqra.createdAt, today)))
 
-      // Map format agar sesuai dengan frontend (flatten santriNama)
-      const formattedRecent = recentSetoran.map(s => ({
-        ...s,
-        santriNama: s.santri.nama
+      const unionQuery = sql`
+        (
+          SELECT s.id, s.santri_id as "santriId", 'tahfidz' as tipe, s.created_at as "createdAt", sa.nama as "santriNama"
+          FROM setoran s
+          JOIN santri sa ON s.santri_id = sa.id
+          WHERE s.tenant_id = ${tenantId}
+          ORDER BY s.created_at DESC LIMIT 5
+        )
+        UNION ALL
+        (
+          SELECT si.id, si.santri_id as "santriId", 'iqra' as tipe, si.created_at as "createdAt", sa.nama as "santriNama"
+          FROM setoran_iqra si
+          JOIN santri sa ON si.santri_id = sa.id
+          WHERE si.tenant_id = ${tenantId}
+          ORDER BY si.created_at DESC LIMIT 5
+        )
+        ORDER BY "createdAt" DESC LIMIT 5
+      `;
+      
+      const { rows } = await db.execute(unionQuery);
+      
+      // format for frontend
+      const formattedRecent = rows.map((r: any) => ({
+        id: r.id,
+        santriId: r.santriId,
+        tipe: r.tipe,
+        createdAt: new Date(r.createdAt),
+        santriNama: r.santriNama
       }))
 
       return success({
         totalSantri: santriList.length,
         totalUstadz: ustadzList.length,
-        totalSetoranHariIni: setoranHariIniList.length,
+        totalSetoranHariIni: setoranHariIniList.length + setoranIqraHariIniList.length,
         recentSetoran: formattedRecent,
         tenantStatus: tenantInfo?.status || 'aktif',
         trialEndsAt: tenantInfo?.trialEndsAt || null,
@@ -85,6 +103,8 @@ export const getUstadzDashboard = createServerFn({ method: 'POST' }).handler(
           id: santri.id,
           nama: santri.nama,
           targetJuz: santri.targetJuz,
+          tahapSantri: santri.tahapSantri,
+          jilidIqraTerakhir: santri.jilidIqraTerakhir,
         })
         .from(santri)
         .innerJoin(kelas, eq(santri.kelasId, kelas.id))
@@ -95,7 +115,7 @@ export const getUstadzDashboard = createServerFn({ method: 'POST' }).handler(
           )
         )
 
-      // Ambil setoran hari ini (Relational Query)
+      // Ambil setoran hari ini (Tahfidz)
       const setoranHariIniData = await db.query.setoran.findMany({
         where: and(
           eq(setoran.tenantId, tenantId),
@@ -108,13 +128,31 @@ export const getUstadzDashboard = createServerFn({ method: 'POST' }).handler(
         }
       })
 
-      const setoranHariIni = setoranHariIniData.map(s => ({
-        ...s,
-        santriNama: s.santri.nama
-      }))
+      // Ambil setoran hari ini (Iqra)
+      const setoranIqraHariIniData = await db.query.setoranIqra.findMany({
+        where: and(
+          eq(setoranIqra.tenantId, tenantId),
+          eq(setoranIqra.createdBy, session.user.id),
+          gte(setoranIqra.createdAt, today)
+        ),
+        orderBy: [desc(setoranIqra.createdAt)],
+        with: {
+          santri: { columns: { nama: true } }
+        }
+      })
+
+      const setoranHariIni = [
+        ...setoranHariIniData.map(s => ({ ...s, santriNama: s.santri.nama, tipe: 'tahfidz' as const })),
+        ...setoranIqraHariIniData.map(s => ({ ...s, santriNama: s.santri.nama, tipe: 'iqra' as const }))
+      ]
+      
+      setoranHariIni.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 
       const sudahSetorIds = setoranHariIni.map((s) => s.santriId)
-      const belumSetor = santriBinaan.filter((s) => !sudahSetorIds.includes(s.id))
+      const belumSetor = santriBinaan.filter((s) => !sudahSetorIds.includes(s.id)).map(s => ({
+        ...s,
+        displayMode: getSantriDisplayMode(s)
+      }))
 
       return success(
         {
@@ -146,101 +184,174 @@ export const getSantriDashboardData = createServerFn({ method: 'POST' }).handler
       if (!santriId) throw new Error('Anda tidak memiliki profil santri.')
 
       const [profil] = await db.select().from(santri).where(eq(santri.id, santriId)).limit(1)
+      if (!profil) throw new Error('Profil santri tidak ditemukan.')
 
-      const riwayat = await db.query.setoran.findMany({
-        where: eq(setoran.santriId, santriId),
-        orderBy: [desc(setoran.createdAt)],
-        limit: 5
-      })
+      const displayMode = getSantriDisplayMode(profil)
 
-      const targetJuz = profil?.targetJuz || 30
-      const juzSelesai = profil ? kalkulasiJuzProgress(profil.urutanHafalan || [], profil.posisiTerakhir, profil.juzUjianPending).length : 0
-      
-      let progressPercentage = Math.round((juzSelesai / targetJuz) * 100)
-      try {
-        if (profil?.urutanHafalan && profil?.posisiTerakhir) {
-          const progresHal = hitungProgresHalaman(profil.urutanHafalan, profil.posisiTerakhir)
-          progressPercentage = progresHal.persen
-        }
-      } catch (err) {
-        // Fallback jika array urutanHafalan / posisiTerakhir tidak konsisten
-        progressPercentage = Math.round((juzSelesai / targetJuz) * 100)
-      }
-
-      // Murojaah 7 Hari Terakhir
+      // Helper date for 7 days
       const last7Days = new Date();
       last7Days.setDate(last7Days.getDate() - 6);
       last7Days.setHours(0,0,0,0);
       
-      const setoran7Hari = await db.query.setoran.findMany({
-        where: and(
-          eq(setoran.santriId, santriId),
-          gte(setoran.createdAt, last7Days)
-        )
-      })
-      
-      const murojaahChart = Array(7).fill(0).map((_, i) => {
-        const d = new Date(last7Days);
-        d.setDate(d.getDate() + i);
-        return { 
-          name: d.toLocaleDateString('id-ID', { weekday: 'short' }), 
-          date: d.toISOString().split('T')[0],
-          halaman: 0 
-        };
-      });
-
-      for (const s of setoran7Hari) {
-        if (s.jenis === 'sabqi' || s.jenis === 'manzil') {
-          const sDate = new Date(s.createdAt).toISOString().split('T')[0];
-          const dayIdx = murojaahChart.findIndex(d => d.date === sDate);
-          if (dayIdx !== -1) {
-            let pages = 0;
-            if (s.halamanAwal != null && s.halamanAkhir != null) {
-              pages = Math.max(0, s.halamanAkhir - s.halamanAwal + 1); // estimasi kasar halaman
-            }
-            murojaahChart[dayIdx].halaman += pages;
-          }
-        }
-      }
-
-      // Kalkulasi Streak Cerdas (Daily atau Weekly)
       const duaTahunLalu = new Date()
       duaTahunLalu.setDate(duaTahunLalu.getDate() - 730)
-      
-      const riwayatStreak = await db.query.setoran.findMany({
-        where: and(
-          eq(setoran.santriId, santriId),
-          gte(setoran.createdAt, duaTahunLalu)
-        ),
-        orderBy: [desc(setoran.createdAt)],
-        columns: { createdAt: true }
-      })
 
-      const rawDates = riwayatStreak.map(s => s.createdAt)
-      const streakMode = profil?.tipe === 'reguler' ? 'daily' : 'weekly'
-      const calculatedStreak = streakMode === 'daily' 
-        ? hitungDailyStreak(rawDates) 
-        : hitungWeeklyStreak(rawDates)
+      if (displayMode === 'iqra') {
+        // ---- DATA IQRA ----
+        const riwayat = await db.query.setoranIqra.findMany({
+          where: eq(setoranIqra.santriId, santriId),
+          orderBy: [desc(setoranIqra.createdAt)],
+          limit: 5
+        })
 
-      return success({
-        profil,
-        riwayat,
-        progress: {
-          targetJuz,
-          juzSelesai,
-          percentage: progressPercentage,
-        },
-        murojaahChart,
-        streak: calculatedStreak,
-        streakMode: streakMode,
-      }, "Data dashboard berhasil diambil")
+        const jilidSekarang = profil.jilidIqraTerakhir || 1
+        const halamanSekarang = profil.halamanIqraTerakhir || 0
+        const progressPercentage = Math.round((jilidSekarang / 6) * 100)
+
+        // Setoran 7 hari terakhir
+        const setoran7Hari = await db.query.setoranIqra.findMany({
+          where: and(
+            eq(setoranIqra.santriId, santriId),
+            gte(setoranIqra.createdAt, last7Days)
+          )
+        })
+
+        const iqraChart = Array(7).fill(0).map((_, i) => {
+          const d = new Date(last7Days);
+          d.setDate(d.getDate() + i);
+          return { 
+            name: d.toLocaleDateString('id-ID', { weekday: 'short' }), 
+            date: d.toISOString().split('T')[0],
+            halaman: 0 
+          };
+        });
+
+        for (const s of setoran7Hari) {
+          const sDate = new Date(s.createdAt).toISOString().split('T')[0];
+          const dayIdx = iqraChart.findIndex(d => d.date === sDate);
+          if (dayIdx !== -1) {
+            let pages = Math.max(0, s.halamanAkhir - s.halamanAwal + 1);
+            iqraChart[dayIdx].halaman += pages;
+          }
+        }
+
+        // Streak Iqra
+        const riwayatStreak = await db.query.setoranIqra.findMany({
+          where: and(
+            eq(setoranIqra.santriId, santriId),
+            gte(setoranIqra.createdAt, duaTahunLalu)
+          ),
+          orderBy: [desc(setoranIqra.createdAt)],
+          columns: { createdAt: true }
+        })
+
+        const rawDates = riwayatStreak.map(s => s.createdAt)
+        const streakMode = profil.tipe === 'reguler' ? 'daily' : 'weekly'
+        const calculatedStreak = streakMode === 'daily' 
+          ? hitungDailyStreak(rawDates) 
+          : hitungWeeklyStreak(rawDates)
+
+        return success({
+          displayMode,
+          profil,
+          riwayat,
+          progress: {
+            jilidSekarang,
+            halamanSekarang,
+            percentage: progressPercentage,
+          },
+          analitikChart: iqraChart,
+          streak: calculatedStreak,
+          streakMode: streakMode,
+        }, "Data dashboard Iqra berhasil diambil")
+
+      } else {
+        // ---- DATA TAHFIDZ ----
+        const riwayat = await db.query.setoran.findMany({
+          where: eq(setoran.santriId, santriId),
+          orderBy: [desc(setoran.createdAt)],
+          limit: 5
+        })
+
+        const targetJuz = profil?.targetJuz || 30
+        const juzSelesai = profil ? kalkulasiJuzProgress(profil.urutanHafalan || [], profil.posisiTerakhir, profil.juzUjianPending).length : 0
+        
+        let progressPercentage = Math.round((juzSelesai / targetJuz) * 100)
+        try {
+          if (profil?.urutanHafalan && profil?.posisiTerakhir) {
+            const progresHal = hitungProgresHalaman(profil.urutanHafalan, profil.posisiTerakhir)
+            progressPercentage = progresHal.persen
+          }
+        } catch (err) {
+          progressPercentage = Math.round((juzSelesai / targetJuz) * 100)
+        }
+
+        const setoran7Hari = await db.query.setoran.findMany({
+          where: and(
+            eq(setoran.santriId, santriId),
+            gte(setoran.createdAt, last7Days)
+          )
+        })
+        
+        const murojaahChart = Array(7).fill(0).map((_, i) => {
+          const d = new Date(last7Days);
+          d.setDate(d.getDate() + i);
+          return { 
+            name: d.toLocaleDateString('id-ID', { weekday: 'short' }), 
+            date: d.toISOString().split('T')[0],
+            halaman: 0 
+          };
+        });
+
+        for (const s of setoran7Hari) {
+          if (s.jenis === 'sabqi' || s.jenis === 'manzil') {
+            const sDate = new Date(s.createdAt).toISOString().split('T')[0];
+            const dayIdx = murojaahChart.findIndex(d => d.date === sDate);
+            if (dayIdx !== -1) {
+              let pages = 0;
+              if (s.halamanAwal != null && s.halamanAkhir != null) {
+                pages = Math.max(0, s.halamanAkhir - s.halamanAwal + 1);
+              }
+              murojaahChart[dayIdx].halaman += pages;
+            }
+          }
+        }
+
+        const riwayatStreak = await db.query.setoran.findMany({
+          where: and(
+            eq(setoran.santriId, santriId),
+            gte(setoran.createdAt, duaTahunLalu)
+          ),
+          orderBy: [desc(setoran.createdAt)],
+          columns: { createdAt: true }
+        })
+
+        const rawDates = riwayatStreak.map(s => s.createdAt)
+        const streakMode = profil?.tipe === 'reguler' ? 'daily' : 'weekly'
+        const calculatedStreak = streakMode === 'daily' 
+          ? hitungDailyStreak(rawDates) 
+          : hitungWeeklyStreak(rawDates)
+
+        return success({
+          displayMode,
+          profil,
+          riwayat,
+          progress: {
+            targetJuz,
+            juzSelesai,
+            percentage: progressPercentage,
+          },
+          analitikChart: murojaahChart,
+          streak: calculatedStreak,
+          streakMode: streakMode,
+        }, "Data dashboard Tahfidz berhasil diambil")
+      }
     } catch (err) {
       return handleError(err)
     }
   }
 )
 
-// Alias untuk konsistensi dengan import yang dipakai di src/routes/santri/index.tsx
 export { getSantriDashboardData as getSantriDashboard }
 
 // ==========================================
@@ -255,90 +366,124 @@ export const getWaliDashboard = createServerFn({ method: 'POST' }).handler(
 
       let santriIds: string[] = []
       
-      // Coba cari dari tabel wali_santri terlebih dahulu
       const anakLinks = await db.select({ santriId: waliSantri.santriId }).from(waliSantri).where(eq(waliSantri.waliUserId, session.user.id))
       
       if (anakLinks.length > 0) {
         santriIds = anakLinks.map(link => link.santriId)
       } else if (session.user.santriId) {
-        // Fallback untuk backward compatibility jika wali_santri belum terisi tapi user punya santriId
         santriIds = [session.user.santriId]
       }
 
       if (santriIds.length === 0) throw new Error('Akun Wali ini belum terhubung ke data anak (santri).')
 
       const daftarAnak = []
+      const duaTahunLalu = new Date()
+      duaTahunLalu.setDate(duaTahunLalu.getDate() - 730)
 
       for (const santriId of santriIds) {
         const [profil] = await db.select().from(santri).where(eq(santri.id, santriId)).limit(1)
         if (!profil) continue;
 
-        // Ambil nama kelas jika ada
         let namaKelas = null;
         if (profil.kelasId) {
           const [kelasObj] = await db.select({ nama: kelas.nama }).from(kelas).where(eq(kelas.id, profil.kelasId)).limit(1)
           if (kelasObj) namaKelas = kelasObj.nama;
         }
 
-        // Ambil riwayat setoran dengan nama ustadz
-        const riwayat = await db.query.setoran.findMany({
-          where: eq(setoran.santriId, santriId),
-          orderBy: [desc(setoran.createdAt)],
-          limit: 10,
-          with: {
-            ustadz: { columns: { nama: true } }
-          }
-        })
+        const displayMode = getSantriDisplayMode(profil)
 
-        const targetJuz = profil.targetJuz || 30
-        const juzSelesai = kalkulasiJuzProgress(profil.urutanHafalan || [], profil.posisiTerakhir, profil.juzUjianPending).length
-        
-        let progressPercentage = Math.round((juzSelesai / targetJuz) * 100)
-        try {
-          if (profil.urutanHafalan && profil.posisiTerakhir) {
-            const progresHal = hitungProgresHalaman(profil.urutanHafalan, profil.posisiTerakhir)
-            progressPercentage = progresHal.persen
+        if (displayMode === 'iqra') {
+          const riwayat = await db.query.setoranIqra.findMany({
+            where: eq(setoranIqra.santriId, santriId),
+            orderBy: [desc(setoranIqra.createdAt)],
+            limit: 10,
+            with: {
+              createdBy: { columns: { nama: true } }
+            }
+          })
+
+          const jilidSekarang = profil.jilidIqraTerakhir || 1
+          const halamanSekarang = profil.halamanIqraTerakhir || 0
+          const progressPercentage = Math.round((jilidSekarang / 6) * 100)
+
+          const riwayatStreak = await db.query.setoranIqra.findMany({
+            where: and(
+              eq(setoranIqra.santriId, santriId),
+              gte(setoranIqra.createdAt, duaTahunLalu)
+            ),
+            orderBy: [desc(setoranIqra.createdAt)],
+            columns: { createdAt: true }
+          })
+  
+          const rawDates = riwayatStreak.map(s => s.createdAt)
+          const streakMode = profil.tipe === 'reguler' ? 'daily' : 'weekly'
+          const calculatedStreak = streakMode === 'daily' 
+            ? hitungDailyStreak(rawDates) 
+            : hitungWeeklyStreak(rawDates)
+
+          daftarAnak.push({
+            displayMode,
+            profil: { ...profil, namaKelas },
+            riwayat: riwayat.map(r => ({ ...r, ustadzNama: r.createdBy?.nama || 'Ustadz' })),
+            progress: {
+              jilidSekarang,
+              halamanSekarang,
+              percentage: progressPercentage,
+            },
+            streak: calculatedStreak,
+            streakMode: streakMode
+          })
+        } else {
+          const riwayat = await db.query.setoran.findMany({
+            where: eq(setoran.santriId, santriId),
+            orderBy: [desc(setoran.createdAt)],
+            limit: 10,
+            with: {
+              ustadz: { columns: { nama: true } }
+            }
+          })
+
+          const targetJuz = profil.targetJuz || 30
+          const juzSelesai = kalkulasiJuzProgress(profil.urutanHafalan || [], profil.posisiTerakhir, profil.juzUjianPending).length
+          
+          let progressPercentage = Math.round((juzSelesai / targetJuz) * 100)
+          try {
+            if (profil.urutanHafalan && profil.posisiTerakhir) {
+              const progresHal = hitungProgresHalaman(profil.urutanHafalan, profil.posisiTerakhir)
+              progressPercentage = progresHal.persen
+            }
+          } catch (err) {
+            progressPercentage = Math.round((juzSelesai / targetJuz) * 100)
           }
-        } catch (err) {
-          progressPercentage = Math.round((juzSelesai / targetJuz) * 100)
+
+          const riwayatStreak = await db.query.setoran.findMany({
+            where: and(
+              eq(setoran.santriId, santriId),
+              gte(setoran.createdAt, duaTahunLalu)
+            ),
+            orderBy: [desc(setoran.createdAt)],
+            columns: { createdAt: true }
+          })
+  
+          const rawDates = riwayatStreak.map(s => s.createdAt)
+          const streakMode = profil.tipe === 'reguler' ? 'daily' : 'weekly'
+          const calculatedStreak = streakMode === 'daily' 
+            ? hitungDailyStreak(rawDates) 
+            : hitungWeeklyStreak(rawDates)
+
+          daftarAnak.push({
+            displayMode,
+            profil: { ...profil, namaKelas },
+            riwayat: riwayat.map(r => ({ ...r, ustadzNama: r.ustadz?.nama || 'Ustadz' })),
+            progress: {
+              targetJuz,
+              juzSelesai,
+              percentage: progressPercentage,
+            },
+            streak: calculatedStreak,
+            streakMode: streakMode
+          })
         }
-
-        // Kalkulasi Streak Cerdas (Daily atau Weekly)
-        const duaTahunLalu = new Date()
-        duaTahunLalu.setDate(duaTahunLalu.getDate() - 730)
-        
-        const riwayatStreak = await db.query.setoran.findMany({
-          where: and(
-            eq(setoran.santriId, santriId),
-            gte(setoran.createdAt, duaTahunLalu)
-          ),
-          orderBy: [desc(setoran.createdAt)],
-          columns: { createdAt: true }
-        })
-
-        const rawDates = riwayatStreak.map(s => s.createdAt)
-        const streakMode = profil.tipe === 'reguler' ? 'daily' : 'weekly'
-        const calculatedStreak = streakMode === 'daily' 
-          ? hitungDailyStreak(rawDates) 
-          : hitungWeeklyStreak(rawDates)
-
-        daftarAnak.push({
-          profil: {
-            ...profil,
-            namaKelas
-          },
-          riwayat: riwayat.map(r => ({
-            ...r,
-            ustadzNama: r.ustadz?.nama || 'Ustadz'
-          })),
-          progress: {
-            targetJuz,
-            juzSelesai,
-            percentage: progressPercentage,
-          },
-          streak: calculatedStreak,
-          streakMode: streakMode
-        })
       }
       
       if (daftarAnak.length === 0) throw new Error('Data anak tidak ditemukan.')
