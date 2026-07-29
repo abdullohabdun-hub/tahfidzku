@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { Check, ChevronDown, Loader2, Info, Settings2 } from 'lucide-react'
+import { Check, ChevronDown, Loader2, Info, Settings2, Edit } from 'lucide-react'
+import { useRouter } from '@tanstack/react-router'
+import { KoreksiPosisiModal } from './KoreksiPosisiModal'
 import {
   buatSurahMetaOtomatis,
   buatSurahMetaLintasJuz,
@@ -11,7 +13,8 @@ import {
   labelRentangAyatZiyadah,
   urutanJuzStandar,
 } from '../lib/quranMapper'
-import { SKOR_LIST, SKOR_DEFAULT_LABELS, SKOR_WARNA_SOLID, SKOR_WARNA, LEGACY_TO_SKOR } from '../lib/penilaian'
+import { getTodayWIB } from '../lib/dateUtils'
+import { SKOR_LIST, SKOR_DEFAULT_LABELS, SKOR_WARNA_SOLID, LEGACY_TO_SKOR } from '../lib/penilaian'
 import type { SkorKualitas, StatusHafalan } from '../lib/penilaian'
 
 // === Styles & Tokens ===
@@ -103,15 +106,17 @@ interface SetoranFormProps {
 }
 
 export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit, onCancel, isUstadz = true }: SetoranFormProps) {
+  const router = useRouter()
   const [submitting, setSubmitting] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
+  const [isKoreksiModalOpen, setIsKoreksiModalOpen] = useState(false)
   
   // State Utama
   const [jenisSetoran, setJenisSetoran] = useState<'ziyadah' | 'sabqi' | 'manzil'>(defaultJenis || 'ziyadah')
   const activeAccent = JENIS_TABS.find(t => t.id === jenisSetoran)?.accent as keyof typeof ACCENTS || 'emerald'
   
-  const urutanHafalan = useMemo(() => santri?.urutanHafalan ?? urutanJuzStandar(), [santri])
+  const urutanHafalan = useMemo(() => (santri?.urutanHafalan && santri.urutanHafalan.length > 0) ? santri.urutanHafalan : urutanJuzStandar(), [santri])
 
   // Ziyadah State
   const [surahSelesaiNomor, setSurahSelesaiNomor] = useState<number>(0)
@@ -150,12 +155,18 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
   const [skorKualitas, setSkorKualitas] = useState<SkorKualitas | null>(null)
   const [statusHafalan, setStatusHafalan] = useState<StatusHafalan | null>(null)
   const [catatan, setCatatan] = useState('')
+  const [tanggalSetoran, setTanggalSetoran] = useState<string>('')
 
   // INISIALISASI DATA
   useEffect(() => {
     if (mode === 'edit' && initialData) {
       setJenisSetoran(initialData.jenis)
       setCatatan(initialData.catatan || '')
+      if (initialData.tanggalSetoran) {
+        setTanggalSetoran(initialData.tanggalSetoran)
+      } else {
+        setTanggalSetoran(getTodayWIB())
+      }
       
       // Set skor: pakai skorKualitas baru jika ada, fallback konversi dari kualitas lama
       if (initialData.skorKualitas) {
@@ -216,7 +227,10 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
             }
         }
       }
+    } else {
+      if (!tanggalSetoran) setTanggalSetoran(getTodayWIB())
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, initialData])
 
   // Auto kalkulasi meta Sabqi/Manzil
@@ -336,9 +350,11 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
 
       if (mode === 'create') {
         payload.santriId = santri?.id
+        payload.tanggalSetoran = tanggalSetoran || getTodayWIB()
       } else {
         payload.id = initialData.id
         if (isUstadz) payload.santriId = initialData.santriId
+        payload.tanggalSetoran = tanggalSetoran || initialData.tanggalSetoran || getTodayWIB()
       }
 
       if (jenisSetoran === 'ziyadah') {
@@ -421,6 +437,20 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
         </div>
       )}
 
+      {/* Tanggal Setoran (Hanya untuk Ustadz) */}
+      {isUstadz && (
+        <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-sm">
+          <label className="block text-sm font-medium text-slate-700 mb-1.5">Tanggal Setoran</label>
+          <input 
+            type="date"
+            value={tanggalSetoran}
+            onChange={(e) => { setTanggalSetoran(e.target.value); setErrorMsg('') }}
+            max={getTodayWIB()}
+            className="w-full rounded-lg border-slate-200 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+          />
+        </div>
+      )}
+
       {/* 2. Tabs Jenis Setoran (Jika Mode Create, atau Edit dengan Jenis Fixed) */}
       <div className="bg-white rounded-xl border border-slate-200 p-1.5 flex gap-1 shadow-sm">
         {JENIS_TABS.filter(t => isUstadz || t.id !== 'ziyadah').map((tab) => {
@@ -456,9 +486,21 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
           
           {jenisSetoran === 'ziyadah' && (
             <div className="space-y-4">
-              <SectionLabel accent="emerald">Surat Mulai</SectionLabel>
+              <div className="flex items-center justify-between mb-2">
+                <SectionLabel accent="emerald">Surat Mulai</SectionLabel>
+                {santri && mode === 'create' && (
+                  <button 
+                    type="button" 
+                    onClick={() => setIsKoreksiModalOpen(true)} 
+                    className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded transition-colors flex items-center"
+                  >
+                    <Edit className="w-3 h-3 mr-1" />
+                    Koreksi
+                  </button>
+                )}
+              </div>
               
-              <div className="flex gap-2">
+              <div className="flex gap-2 -mt-2">
                 <div className="flex-1 bg-slate-50 border border-slate-200 rounded-lg p-2.5 flex flex-col justify-center">
                   <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-0.5">Surah</span>
                   <span className="text-sm font-semibold text-slate-700 truncate">{actualSurahMulaiObj?.nama || '-'}</span>
@@ -788,6 +830,13 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
             </button>
         </div>
       </form>
+
+      <KoreksiPosisiModal 
+        isOpen={isKoreksiModalOpen} 
+        onClose={() => setIsKoreksiModalOpen(false)} 
+        santri={santri} 
+        onSuccess={() => router.invalidate()} 
+      />
     </div>
   )
 }

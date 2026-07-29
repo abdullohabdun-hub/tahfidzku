@@ -1,7 +1,7 @@
 // src/db/schema/setoran.ts
 // Tabel setoran — catatan hafalan yang diinput oleh Ustadz
 
-import { pgTable, uuid, varchar, integer, text, timestamp, pgEnum, real, boolean, jsonb } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, varchar, integer, text, timestamp, pgEnum, real, boolean, jsonb, date } from 'drizzle-orm/pg-core'
 import { tenants } from './tenants'
 import { santri } from './santri'
 import { users } from './users'
@@ -43,6 +43,8 @@ export const setoran = pgTable('setoran', {
   sumber: sumberSetoranEnum('sumber').notNull().default('ustadz'),
   updatedBy: uuid('updated_by').references(() => users.id, { onDelete: 'set null' }),
   previousData: jsonb('previous_data').$type<Record<string, any>>(),
+  tanggalSetoran: date('tanggal_setoran').notNull(),
+  isBackdated: boolean('is_backdated').default(false).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })

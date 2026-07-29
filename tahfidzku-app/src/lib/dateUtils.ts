@@ -12,3 +12,11 @@ export function getLegacyMingguMulaiKey(date: Date = new Date()): string {
   startOfWeek.setHours(0, 0, 0, 0)
   return startOfWeek.toISOString().split('T')[0]
 }
+
+/**
+ * Mendapatkan tanggal hari ini dalam zona waktu WIB (Asia/Jakarta).
+ * Mengembalikan string dalam format YYYY-MM-DD.
+ */
+export function getTodayWIB(): string {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' })
+}

@@ -12,9 +12,6 @@ export const Route = createFileRoute('/admin/')({
   loader: async () => {
     try {
       const rubrikRes = await getAllRubrikTenant()
-      // Note: If rubrikRes has an error mechanism we should check it here too
-      // But typically it returns an array directly based on current code.
-      // We will wrap with try-catch for NETWORK_ERROR.
       return {
         rubrikAktif: rubrikRes,
         authError: null
@@ -137,7 +134,6 @@ function Dashboard() {
         </div>
       </div>
 
-
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat, i) => (
           <div key={i} className="bg-white rounded-2xl p-6 shadow-sm shadow-slate-200/50 border border-slate-100 hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden group">
@@ -173,7 +169,10 @@ function Dashboard() {
             ) : (
               statsData?.recentSetoran?.map((item: any, i: number) => {
                 let infoTarget = ''
-                if (item.jenis === 'ziyadah') {
+                const isIqra = item.tipe === 'iqra'
+                if (isIqra) {
+                  infoTarget = `Jilid ${item.jilid || ''} Hal ${item.halamanAwal || ''}`
+                } else if (item.jenis === 'ziyadah') {
                   const surahName = item.surah || (item.surahMeta && item.surahMeta.length > 0 ? item.surahMeta[0].nama : 'Unknown')
                   infoTarget = `${surahName}: ${item.ayatAwal || ''}-${item.ayatAkhir || ''}`
                 } else {
@@ -185,7 +184,10 @@ function Dashboard() {
                   <div key={i} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl transition-colors border border-transparent hover:border-slate-100 group">
                     <div>
                       <p className="font-semibold text-sm text-slate-900">{item.santriNama}</p>
-                      <p className="text-xs text-slate-500 capitalize mt-0.5 group-hover:text-slate-600 transition-colors">{item.jenis} • {infoTarget}</p>
+                      <p className="text-xs text-slate-500 capitalize mt-0.5 group-hover:text-slate-600 transition-colors">
+                        <span className={`px-1.5 py-0.5 rounded mr-1.5 font-semibold text-[10px] uppercase tracking-wider ${isIqra ? 'bg-violet-100 text-violet-700' : 'bg-emerald-100 text-emerald-700'}`}>{isIqra ? 'Iqra' : item.jenis}</span>
+                        {infoTarget}
+                      </p>
                     </div>
                     <div className="text-right flex flex-col items-end">
                       <FormatPenilaian item={item} />

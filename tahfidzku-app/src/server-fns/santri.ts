@@ -98,6 +98,11 @@ export const getSantriList = createServerFn({ method: 'POST' }).handler(
           posisiTerakhir: s.posisiTerakhir,
           urutanHafalan: s.urutanHafalan,
           juzUjianPending: s.juzUjianPending,
+          tahapSantri: s.tahapSantri,
+          jilidIqraTerakhir: s.jilidIqraTerakhir,
+          halamanIqraTerakhir: s.halamanIqraTerakhir,
+          posisiTerakhirUpdatedAt: s.posisiTerakhirUpdatedAt,
+          posisiTerakhirUpdateNote: s.posisiTerakhirUpdateNote,
         }
       })
 
@@ -583,6 +588,60 @@ export const setupSantriInitialHafalan = createServerFn({ method: 'POST' })
       }).where(eq(santri.id, data.santriId))
 
       return success(null, 'Posisi hafalan awal berhasil disimpan')
+    } catch (err) {
+      return handleError(err)
+    }
+  })
+
+// ==========================================
+// 6. KOREKSI POSISI HAFALAN (USTADZ SAJA)
+// ==========================================
+export const koreksiPosisiHafalan = createServerFn({ method: 'POST' })
+  .validator(z.object({
+    santriId: z.string().uuid('ID Santri tidak valid'),
+    batasHafalanJuz: z.number().min(1).max(30).nullable(),
+    batasHafalanSurah: z.string().nullable(),
+    batasHafalanAyat: z.number().nullable(),
+    catatan: z.string().optional(),
+  }))
+  .handler(async ({ data }) => {
+    try {
+      const session = await getAuthSession()
+      if (!session) throw new AuthenticationError()
+      requireRole(session, 'ustadz') // HANYA Ustadz
+
+      const [currentSantri] = await db.select().from(santri)
+        .where(and(eq(santri.id, data.santriId), eq(santri.tenantId, session.user.tenantId)))
+        .limit(1)
+
+      if (!currentSantri) {
+        throw new NotFoundError('Santri tidak ditemukan atau bukan milik Anda')
+      }
+
+      if (currentSantri.tahapSantri !== 'tahfidz') {
+        throw new ValidationError('Koreksi posisi ini khusus untuk santri Tahfidz')
+      }
+
+      // Hitung ulang posisi dan urutan dari input
+      const buildPosisi = bangunPosisiDariAdminInput(
+         currentSantri.juzProgress || [],
+         data.batasHafalanJuz,
+         data.batasHafalanSurah,
+         data.batasHafalanAyat
+      );
+
+      await db.update(santri).set({
+        batasHafalanJuz: data.batasHafalanJuz ?? null,
+        batasHafalanSurah: data.batasHafalanSurah ?? null,
+        batasHafalanAyat: data.batasHafalanAyat ?? null,
+        posisiTerakhir: buildPosisi.posisiTerakhir,
+        urutanHafalan: buildPosisi.urutanHafalan,
+        posisiTerakhirUpdatedBy: session.user.id,
+        posisiTerakhirUpdatedAt: new Date(),
+        posisiTerakhirUpdateNote: data.catatan || null,
+      }).where(eq(santri.id, data.santriId))
+
+      return success(null, 'Posisi hafalan berhasil dikoreksi')
     } catch (err) {
       return handleError(err)
     }

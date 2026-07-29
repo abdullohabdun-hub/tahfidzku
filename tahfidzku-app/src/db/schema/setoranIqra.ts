@@ -1,4 +1,4 @@
-import { pgTable, uuid, integer, varchar, text, timestamp, pgEnum } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, integer, varchar, text, timestamp, pgEnum, date } from 'drizzle-orm/pg-core'
 import { tenants } from './tenants'
 import { santri } from './santri'
 import { users } from './users'
@@ -9,6 +9,7 @@ export const setoranIqra = pgTable('setoran_iqra', {
   tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   santriId: uuid('santri_id').notNull().references(() => santri.id, { onDelete: 'cascade' }),
   sesiKelasId: uuid('sesi_kelas_id').references(() => sesiKelas.id), // nullable, sama seperti setoran tahfidz
+  tanggalSetoran: date('tanggal_setoran').notNull(),
   jilid: integer('jilid').notNull(), // 1-6
   halamanAwal: integer('halaman_awal').notNull(),
   halamanAkhir: integer('halaman_akhir').notNull(),

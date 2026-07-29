@@ -1,7 +1,7 @@
 // src/db/schema/santri.ts
 // Tabel santri — data peserta didik, terkait tenant dan kelas
 
-import { pgTable, uuid, varchar, integer, timestamp, pgEnum, jsonb, date } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, varchar, integer, timestamp, pgEnum, jsonb, date, text } from 'drizzle-orm/pg-core'
 import { tenants } from './tenants'
 import { kelas } from './kelas'
 import { users } from './users'
@@ -21,6 +21,9 @@ export const santri = pgTable('santri', {
   halamanIqraTerakhir: integer('halaman_iqra_terakhir'),
   tahapSantriUpdatedBy: uuid('tahap_santri_updated_by').references(() => users.id),
   tahapSantriUpdatedAt: timestamp('tahap_santri_updated_at', { withTimezone: true }),
+  posisiTerakhirUpdatedBy: uuid('posisi_terakhir_updated_by').references(() => users.id),
+  posisiTerakhirUpdatedAt: timestamp('posisi_terakhir_updated_at', { withTimezone: true }),
+  posisiTerakhirUpdateNote: text('posisi_terakhir_update_note'),
   kelasId: uuid('kelas_id').references(() => kelas.id, { onDelete: 'set null' }),
   targetJuz: integer('target_juz').notNull().default(30),
   juzProgress: integer('juz_progress').array().default([]), // Juz yang sudah diselesaikan (contoh: [30, 29])

@@ -2,6 +2,7 @@
 // Shared Zod schemas — dipakai oleh server functions DAN frontend forms
 
 import { z } from 'zod'
+import { getTodayWIB } from './dateUtils'
 
 // ── Setoran (Input oleh Ustadz) ──────────────────────
 export const createSetoranSchema = z
@@ -34,6 +35,14 @@ export const createSetoranSchema = z
     statusHafalan: z.enum(['lanjut', 'mengulang']).optional().nullable(),
     penilaianKustom: z.record(z.string(), z.any()).optional().nullable(),
     catatan: z.string().max(500, { message: 'Catatan maksimal 500 karakter' }).optional().nullable(),
+    tanggalSetoran: z.string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Format YYYY-MM-DD')
+      .refine(s => s <= getTodayWIB(), { message: 'Tidak boleh pilih tanggal masa depan' })
+      .refine(s => {
+        const minDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+          .toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' })
+        return s >= minDate
+      }, { message: 'Maksimal 7 hari ke belakang' }),
   })
   .superRefine((data, ctx) => {
     if (data.jenis === 'ziyadah') {

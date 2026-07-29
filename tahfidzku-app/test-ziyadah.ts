@@ -37,6 +37,8 @@ async function run() {
           surah: payload.surah,
           ayatAwal: payload.ayatAwal,
           ayatAkhir: payload.ayatAkhir,
+          tanggalSetoran: '2026-07-29',
+          isBackdated: false,
         })
         .returning()
 

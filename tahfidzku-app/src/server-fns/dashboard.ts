@@ -8,10 +8,8 @@ import { AuthenticationError } from '../lib/errors'
 import { hitungProgresHalaman, kalkulasiJuzProgress } from '../lib/quranMapper'
 import { hitungDailyStreak, hitungWeeklyStreak } from '../lib/streak'
 import { getSantriDisplayMode } from '../lib/santri-display'
+import { getTodayWIB } from '../lib/dateUtils'
 
-// ==========================================
-// 1. ADMIN DASHBOARD
-// ==========================================
 export const getAdminDashboardStats = createServerFn({ method: 'POST' }).handler(
   async () => {
     try {
@@ -32,16 +30,19 @@ export const getAdminDashboardStats = createServerFn({ method: 'POST' }).handler
       const setoranHariIniList = await db
         .select({ id: setoran.id })
         .from(setoran)
-        .where(and(eq(setoran.tenantId, tenantId), gte(setoran.createdAt, today)))
+        .where(and(eq(setoran.tenantId, tenantId), eq(setoran.tanggalSetoran, getTodayWIB())))
 
       const setoranIqraHariIniList = await db
         .select({ id: setoranIqra.id })
         .from(setoranIqra)
-        .where(and(eq(setoranIqra.tenantId, tenantId), gte(setoranIqra.createdAt, today)))
+        .where(and(eq(setoranIqra.tenantId, tenantId), eq(setoranIqra.tanggalSetoran, getTodayWIB())))
 
       const unionQuery = sql`
         (
-          SELECT s.id, s.santri_id as "santriId", 'tahfidz' as tipe, s.created_at as "createdAt", sa.nama as "santriNama"
+          SELECT s.id, s.santri_id as "santriId", 'tahfidz' as tipe, s.created_at as "createdAt", sa.nama as "santriNama",
+            s.jenis, s.surah, s.juz, s.juz_mulai as "juzMulai", s.juz_selesai as "juzSelesai", s.lintas_juz as "lintasJuz",
+            s.ayat_awal as "ayatAwal", s.ayat_akhir as "ayatAkhir", s.halaman_awal as "halamanAwal", s.halaman_akhir as "halamanAkhir",
+            NULL as jilid, s.skor_kualitas as "skorKualitas", s.status_hafalan as "statusHafalan"
           FROM setoran s
           JOIN santri sa ON s.santri_id = sa.id
           WHERE s.tenant_id = ${tenantId}
@@ -49,7 +50,10 @@ export const getAdminDashboardStats = createServerFn({ method: 'POST' }).handler
         )
         UNION ALL
         (
-          SELECT si.id, si.santri_id as "santriId", 'iqra' as tipe, si.created_at as "createdAt", sa.nama as "santriNama"
+          SELECT si.id, si.santri_id as "santriId", 'iqra' as tipe, si.created_at as "createdAt", sa.nama as "santriNama",
+            NULL as jenis, NULL as surah, NULL as juz, NULL as "juzMulai", NULL as "juzSelesai", false as "lintasJuz",
+            NULL as "ayatAwal", NULL as "ayatAkhir", si.halaman_awal as "halamanAwal", si.halaman_akhir as "halamanAkhir",
+            si.jilid as jilid, si.skor_kualitas as "skorKualitas", si.status_hafalan as "statusHafalan"
           FROM setoran_iqra si
           JOIN santri sa ON si.santri_id = sa.id
           WHERE si.tenant_id = ${tenantId}
@@ -66,7 +70,20 @@ export const getAdminDashboardStats = createServerFn({ method: 'POST' }).handler
         santriId: r.santriId,
         tipe: r.tipe,
         createdAt: new Date(r.createdAt),
-        santriNama: r.santriNama
+        santriNama: r.santriNama,
+        jenis: r.jenis,
+        surah: r.surah,
+        juz: r.juz,
+        juzMulai: r.juzMulai,
+        juzSelesai: r.juzSelesai,
+        lintasJuz: r.lintasJuz,
+        ayatAwal: r.ayatAwal,
+        ayatAkhir: r.ayatAkhir,
+        halamanAwal: r.halamanAwal,
+        halamanAkhir: r.halamanAkhir,
+        jilid: r.jilid,
+        skorKualitas: r.skorKualitas,
+        statusHafalan: r.statusHafalan
       }))
 
       return success({
@@ -83,9 +100,6 @@ export const getAdminDashboardStats = createServerFn({ method: 'POST' }).handler
   }
 )
 
-// ==========================================
-// 2. USTADZ DASHBOARD
-// ==========================================
 export const getUstadzDashboard = createServerFn({ method: 'POST' }).handler(
   async () => {
     try {
@@ -97,7 +111,6 @@ export const getUstadzDashboard = createServerFn({ method: 'POST' }).handler(
       const today = new Date()
       today.setHours(0, 0, 0, 0)
 
-      // Ambil santri binaan
       const santriBinaan = await db
         .select({
           id: santri.id,
@@ -115,25 +128,23 @@ export const getUstadzDashboard = createServerFn({ method: 'POST' }).handler(
           )
         )
 
-      // Ambil setoran hari ini (Tahfidz)
       const setoranHariIniData = await db.query.setoran.findMany({
         where: and(
           eq(setoran.tenantId, tenantId),
           eq(setoran.ustadzId, session.user.id),
-          gte(setoran.createdAt, today)
+          eq(setoran.tanggalSetoran, getTodayWIB())
         ),
-        orderBy: [desc(setoran.createdAt)],
+        orderBy: [desc(setoran.tanggalSetoran), desc(setoran.createdAt)],
         with: {
           santri: { columns: { nama: true } }
         }
       })
 
-      // Ambil setoran hari ini (Iqra)
       const setoranIqraHariIniData = await db.query.setoranIqra.findMany({
         where: and(
           eq(setoranIqra.tenantId, tenantId),
           eq(setoranIqra.createdBy, session.user.id),
-          gte(setoranIqra.createdAt, today)
+          eq(setoranIqra.tanggalSetoran, getTodayWIB())
         ),
         orderBy: [desc(setoranIqra.createdAt)],
         with: {
@@ -170,9 +181,6 @@ export const getUstadzDashboard = createServerFn({ method: 'POST' }).handler(
   }
 )
 
-// ==========================================
-// 3. SANTRI DASHBOARD
-// ==========================================
 export const getSantriDashboardData = createServerFn({ method: 'POST' }).handler(
   async () => {
     try {
@@ -188,16 +196,16 @@ export const getSantriDashboardData = createServerFn({ method: 'POST' }).handler
 
       const displayMode = getSantriDisplayMode(profil)
 
-      // Helper date for 7 days
       const last7Days = new Date();
       last7Days.setDate(last7Days.getDate() - 6);
       last7Days.setHours(0,0,0,0);
+      const last7DaysStr = last7Days.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
       
       const duaTahunLalu = new Date()
       duaTahunLalu.setDate(duaTahunLalu.getDate() - 730)
+      const duaTahunLaluStr = duaTahunLalu.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
 
       if (displayMode === 'iqra') {
-        // ---- DATA IQRA ----
         const riwayat = await db.query.setoranIqra.findMany({
           where: eq(setoranIqra.santriId, santriId),
           orderBy: [desc(setoranIqra.createdAt)],
@@ -208,11 +216,10 @@ export const getSantriDashboardData = createServerFn({ method: 'POST' }).handler
         const halamanSekarang = profil.halamanIqraTerakhir || 0
         const progressPercentage = Math.round((jilidSekarang / 6) * 100)
 
-        // Setoran 7 hari terakhir
         const setoran7Hari = await db.query.setoranIqra.findMany({
           where: and(
             eq(setoranIqra.santriId, santriId),
-            gte(setoranIqra.createdAt, last7Days)
+            gte(setoranIqra.tanggalSetoran, last7DaysStr)
           )
         })
 
@@ -227,7 +234,7 @@ export const getSantriDashboardData = createServerFn({ method: 'POST' }).handler
         });
 
         for (const s of setoran7Hari) {
-          const sDate = new Date(s.createdAt).toISOString().split('T')[0];
+          const sDate = s.tanggalSetoran;
           const dayIdx = iqraChart.findIndex(d => d.date === sDate);
           if (dayIdx !== -1) {
             let pages = Math.max(0, s.halamanAkhir - s.halamanAwal + 1);
@@ -235,11 +242,10 @@ export const getSantriDashboardData = createServerFn({ method: 'POST' }).handler
           }
         }
 
-        // Streak Iqra
         const riwayatStreak = await db.query.setoranIqra.findMany({
           where: and(
             eq(setoranIqra.santriId, santriId),
-            gte(setoranIqra.createdAt, duaTahunLalu)
+            gte(setoranIqra.tanggalSetoran, duaTahunLaluStr)
           ),
           orderBy: [desc(setoranIqra.createdAt)],
           columns: { createdAt: true }
@@ -266,10 +272,9 @@ export const getSantriDashboardData = createServerFn({ method: 'POST' }).handler
         }, "Data dashboard Iqra berhasil diambil")
 
       } else {
-        // ---- DATA TAHFIDZ ----
         const riwayat = await db.query.setoran.findMany({
           where: eq(setoran.santriId, santriId),
-          orderBy: [desc(setoran.createdAt)],
+          orderBy: [desc(setoran.tanggalSetoran), desc(setoran.createdAt)],
           limit: 5
         })
 
@@ -289,7 +294,7 @@ export const getSantriDashboardData = createServerFn({ method: 'POST' }).handler
         const setoran7Hari = await db.query.setoran.findMany({
           where: and(
             eq(setoran.santriId, santriId),
-            gte(setoran.createdAt, last7Days)
+            gte(setoran.tanggalSetoran, last7DaysStr)
           )
         })
         
@@ -305,7 +310,7 @@ export const getSantriDashboardData = createServerFn({ method: 'POST' }).handler
 
         for (const s of setoran7Hari) {
           if (s.jenis === 'sabqi' || s.jenis === 'manzil') {
-            const sDate = new Date(s.createdAt).toISOString().split('T')[0];
+            const sDate = s.tanggalSetoran;
             const dayIdx = murojaahChart.findIndex(d => d.date === sDate);
             if (dayIdx !== -1) {
               let pages = 0;
@@ -320,13 +325,13 @@ export const getSantriDashboardData = createServerFn({ method: 'POST' }).handler
         const riwayatStreak = await db.query.setoran.findMany({
           where: and(
             eq(setoran.santriId, santriId),
-            gte(setoran.createdAt, duaTahunLalu)
+            gte(setoran.tanggalSetoran, duaTahunLaluStr)
           ),
-          orderBy: [desc(setoran.createdAt)],
-          columns: { createdAt: true }
+          orderBy: [desc(setoran.tanggalSetoran), desc(setoran.createdAt)],
+          columns: { tanggalSetoran: true }
         })
 
-        const rawDates = riwayatStreak.map(s => s.createdAt)
+        const rawDates = riwayatStreak.map(s => new Date(s.tanggalSetoran))
         const streakMode = profil?.tipe === 'reguler' ? 'daily' : 'weekly'
         const calculatedStreak = streakMode === 'daily' 
           ? hitungDailyStreak(rawDates) 
@@ -354,9 +359,6 @@ export const getSantriDashboardData = createServerFn({ method: 'POST' }).handler
 
 export { getSantriDashboardData as getSantriDashboard }
 
-// ==========================================
-// 4. WALI DASHBOARD
-// ==========================================
 export const getWaliDashboard = createServerFn({ method: 'POST' }).handler(
   async () => {
     try {
@@ -379,6 +381,7 @@ export const getWaliDashboard = createServerFn({ method: 'POST' }).handler(
       const daftarAnak = []
       const duaTahunLalu = new Date()
       duaTahunLalu.setDate(duaTahunLalu.getDate() - 730)
+      const duaTahunLaluStr = duaTahunLalu.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
 
       for (const santriId of santriIds) {
         const [profil] = await db.select().from(santri).where(eq(santri.id, santriId)).limit(1)
@@ -409,7 +412,7 @@ export const getWaliDashboard = createServerFn({ method: 'POST' }).handler(
           const riwayatStreak = await db.query.setoranIqra.findMany({
             where: and(
               eq(setoranIqra.santriId, santriId),
-              gte(setoranIqra.createdAt, duaTahunLalu)
+              gte(setoranIqra.tanggalSetoran, duaTahunLaluStr)
             ),
             orderBy: [desc(setoranIqra.createdAt)],
             columns: { createdAt: true }
@@ -436,7 +439,7 @@ export const getWaliDashboard = createServerFn({ method: 'POST' }).handler(
         } else {
           const riwayat = await db.query.setoran.findMany({
             where: eq(setoran.santriId, santriId),
-            orderBy: [desc(setoran.createdAt)],
+            orderBy: [desc(setoran.tanggalSetoran), desc(setoran.createdAt)],
             limit: 10,
             with: {
               ustadz: { columns: { nama: true } }
@@ -459,13 +462,13 @@ export const getWaliDashboard = createServerFn({ method: 'POST' }).handler(
           const riwayatStreak = await db.query.setoran.findMany({
             where: and(
               eq(setoran.santriId, santriId),
-              gte(setoran.createdAt, duaTahunLalu)
+              gte(setoran.tanggalSetoran, duaTahunLaluStr)
             ),
-            orderBy: [desc(setoran.createdAt)],
-            columns: { createdAt: true }
+            orderBy: [desc(setoran.tanggalSetoran), desc(setoran.createdAt)],
+            columns: { tanggalSetoran: true }
           })
   
-          const rawDates = riwayatStreak.map(s => s.createdAt)
+          const rawDates = riwayatStreak.map(s => new Date(s.tanggalSetoran))
           const streakMode = profil.tipe === 'reguler' ? 'daily' : 'weekly'
           const calculatedStreak = streakMode === 'daily' 
             ? hitungDailyStreak(rawDates) 

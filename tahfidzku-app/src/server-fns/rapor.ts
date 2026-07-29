@@ -1,8 +1,8 @@
 import { createServerFn } from '@tanstack/react-start'
-import { eq, and, desc, sql, inArray } from 'drizzle-orm'
+import { eq, and, desc, sql, inArray, gte, lt } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '../db'
-import { raporSettings, santri, setoran, ujian, absensi, sesiKelas, kelas } from '../db/schema'
+import { raporSettings, santri, setoran, ujian, absensi, sesiKelas, kelas, setoranIqra, ujianIqra } from '../db/schema'
 import { getAuthSession, requireRole } from '../middleware/auth.middleware'
 import { success, handleError } from '../lib/response'
 import { AuthenticationError, ValidationError } from '../lib/errors'
@@ -152,29 +152,53 @@ export const getSantriRaporData = createServerFn({ method: 'POST' })
         throw new ValidationError('Data santri tidak ditemukan atau akses ditolak')
       }
 
+      const awalBulanStr = awalBulan.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' })
+      const akhirBulanStr = akhirBulan.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' })
+      
+      const awalBulanWIB  = new Date(`${awalBulanStr}T00:00:00+07:00`)
+      const akhirBulanWIB = new Date(`${akhirBulanStr}T00:00:00+07:00`)
+
       // --- 2. Setoran pada periode ---
       let setoranByJenis = { ziyadah: [] as any[], sabqi: [] as any[], manzil: [] as any[] }
       let rekapBulanan: any[] = []
+
+      const _typeHelperSetoranIqra = () => db.query.setoranIqra.findMany({
+        with: { createdBy: { columns: { nama: true } } }
+      })
+      type SetoranIqraPayload = Awaited<ReturnType<typeof _typeHelperSetoranIqra>>
+      let daftarSetoranIqra: SetoranIqraPayload = []
+
 
       if (mode === 'bulanan') {
         const daftarSetoran = await db.query.setoran.findMany({
           where: and(
             eq(setoran.santriId, santriId),
             eq(setoran.tenantId, tenantId),
-            sql`${setoran.createdAt} >= ${awalBulan}`,
-            sql`${setoran.createdAt} < ${akhirBulan}`
+            gte(setoran.tanggalSetoran, awalBulanStr),
+            lt(setoran.tanggalSetoran, akhirBulanStr)
           ),
           with: { ustadz: { columns: { nama: true } } },
-          orderBy: [desc(setoran.createdAt)],
+          orderBy: [desc(setoran.tanggalSetoran), desc(setoran.createdAt)],
         })
         setoranByJenis.ziyadah = daftarSetoran.filter(s => s.jenis === 'ziyadah')
         setoranByJenis.sabqi = daftarSetoran.filter(s => s.jenis === 'sabqi')
         setoranByJenis.manzil = daftarSetoran.filter(s => s.jenis === 'manzil')
+
+        daftarSetoranIqra = await db.query.setoranIqra.findMany({
+          where: and(
+            eq(setoranIqra.santriId, santriId),
+            eq(setoranIqra.tenantId, tenantId),
+            gte(setoranIqra.tanggalSetoran, awalBulanStr),
+            lt(setoranIqra.tanggalSetoran, akhirBulanStr)
+          ),
+          with: { createdBy: { columns: { nama: true } } },
+          orderBy: [desc(setoranIqra.tanggalSetoran), desc(setoranIqra.createdAt)],
+        })
       } else {
         // Mode Semester/Tahunan: Agregasi SQL (hindari N+1 data harian)
         const aggregasi = await db
           .select({
-            bulan: sql<string>`TO_CHAR(${setoran.createdAt} AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM')`,
+            bulan: sql<string>`TO_CHAR(${setoran.tanggalSetoran}, 'YYYY-MM')`,
             jenis: setoran.jenis,
             total: sql<number>`CAST(COUNT(*) AS INTEGER)`,
             avgSkor: sql<number>`AVG(${setoran.skorKualitas})`,
@@ -183,8 +207,8 @@ export const getSantriRaporData = createServerFn({ method: 'POST' })
           .where(and(
             eq(setoran.santriId, santriId),
             eq(setoran.tenantId, tenantId),
-            sql`${setoran.createdAt} >= ${awalBulan}`,
-            sql`${setoran.createdAt} < ${akhirBulan}`
+            gte(setoran.tanggalSetoran, awalBulanStr),
+            lt(setoran.tanggalSetoran, akhirBulanStr)
           ))
           .groupBy(sql`1, 2`)
 
@@ -229,6 +253,24 @@ export const getSantriRaporData = createServerFn({ method: 'POST' })
         ),
         with: { ustadz: { columns: { nama: true } } },
         orderBy: [desc(ujian.createdAt)],
+      })
+
+      // --- 3b. Ujian Iqra pada periode ---
+      const _typeHelperUjianIqra = () => db.query.ujianIqra.findMany({
+        with: { ujiOlehUstadz: { columns: { nama: true } } }
+      })
+      type UjianIqraPayload = Awaited<ReturnType<typeof _typeHelperUjianIqra>>
+      let daftarUjianIqra: UjianIqraPayload = []
+
+      daftarUjianIqra = await db.query.ujianIqra.findMany({
+        where: and(
+          eq(ujianIqra.santriId, santriId),
+          eq(ujianIqra.tenantId, tenantId),
+          sql`${ujianIqra.tanggalUjian} >= ${awalBulanWIB}`,
+          sql`${ujianIqra.tanggalUjian} < ${akhirBulanWIB}`
+        ),
+        with: { ujiOlehUstadz: { columns: { nama: true } } },
+        orderBy: [desc(ujianIqra.tanggalUjian)],
       })
 
       // --- 4. Rekap Absensi pada periode ---
@@ -285,12 +327,15 @@ export const getSantriRaporData = createServerFn({ method: 'POST' })
 
       return success({
         profil: {
-          id:           profilSantri.id,
-          nama:         profilSantri.nama,
-          kelasNama:    profilSantri.kelas?.nama ?? null,
-          targetJuz:    profilSantri.targetJuz,
-          juzSelesai:   historicalJuzProgress.length,
-          juzProgress:  historicalJuzProgress,
+          id:                   profilSantri.id,
+          nama:                 profilSantri.nama,
+          tahapSantri:          profilSantri.tahapSantri,
+          jilidIqraTerakhir:    profilSantri.jilidIqraTerakhir,
+          halamanIqraTerakhir:  profilSantri.halamanIqraTerakhir,
+          kelasNama:            profilSantri.kelas?.nama ?? null,
+          targetJuz:            profilSantri.targetJuz,
+          juzSelesai:           historicalJuzProgress.length,
+          juzProgress:          historicalJuzProgress,
         },
         periode: { 
           label: periodeLabel, 
@@ -301,6 +346,8 @@ export const getSantriRaporData = createServerFn({ method: 'POST' })
         setoran: setoranByJenis,
         rekapBulanan,
         ujian: daftarUjian,
+        setoranIqra: daftarSetoranIqra,
+        ujianIqra: daftarUjianIqra,
         absensi: rekapAbsensi,
         raporSettings: settingLembaga,
       }, 'Berhasil mengambil data rapor santri')

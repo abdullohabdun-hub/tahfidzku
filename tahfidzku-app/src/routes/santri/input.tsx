@@ -1,10 +1,11 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { Loader2, ArrowLeft } from 'lucide-react'
+import { Loader2, ArrowLeft, Info } from 'lucide-react'
 import { inputMurojaah } from '../../server-fns/setoran'
 import { getSantriProfile } from '../../server-fns/santri'
 import { SetoranForm } from '../../components/SetoranForm'
 import { AuthErrorAlert } from '../../components/AuthErrorAlert'
+import { getSantriDisplayMode } from '../../lib/santri-display'
 
 export const Route = createFileRoute('/santri/input')({
   component: SantriInputMurojaah,
@@ -57,7 +58,7 @@ function SantriInputMurojaah() {
     )
   }
 
-
+  const displayMode = profile ? getSantriDisplayMode(profile) : 'tahfidz';
 
   return (
     <div className="max-w-xl mx-auto space-y-5 pb-8 relative">
@@ -79,12 +80,28 @@ function SantriInputMurojaah() {
         <p className="text-sm font-bold text-slate-800">{profile?.nama} ({profile?.kelas?.nama})</p>
       </div>
 
-      <SetoranForm
-        mode="create"
-        defaultJenis="sabqi"
-        isUstadz={false}
-        onSubmit={handleSubmit}
-      />
+      {displayMode === 'iqra' ? (
+        <div className="bg-violet-50 border border-violet-100 rounded-xl p-6 text-center shadow-sm">
+          <div className="w-12 h-12 bg-violet-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Info className="w-6 h-6 text-violet-600" />
+          </div>
+          <h2 className="text-violet-900 font-bold text-lg mb-2">Hanya Untuk Tahfidz</h2>
+          <p className="text-violet-700 text-sm leading-relaxed">
+            Fitur <b>Lapor Mandiri Murojaah</b> saat ini hanya tersedia untuk santri program Tahfidz. 
+            Setoran program Iqra Anda akan diinput secara langsung oleh Ustadz pengampu.
+          </p>
+          <p className="text-violet-600 text-sm mt-4 italic font-medium">
+            Terus semangat belajar mengajinya!
+          </p>
+        </div>
+      ) : (
+        <SetoranForm
+          mode="create"
+          defaultJenis="sabqi"
+          isUstadz={false}
+          onSubmit={handleSubmit}
+        />
+      )}
     </div>
   )
 }

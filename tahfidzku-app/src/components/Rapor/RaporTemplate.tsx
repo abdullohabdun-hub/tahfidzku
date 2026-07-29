@@ -42,10 +42,35 @@ interface Ujian {
   ustadz: { nama: string } | null
 }
 
+interface SetoranIqra {
+  id: string
+  jilid: number
+  halamanAwal: number
+  halamanAkhir: number
+  skorKualitas: number | null
+  statusHafalan: string | null
+  catatan: string | null
+  tanggalSetoran: string
+  createdBy: { nama: string } | null
+}
+
+interface UjianIqra {
+  id: string
+  jilidDiuji: number
+  skor: number | null
+  lulus: boolean
+  catatan: string | null
+  tanggalUjian: string | Date
+  ujiOlehUstadz: { nama: string } | null
+}
+
 interface RaporData {
   profil: {
     id: string
     nama: string
+    tahapSantri?: 'iqra' | 'tahfidz'
+    jilidIqraTerakhir?: number | null
+    halamanIqraTerakhir?: number | null
     kelasNama: string | null
     targetJuz: number
     juzSelesai: number
@@ -58,6 +83,8 @@ interface RaporData {
     sabqi: Setoran[]
     manzil: Setoran[]
   }
+  setoranIqra: SetoranIqra[]
+  ujianIqra: UjianIqra[]
   ujian: Ujian[]
   absensi: {
     hadir: number
@@ -150,7 +177,9 @@ export function RaporTemplate({ data, tanggalCetak }: { data: RaporData; tanggal
 
       {/* ── JUDUL RAPOR ── */}
       <div className="text-center mb-5">
-        <h2 className="text-base font-bold uppercase underline tracking-widest">Rapor Hafalan Santri</h2>
+        <h2 className="text-base font-bold uppercase underline tracking-widest">
+          Rapor {profil.tahapSantri === 'iqra' ? 'Bacaan Iqra' : 'Hafalan'} Santri
+        </h2>
         <p className="text-sm mt-1">Periode: {periode.label}</p>
       </div>
 
@@ -162,23 +191,34 @@ export function RaporTemplate({ data, tanggalCetak }: { data: RaporData; tanggal
         <div className="px-4 py-3 grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
           <InfoRow label="Nama" value={profil.nama} />
           <InfoRow label="Kelas/Halaqoh" value={profil.kelasNama ?? '-'} />
-          <InfoRow label="Target Hafalan" value={`${profil.targetJuz} Juz`} />
-          <InfoRow
-            label="Capaian Hafalan"
-            value={`${profil.juzSelesai} Juz (${persentaseHafalan}%)`}
-          />
-          {profil.juzProgress.length > 0 && (
-            <div className="col-span-2">
+          
+          {profil.tahapSantri === 'iqra' ? (
+            <>
+              <InfoRow label="Jilid Saat Ini" value={profil.jilidIqraTerakhir != null ? `Jilid ${profil.jilidIqraTerakhir}` : '-'} />
+              <InfoRow label="Halaman Terakhir" value={profil.halamanIqraTerakhir != null ? `Hal. ${profil.halamanIqraTerakhir}` : '-'} />
+            </>
+          ) : (
+            <>
+              <InfoRow label="Target Hafalan" value={`${profil.targetJuz} Juz`} />
               <InfoRow
-                label="Juz Selesai"
-                value={profil.juzProgress.slice().sort((a, b) => a - b).join(', ')}
+                label="Capaian Hafalan"
+                value={`${profil.juzSelesai} Juz (${persentaseHafalan}%)`}
               />
-            </div>
+              {profil.juzProgress.length > 0 && (
+                <div className="col-span-2">
+                  <InfoRow
+                    label="Juz Selesai"
+                    value={profil.juzProgress.slice().sort((a, b) => a - b).join(', ')}
+                  />
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
 
       {/* ── C. REKAP SETORAN ── */}
+      {profil.tahapSantri !== 'iqra' && (
       <div className="border border-slate-300 rounded mb-5 overflow-hidden">
         <div className="bg-slate-100 px-4 py-1.5 border-b border-slate-300">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
@@ -273,8 +313,10 @@ export function RaporTemplate({ data, tanggalCetak }: { data: RaporData; tanggal
           </div>
         )}
       </div>
+      )}
 
       {/* ── D. UJIAN KENAIKAN JUZ ── */}
+      {profil.tahapSantri !== 'iqra' && (
       <div className="border border-slate-300 rounded mb-5 overflow-hidden">
         <div className="bg-slate-100 px-4 py-1.5 border-b border-slate-300">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-700">Ujian Kenaikan Juz</span>
@@ -316,6 +358,94 @@ export function RaporTemplate({ data, tanggalCetak }: { data: RaporData; tanggal
           <p className="px-4 py-3 text-sm text-slate-400 italic">Tidak ada ujian kenaikan juz pada periode ini.</p>
         )}
       </div>
+      )}
+
+      {/* ── REKAP SETORAN IQRA ── */}
+      {data.setoranIqra && data.setoranIqra.length > 0 && (
+        <div className="border border-slate-300 rounded mb-5 overflow-hidden">
+          <div className="bg-slate-100 px-4 py-1.5 border-b border-slate-300">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
+              Rekap Setoran Iqra — {periode.label}
+            </span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-[11px]">
+              <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th className="text-left px-3 py-2 font-semibold text-slate-600">Tanggal</th>
+                  <th className="text-left px-3 py-2 font-semibold text-slate-600">Jilid</th>
+                  <th className="text-left px-3 py-2 font-semibold text-slate-600">Halaman</th>
+                  <th className="text-left px-3 py-2 font-semibold text-slate-600">Skor / Status</th>
+                  <th className="text-left px-3 py-2 font-semibold text-slate-600">Penyimak</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.setoranIqra
+                  .slice()
+                  .sort((a, b) => new Date(a.tanggalSetoran).getTime() - new Date(b.tanggalSetoran).getTime())
+                  .map((s) => (
+                    <tr key={s.id} className="border-b border-slate-100 hover:bg-slate-50/50">
+                      <td className="px-3 py-1.5 whitespace-nowrap text-slate-600">
+                        {format(new Date(s.tanggalSetoran), 'd MMM yyyy', { locale: idLocale })}
+                      </td>
+                      <td className="px-3 py-1.5 font-medium">Jilid {s.jilid}</td>
+                      <td className="px-3 py-1.5">
+                        {s.halamanAwal === s.halamanAkhir
+                          ? `Hal ${s.halamanAwal}`
+                          : `Hal ${s.halamanAwal} - ${s.halamanAkhir}`}
+                      </td>
+                      <td className="px-3 py-1.5">
+                        {s.skorKualitas != null ? (
+                          <span className="font-bold">{s.skorKualitas}</span>
+                        ) : (
+                          <span className="capitalize">{s.statusHafalan ?? '-'}</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-1.5 text-slate-500">{s.createdBy?.nama ?? '-'}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── UJIAN KENAIKAN JILID IQRA ── */}
+      {data.ujianIqra && data.ujianIqra.length > 0 && (
+        <div className="border border-slate-300 rounded mb-5 overflow-hidden">
+          <div className="bg-slate-100 px-4 py-1.5 border-b border-slate-300">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-700">Ujian Kenaikan Jilid (Iqra)</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-[11px]">
+              <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th className="text-left px-3 py-2 font-semibold text-slate-600">Tanggal</th>
+                  <th className="text-left px-3 py-2 font-semibold text-slate-600">Jilid Diuji</th>
+                  <th className="text-left px-3 py-2 font-semibold text-slate-600">Skor</th>
+                  <th className="text-left px-3 py-2 font-semibold text-slate-600">Status</th>
+                  <th className="text-left px-3 py-2 font-semibold text-slate-600">Penguji</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.ujianIqra.map((u) => (
+                  <tr key={u.id} className="border-b border-slate-100">
+                    <td className="px-3 py-1.5 whitespace-nowrap text-slate-600">
+                      {format(new Date(u.tanggalUjian), 'd MMM yyyy', { locale: idLocale })}
+                    </td>
+                    <td className="px-3 py-1.5 font-medium">Jilid {u.jilidDiuji}</td>
+                    <td className="px-3 py-1.5 font-bold">{u.skor ?? '-'}</td>
+                    <td className={`px-3 py-1.5 font-semibold ${u.lulus ? 'text-emerald-700' : 'text-red-600'}`}>
+                      {u.lulus ? 'Lulus' : 'Belum Lulus'}
+                    </td>
+                    <td className="px-3 py-1.5 text-slate-500">{u.ujiOlehUstadz?.nama ?? '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* ── E. ABSENSI ── */}
       <div className="border border-slate-300 rounded mb-6 overflow-hidden">

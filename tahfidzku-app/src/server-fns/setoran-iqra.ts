@@ -8,6 +8,7 @@ import { createSetoranIqraSchema, createUjianIqraSchema } from '../lib/validator
 import { success, handleError } from '../lib/response'
 import { AuthenticationError, ForbiddenError, NotFoundError } from '../lib/errors'
 import { verifyAksesSantri } from '../lib/authz'
+import { getTodayWIB } from '../lib/dateUtils'
 
 export const createSetoranIqra = createServerFn({ method: 'POST' })
   .validator(createSetoranIqraSchema)
@@ -44,6 +45,7 @@ export const createSetoranIqra = createServerFn({ method: 'POST' })
           skorKualitas: data.skorKualitas,
           statusHafalan: data.statusHafalan,
           catatan: data.catatan,
+          tanggalSetoran: getTodayWIB(),
           createdBy: session.user.id,
         })
         .returning()

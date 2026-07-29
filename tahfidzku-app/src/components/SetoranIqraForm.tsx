@@ -48,8 +48,8 @@ export function SetoranIqraForm({ santri, onSubmit }: SetoranIqraFormProps) {
     if (!santri) return setErrorMsg('Pilih santri terlebih dahulu')
     if (!jilid) return setErrorMsg('Pilih jilid Iqra')
     if (halamanAwal === '' || halamanAkhir === '') return setErrorMsg('Isi halaman awal dan akhir')
-    if (!skorKualitas) return setErrorMsg('Pilih skor kualitas hafalan (1-5)')
-    if (!statusHafalan) return setErrorMsg('Pilih status hafalan (Lanjut atau Mengulang)')
+    if (!skorKualitas) return setErrorMsg('Pilih skor kualitas bacaan (1-5)')
+    if (!statusHafalan) return setErrorMsg('Pilih status kelancaran (Lanjut atau Mengulang)')
 
     setSubmitting(true)
 
@@ -103,7 +103,7 @@ export function SetoranIqraForm({ santri, onSubmit }: SetoranIqraFormProps) {
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Rentang Hafalan */}
         <div className={`bg-white rounded-xl border p-4 shadow-sm transition-colors duration-300 ${ACCENT.border}`}>
-          <SectionLabel>Rentang Hafalan Iqra</SectionLabel>
+          <SectionLabel>Rentang Bacaan Iqra</SectionLabel>
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="block text-[10px] font-bold tracking-wider text-slate-500 uppercase mb-1">Jilid</label>
@@ -146,7 +146,7 @@ export function SetoranIqraForm({ santri, onSubmit }: SetoranIqraFormProps) {
 
         {/* Penilaian */}
         <div className={`bg-white rounded-xl border ${ACCENT.border} p-4 shadow-sm mb-4`}>
-          <SectionLabel>Skor Kualitas Hafalan</SectionLabel>
+          <SectionLabel>Skor Kualitas Bacaan</SectionLabel>
           <div className="grid grid-cols-5 gap-2 mb-5">
             {SKOR_LIST.map((skor) => {
               const isSelected = skorKualitas === skor
@@ -172,7 +172,7 @@ export function SetoranIqraForm({ santri, onSubmit }: SetoranIqraFormProps) {
             })}
           </div>
 
-          <SectionLabel>Status Hafalan</SectionLabel>
+          <SectionLabel>Status Kelancaran</SectionLabel>
           <div className="grid grid-cols-2 gap-3 mb-5">
             <button
               type="button"

@@ -5,8 +5,6 @@ import { getAllRubrikTenant } from '../../server-fns/rubrik'
 import { FormatPenilaian } from '../../components/FormatPenilaian'
 import { Card, CardContent } from '../../components/ui/card'
 import { Flame, Target, BookOpen, Clock, GraduationCap, ChevronRight, CheckCircle, AlertTriangle } from 'lucide-react'
-import { format } from 'date-fns'
-import { id } from 'date-fns/locale'
 import { AuthErrorAlert } from '../../components/AuthErrorAlert'
 
 export const Route = createFileRoute('/wali/')({
@@ -32,14 +30,13 @@ export const Route = createFileRoute('/wali/')({
 })
 
 function WaliDashboard() {
-  const { data, rubrikAktif, authError } = Route.useLoaderData()
+  const { data, authError } = Route.useLoaderData()
 
   if (authError) return <AuthErrorAlert error={authError} />
   if (!data) return null
   const { daftarAnak } = data
   const [activeIndex, setActiveIndex] = useState(0)
 
-  // Pastikan data valid
   if (!daftarAnak || daftarAnak.length === 0) {
     return <div className="p-4 text-center">Data anak tidak ditemukan</div>
   }
@@ -47,9 +44,13 @@ function WaliDashboard() {
   const activeData = daftarAnak[activeIndex]
   if (!activeData) return null
 
-  const totalJuz = activeData.progress.targetJuz || 30
-  const juzSelesai = activeData.progress.juzSelesai || 0
+  const isIqra = activeData.displayMode === 'iqra'
+  const profil = activeData.profil
+
   const percentage = activeData.progress.percentage || 0
+  const labelSelesai = isIqra ? activeData.progress.jilidSekarang : activeData.progress.juzSelesai
+  const labelSelesaiSatuan = isIqra ? 'Jilid' : 'Juz'
+  const labelTarget = isIqra ? 6 : (activeData.progress.targetJuz || 30)
 
   // SVG Circle calculation
   const radius = 60
@@ -57,9 +58,7 @@ function WaliDashboard() {
   const strokeDashoffset = circumference - (percentage / 100) * circumference
 
   const riwayat = activeData.riwayat || []
-
   const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-  const profil = activeData.profil
 
   const getInisial = (nama: string) => {
     if (!nama) return '?'
@@ -68,25 +67,36 @@ function WaliDashboard() {
     return (parts[0][0] + parts[1][0]).toUpperCase()
   }
 
+  const mainColorClass = isIqra ? 'text-violet-600' : 'text-emerald-600'
+  const mainBgClass = isIqra ? 'bg-violet-600' : 'bg-emerald-600'
+  const lightBgClass = isIqra ? 'bg-violet-100' : 'bg-emerald-100'
+  const activeTabClass = isIqra ? 'bg-violet-600 text-white shadow-md' : 'bg-emerald-600 text-white shadow-md'
+  const inactiveTabClass = isIqra ? 'bg-violet-100 text-violet-700 hover:bg-violet-200' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+  const circleColorClass = isIqra ? 'text-violet-500' : 'text-emerald-500'
+  const iconColorClass = isIqra ? 'text-violet-700' : 'text-emerald-700'
+
   return (
     <div className="p-4 space-y-6 max-w-lg mx-auto pb-6">
 
       {/* Tab Switcher Anak (Jika lebih dari 1) */}
       {daftarAnak.length > 1 && (
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          {daftarAnak.map((anak: any, idx: number) => (
-            <button
-              key={anak.profil.id}
-              onClick={() => setActiveIndex(idx)}
-              className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
-                idx === activeIndex 
-                  ? 'bg-emerald-600 text-white shadow-md' 
-                  : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
-              }`}
-            >
-              {anak.profil.nama.split(' ')[0]}
-            </button>
-          ))}
+          {daftarAnak.map((anak: any, idx: number) => {
+            const isChildIqra = anak.displayMode === 'iqra'
+            return (
+              <button
+                key={anak.profil.id}
+                onClick={() => setActiveIndex(idx)}
+                className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+                  idx === activeIndex 
+                    ? (isChildIqra ? 'bg-violet-600 text-white shadow-md' : 'bg-emerald-600 text-white shadow-md')
+                    : (isChildIqra ? 'bg-violet-100 text-violet-700 hover:bg-violet-200' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200')
+                }`}
+              >
+                {anak.profil.nama.split(' ')[0]}
+              </button>
+            )
+          })}
         </div>
       )}
 
@@ -94,7 +104,7 @@ function WaliDashboard() {
       <div className="space-y-4">
         <div className="flex justify-between items-end">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center text-lg border-2 border-white shadow-sm">
+            <div className={`w-12 h-12 rounded-full ${lightBgClass} ${iconColorClass} font-bold flex items-center justify-center text-lg border-2 border-white shadow-sm`}>
               {getInisial(profil.nama)}
             </div>
             <div>
@@ -102,7 +112,7 @@ function WaliDashboard() {
               <p className="text-sm text-slate-500">{profil.namaKelas || 'Belum ada kelas'}</p>
             </div>
           </div>
-          <p className="text-emerald-700 text-[11px] font-bold pb-1">{today}</p>
+          <p className={`${iconColorClass} text-[11px] font-bold pb-1`}>{today}</p>
         </div>
 
         {/* Streak Card */}
@@ -121,11 +131,6 @@ function WaliDashboard() {
           <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm shadow-inner">
             <Flame className="w-6 h-6 text-white animate-pulse" fill="currentColor" />
           </div>
-        </div>
-
-        {/* Motivation Card */}
-        <div className="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-2xl p-4 text-white shadow-md">
-          <p className="text-emerald-50 text-xs italic text-center">"Siapa yang membaca Al-Qur'an dan mengamalkan isinya, maka Allah akan memakaikan mahkota kepada kedua orang tuanya pada hari kiamat..." (HR. Abu Daud)</p>
         </div>
       </div>
 
@@ -158,7 +163,7 @@ function WaliDashboard() {
                   strokeDasharray={circumference}
                   strokeDashoffset={strokeDashoffset}
                   strokeLinecap="round"
-                  className="text-emerald-500 transition-all duration-1000 ease-out"
+                  className={`${circleColorClass} transition-all duration-1000 ease-out`}
                 />
               </svg>
               {/* Text Inside Circle */}
@@ -169,9 +174,9 @@ function WaliDashboard() {
             </div>
 
             <div className="mt-5 text-center">
-              <p className="text-slate-600 text-sm">Total Hafalan Saat Ini:</p>
-              <p className="text-xl font-bold text-emerald-700 mt-0.5">{juzSelesai} Juz</p>
-              <p className="text-xs text-slate-400 mt-1">Target pencapaian: {totalJuz} Juz</p>
+              <p className="text-slate-600 text-sm">{isIqra ? 'Jilid Saat Ini:' : 'Total Hafalan Saat Ini:'}</p>
+              <p className={`text-xl font-bold ${iconColorClass} mt-0.5`}>{labelSelesai} {labelSelesaiSatuan}</p>
+              <p className="text-xs text-slate-400 mt-1">Target pencapaian: {labelTarget} {labelSelesaiSatuan}</p>
             </div>
 
           </div>
@@ -182,8 +187,10 @@ function WaliDashboard() {
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm text-center">
           <p className="text-xs font-semibold text-slate-500 mb-1">Setoran Terakhir</p>
-          <p className="text-sm font-bold text-slate-800 capitalize">{riwayat.length > 0 ? riwayat[0].surah || '-' : '-'}</p>
-          <p className="text-xs text-slate-400">-</p>
+          <p className="text-sm font-bold text-slate-800 capitalize">
+            {riwayat.length > 0 ? (isIqra ? `Jilid ${(riwayat[0] as any).jilid}` : ((riwayat[0] as any).surah || '-')) : '-'}
+          </p>
+          <p className="text-xs text-slate-400">{riwayat.length > 0 ? `Hal ${riwayat[0].halamanAwal}` : '-'}</p>
         </div>
         <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm flex flex-col items-center justify-center">
           <p className="text-xs font-semibold text-slate-500 mb-2">Penilaian Terakhir</p>
@@ -212,7 +219,7 @@ function WaliDashboard() {
                 <div key={item.id} className="relative flex items-start group">
                   {/* Icon / Bullet */}
                   <div className="flex flex-col items-center mt-1 w-8 shrink-0 relative z-10">
-                    <div className="w-3 h-3 rounded-full bg-emerald-500 border-2 border-white ring-4 ring-emerald-50" />
+                    <div className={`w-3 h-3 rounded-full ${mainBgClass} border-2 border-white ring-4 ${isIqra ? 'ring-violet-50' : 'ring-emerald-50'}`} />
                   </div>
 
                   {/* Card */}
@@ -221,7 +228,9 @@ function WaliDashboard() {
                       <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1"><Clock className="w-3 h-3" /> {dateStr}, {timeStr}</span>
                       <FormatPenilaian item={item} />
                     </div>
-                    <h4 className="font-bold text-slate-800 text-sm mb-0.5 capitalize">{item.jenis}: {item.surah || 'Surah'}</h4>
+                    <h4 className="font-bold text-slate-800 text-sm mb-0.5 capitalize">
+                      {isIqra ? 'Iqra' : item.jenis}: {isIqra ? `Jilid ${item.jilid}` : (item.surah || 'Surah')}
+                    </h4>
                     <p className="text-slate-500 text-[11px]">Dinilai oleh: {item.ustadzNama}</p>
                   </div>
                 </div>
@@ -230,7 +239,7 @@ function WaliDashboard() {
           )}
 
         </div>
-        <button className="w-full mt-6 py-3 text-sm font-semibold text-emerald-600 bg-emerald-50 rounded-xl hover:bg-emerald-100 transition-colors">
+        <button className={`w-full mt-6 py-3 text-sm font-semibold ${mainColorClass} ${lightBgClass} rounded-xl hover:opacity-80 transition-colors`}>
           Lihat Semua Riwayat
         </button>
       </section>

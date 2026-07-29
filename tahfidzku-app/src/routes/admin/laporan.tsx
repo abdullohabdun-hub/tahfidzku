@@ -1,10 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect, useMemo } from 'react'
-import { Printer, Loader2, FileText, ChevronDown, ChevronUp, ChevronsUpDown } from 'lucide-react'
+import { Printer, Loader2, FileText, ChevronDown, ChevronUp, ChevronsUpDown, BookOpen } from 'lucide-react'
 import { flexRender, getCoreRowModel, useReactTable, getSortedRowModel } from "@tanstack/react-table"
 import type { SortingState } from "@tanstack/react-table"
 import { getMonthlyReport } from '../../server-fns/setoran'
-import { getAllRubrikTenant } from '../../server-fns/rubrik'
+import { getMonthlyReportIqra } from '../../server-fns/setoran-iqra'
+
 import { FormatPenilaian } from '../../components/FormatPenilaian'
 import { Button } from '../../components/ui/button'
 
@@ -17,9 +18,10 @@ export const Route = createFileRoute('/admin/laporan')({
 })
 
 function AdminLaporanBulanan() {
-  const { rubrikAktif } = Route.useLoaderData()
+  
   const [loading, setLoading] = useState(false)
-  const [data, setData] = useState<any[]>([])
+  const [dataTahfidz, setDataTahfidz] = useState<any[]>([])
+  const [dataIqra, setDataIqra] = useState<any[]>([])
   const [sorting, setSorting] = useState<SortingState>([])
 
   const currentYear = new Date().getFullYear()
@@ -27,21 +29,29 @@ function AdminLaporanBulanan() {
 
   const [selectedYear, setSelectedYear] = useState<number>(currentYear)
   const [selectedMonth, setSelectedMonth] = useState<number>(currentMonth)
+  const [program, setProgram] = useState<'tahfidz' | 'iqra'>('tahfidz')
 
-  const loadData = async (y: number, m: number) => {
+  const loadData = async (y: number, m: number, prog: 'tahfidz' | 'iqra') => {
     setLoading(true)
-    const res = await getMonthlyReport({ data: { year: y, month: m } })
-    if (res.success && res.data) {
-      setData(res.data)
+    if (prog === 'tahfidz') {
+      const res = await getMonthlyReport({ data: { year: y, month: m } })
+      if (res.success && res.data) {
+        setDataTahfidz(res.data)
+      }
+    } else {
+      const res = await getMonthlyReportIqra({ data: { year: y, month: m } })
+      if (res.success && res.data) {
+        setDataIqra(res.data)
+      }
     }
     setLoading(false)
   }
 
   useEffect(() => {
-    loadData(selectedYear, selectedMonth)
-  }, [selectedYear, selectedMonth])
+    loadData(selectedYear, selectedMonth, program)
+  }, [selectedYear, selectedMonth, program])
 
-  const columns = useMemo(() => [
+  const columnsTahfidz = useMemo(() => [
     {
       accessorKey: 'createdAt',
       header: ({ column }: any) => (
@@ -118,9 +128,102 @@ function AdminLaporanBulanan() {
     }
   ], [])
 
+  const columnsIqra = useMemo(() => [
+    {
+      accessorKey: 'date',
+      header: ({ column }: any) => (
+        <Button 
+          variant="ghost" 
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="hover:bg-slate-200 -ml-4"
+        >
+          Tanggal
+          {{
+            asc: <ChevronUp className="ml-2 h-4 w-4" />,
+            desc: <ChevronDown className="ml-2 h-4 w-4" />,
+          }[column.getIsSorted() as string] ?? <ChevronsUpDown className="ml-2 h-4 w-4 text-slate-400" />}
+        </Button>
+      ),
+      cell: ({ row }: any) => {
+        const date = new Date(row.getValue('date'))
+        return <span className="whitespace-nowrap">{date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+      },
+    },
+    {
+      accessorKey: 'santriNama',
+      header: ({ column }: any) => (
+        <Button 
+          variant="ghost" 
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="hover:bg-slate-200 -ml-4"
+        >
+          Nama Santri
+          {{
+            asc: <ChevronUp className="ml-2 h-4 w-4" />,
+            desc: <ChevronDown className="ml-2 h-4 w-4" />,
+          }[column.getIsSorted() as string] ?? <ChevronsUpDown className="ml-2 h-4 w-4 text-slate-400" />}
+        </Button>
+      ),
+      cell: ({ row }: any) => <span className="font-medium text-slate-900">{row.getValue('santriNama') || row.original.data?.santri?.nama || 'Santri Terhapus'}</span>
+    },
+    {
+      accessorKey: 'kelasNama',
+      header: 'Kelas',
+      cell: ({ row }: any) => row.getValue('kelasNama') || row.original.data?.santri?.kelas?.nama || '-'
+    },
+    {
+      id: 'jenis',
+      accessorFn: (row: any) => row.type,
+      header: 'Jenis',
+      cell: ({ row }: any) => (
+        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest ${row.original.type === 'ujian' ? 'bg-amber-100 text-amber-700' : 'bg-violet-100 text-violet-700'}`}>
+          {row.getValue('jenis')}
+        </span>
+      )
+    },
+    {
+      id: 'target',
+      header: 'Pencapaian',
+      cell: ({ row }: any) => {
+        const d = row.original.data
+        if (row.original.type === 'ujian') {
+          return `Ujian Jilid ${d.jilid}`
+        }
+        return `Jilid ${d.jilid} Hal ${d.halamanAwal}${d.halamanAkhir && d.halamanAkhir !== d.halamanAwal ? `-${d.halamanAkhir}` : ''}`
+      }
+    },
+    {
+      id: 'kualitas',
+      header: 'Hasil/Skor',
+      cell: ({ row }: any) => {
+        const d = row.original.data
+        if (row.original.type === 'ujian') {
+          return (
+            <span className={`font-bold ${d.lulus ? 'text-emerald-600' : 'text-red-600'}`}>
+              {d.lulus ? 'LULUS' : 'GAGAL'}
+            </span>
+          )
+        }
+        return (
+          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-violet-50 border border-violet-200">
+            <span className="font-bold text-violet-700 text-sm">{d.skorKualitas || '-'}</span>
+          </div>
+        )
+      }
+    },
+    {
+      accessorKey: 'ustadzNama',
+      header: 'Penyimak',
+      cell: ({ row }: any) => row.getValue('ustadzNama') || '-'
+    }
+  ], [])
+
+  const currentColumns = program === 'tahfidz' ? columnsTahfidz : columnsIqra;
+  const currentData = program === 'tahfidz' ? dataTahfidz : dataIqra;
+
   const table = useReactTable({
-    data,
-    columns,
+    data: currentData,
+    columns: currentColumns,
     state: { sorting },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
@@ -139,6 +242,22 @@ function AdminLaporanBulanan() {
         </div>
         
         <div className="flex items-center gap-3">
+          {/* Program Toggle */}
+          <div className="flex bg-slate-100 rounded-lg p-1 border border-slate-200">
+            <button
+              onClick={() => setProgram('tahfidz')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${program === 'tahfidz' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              Tahfidz
+            </button>
+            <button
+              onClick={() => setProgram('iqra')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors flex items-center gap-1.5 ${program === 'iqra' ? 'bg-white text-violet-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              <BookOpen className="w-3.5 h-3.5" /> Iqra
+            </button>
+          </div>
+
           <div className="flex bg-white rounded-lg border border-slate-200 p-1 shadow-sm">
             <select 
               value={selectedMonth} 
@@ -168,7 +287,7 @@ function AdminLaporanBulanan() {
 
       {/* PRINT HEADER: Hanya muncul saat di-print */}
       <div className="hidden print:block mb-8 text-center border-b-2 border-slate-800 pb-4">
-        <h1 className="text-2xl font-bold text-black uppercase">Laporan Hafalan Santri</h1>
+        <h1 className="text-2xl font-bold text-black uppercase">Laporan {program === 'tahfidz' ? 'Hafalan' : 'Iqra'} Santri</h1>
         <p className="text-lg text-black mt-1">Periode: {monthNames[selectedMonth-1]} {selectedYear}</p>
       </div>
 
@@ -179,10 +298,10 @@ function AdminLaporanBulanan() {
           <div className="flex items-center justify-center py-20 text-emerald-600">
             <Loader2 className="animate-spin w-8 h-8" />
           </div>
-        ) : data.length === 0 ? (
+        ) : currentData.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-slate-400">
             <FileText className="w-12 h-12 mb-4 text-slate-200" />
-            <p>Tidak ada catatan setoran pada bulan ini.</p>
+            <p>Tidak ada catatan {program === 'tahfidz' ? 'setoran hafalan' : 'Iqra'} pada bulan ini.</p>
           </div>
         ) : (
           <div className="overflow-x-auto print:overflow-visible">

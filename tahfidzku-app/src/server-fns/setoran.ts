@@ -1,4 +1,6 @@
 import { createServerFn } from '@tanstack/react-start'
+import { getTodayWIB } from '../lib/dateUtils'
+import { precomputeRekapMingguan } from './cron'
 import { eq, and, desc, sql } from 'drizzle-orm'
 import { db } from '../db'
 import { setoran, santri, rubrikPenilaian } from '../db/schema'
@@ -27,69 +29,108 @@ export const createSetoran = createServerFn({ method: 'POST' })
 
       const tenantId = session.user.tenantId
 
-      // Validasi Wajib-Isi Dinamis
+      const todayWIB = getTodayWIB()
+      const isBackdated = data.tanggalSetoran < todayWIB
 
+      const [curSantri] = await db
+        .select({ juzUjianPending: santri.juzUjianPending, createdAt: santri.createdAt })
+        .from(santri)
+        .where(and(eq(santri.id, data.santriId), eq(santri.tenantId, tenantId)))
+        .limit(1)
 
-      // GATING: Blokir Ziyadah baru jika santri masih punya ujian kenaikan pending
-      if (data.jenis === 'ziyadah') {
-        const [curSantri] = await db
-          .select({ juzUjianPending: santri.juzUjianPending })
-          .from(santri)
-          .where(and(eq(santri.id, data.santriId), eq(santri.tenantId, tenantId)))
-          .limit(1)
+      if (!curSantri) throw new ValidationError('Santri tidak ditemukan')
 
-        if (curSantri?.juzUjianPending) {
-          throw new ValidationError(
-            `Santri ini masih memiliki Ujian Kenaikan Juz ${curSantri.juzUjianPending} yang belum diselesaikan. ` +
-            `Selesaikan ujian terlebih dahulu sebelum melanjutkan Ziyadah.`
-          )
-        }
+      // Validasi batas enrollment
+      const enrollDate = new Date(curSantri.createdAt).toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' })
+      if (data.tanggalSetoran < enrollDate) {
+        throw new ValidationError('Tanggal setoran tidak boleh mendahului tanggal santri didaftarkan.')
       }
 
-      // 1. Insert setoran
-      const [newSetoran] = await db
-        .insert(setoran)
-        .values({
-          tenantId,
-          santriId: data.santriId,
-          ustadzId: session.user.id,
-          jenis: data.jenis,
-          juz: data.juz ?? null,
-          juzMulai: data.juzMulai ?? null,
-          juzSelesai: data.juzSelesai ?? null,
-          lintasJuz: data.lintasJuz ?? false,
-          halamanAwal: data.halamanAwal ?? null,
-          halamanAkhir: data.halamanAkhir ?? null,
-          surah: data.surah ?? null,
-          ayatAwal: data.ayatAwal ?? null,
-          ayatAkhir: data.ayatAkhir ?? null,
-          surahMeta: data.surahMeta ?? null,
-          kualitas: data.kualitas ?? null, // DEPRECATED — dipertahankan untuk backward compat
-          skorKualitas: (data as any).skorKualitas ?? null,
-          statusHafalan: (data as any).statusHafalan ?? null,
-          penilaianKustom: data.penilaianKustom ?? null,
-          catatan: data.catatan ?? null,
-          sumber: 'ustadz',
-        })
-        .returning()
+      // GATING: Blokir Ziyadah baru jika santri masih punya ujian kenaikan pending
+      if (data.jenis === 'ziyadah' && curSantri.juzUjianPending) {
+        throw new ValidationError(
+          `Santri ini masih memiliki Ujian Kenaikan Juz ${curSantri.juzUjianPending} yang belum diselesaikan. ` +
+          `Selesaikan ujian terlebih dahulu sebelum melanjutkan Ziyadah.`
+        )
+      }
 
-      // 2. Update posisiTerakhir + auto-set juzUjianPending jika juz selesai
-      if (data.jenis === 'ziyadah' && data.surahNomor && data.ayatAkhir) {
-        await db
-          .update(santri)
-          .set({ posisiTerakhir: { surahNomor: data.surahNomor, ayat: data.ayatAkhir } })
-          .where(eq(santri.id, data.santriId))
+      // ─── TRANSAKSI: data inti wajib atomik ───────────────
+      const newSetoran = await db.transaction(async (tx) => {
+        // ① INSERT setoran
+        const [row] = await tx
+          .insert(setoran)
+          .values({
+            tenantId,
+            santriId: data.santriId,
+            ustadzId: session.user.id,
+            jenis: data.jenis,
+            juz: data.juz ?? null,
+            juzMulai: data.juzMulai ?? null,
+            juzSelesai: data.juzSelesai ?? null,
+            lintasJuz: data.lintasJuz ?? false,
+            halamanAwal: data.halamanAwal ?? null,
+            halamanAkhir: data.halamanAkhir ?? null,
+            surah: data.surah ?? null,
+            ayatAwal: data.ayatAwal ?? null,
+            ayatAkhir: data.ayatAkhir ?? null,
+            surahMeta: data.surahMeta ?? null,
+            kualitas: data.kualitas ?? null, // DEPRECATED
+            skorKualitas: (data as any).skorKualitas ?? null,
+            statusHafalan: (data as any).statusHafalan ?? null,
+            penilaianKustom: data.penilaianKustom ?? null,
+            catatan: data.catatan ?? null,
+            sumber: 'ustadz',
+            tanggalSetoran: data.tanggalSetoran,
+            isBackdated,
+          })
+          .returning()
 
-        // Cek apakah posisi tepat di ayat terakhir sebuah juz → trigger ujian pending
-        const juzSelesaiNow = cariJuzUntukAyat(data.surahNomor, data.ayatAkhir)
-        if (juzSelesaiNow) {
-          const akhirJuz = getAyatTerakhirJuz(juzSelesaiNow)
-          if (data.surahNomor === akhirJuz.surahNomor && data.ayatAkhir === akhirJuz.ayat) {
-            await db
-              .update(santri)
-              .set({ juzUjianPending: juzSelesaiNow })
-              .where(eq(santri.id, data.santriId))
+        // ② Guard posisiTerakhir + juzUjianPending (satu CTE, atomik)
+        if (data.jenis === 'ziyadah' && data.surahNomor && data.ayatAkhir) {
+          const newPosisi = { surahNomor: data.surahNomor, ayat: data.ayatAkhir }
+          
+          let juzSelesaiToSet: number | null = null
+          const juzSelesaiNow = cariJuzUntukAyat(data.surahNomor, data.ayatAkhir)
+          if (juzSelesaiNow) {
+            const akhirJuz = getAyatTerakhirJuz(juzSelesaiNow)
+            if (data.surahNomor === akhirJuz.surahNomor && data.ayatAkhir === akhirJuz.ayat) {
+              juzSelesaiToSet = juzSelesaiNow
+            }
           }
+
+          // Gunakan CTE agar NOT EXISTS hanya dievaluasi sekali
+          // Update JSONB di Drizzle sql menggunakan literal binding
+          await tx.execute(sql`
+            WITH is_latest AS (
+              SELECT NOT EXISTS (
+                SELECT 1 FROM setoran
+                WHERE santri_id = ${data.santriId}
+                  AND jenis = 'ziyadah'
+                  AND tanggal_setoran > ${data.tanggalSetoran}
+              ) AS boleh_update
+            )
+            UPDATE santri SET
+              posisi_terakhir   = CASE WHEN (SELECT boleh_update FROM is_latest)
+                                    THEN ${newPosisi}::jsonb ELSE posisi_terakhir END,
+              juz_ujian_pending = CASE WHEN (SELECT boleh_update FROM is_latest)
+                                         AND ${juzSelesaiToSet ?? null}::integer IS NOT NULL
+                                    THEN ${juzSelesaiToSet} ELSE juz_ujian_pending END
+            WHERE id = ${data.santriId}
+          `)
+        }
+
+        return row
+      })
+      // ─── END TRANSAKSI ───
+
+      // ③ Re-trigger precompute SETELAH commit, di luar transaksi
+      if (isBackdated) {
+        try {
+          await precomputeRekapMingguan({
+            data: { tanggalAcuan: data.tanggalSetoran, tenantId }
+          })
+        } catch (recomputeErr) {
+          console.error('[backfill-recompute] Gagal recompute rekap mingguan:', recomputeErr)
         }
       }
 
@@ -128,7 +169,7 @@ export const updateSetoran = createServerFn({ method: 'POST' })
 
       // Batas waktu edit 7 hari
       const MAX_EDIT_AGE_MS = 7 * 24 * 60 * 60 * 1000
-      if (Date.now() - new Date(oldSetoran.createdAt).getTime() > MAX_EDIT_AGE_MS) {
+      if (Date.now() - new Date(oldSetoran.tanggalSetoran).getTime() > MAX_EDIT_AGE_MS) {
         throw new ForbiddenError('Data ini sudah berusia lebih dari 7 hari dan tidak bisa diedit lagi untuk menjaga validitas laporan.')
       }
       
@@ -262,7 +303,7 @@ export const getSetoranRiwayat = createServerFn({ method: 'POST' }).handler(
           eq(setoran.tenantId, tenantId),
           eq(setoran.ustadzId, session.user.id)
         ),
-        orderBy: [desc(setoran.createdAt)],
+        orderBy: [desc(setoran.tanggalSetoran), desc(setoran.createdAt)],
         limit: 50,
         with: {
           santri: { columns: { nama: true } }
@@ -301,7 +342,7 @@ export const getLastSetoran = createServerFn({ method: 'POST' })
           eq(setoran.santriId, data.santriId),
           eq(setoran.jenis, data.jenis)
         ),
-        orderBy: [desc(setoran.createdAt)]
+        orderBy: [desc(setoran.tanggalSetoran), desc(setoran.createdAt)]
       })
 
       return success(result ?? null, 'Data setoran terakhir berhasil dimuat')
@@ -324,7 +365,7 @@ export const getRiwayatSetoranAdmin = createServerFn({ method: 'POST' })
 
       const results = await db.query.setoran.findMany({
         where: eq(setoran.tenantId, tenantId),
-        orderBy: [desc(setoran.createdAt)],
+        orderBy: [desc(setoran.tanggalSetoran), desc(setoran.createdAt)],
         limit: 100,
         with: {
           santri: { columns: { nama: true } },
@@ -409,6 +450,8 @@ export const inputMurojaah = createServerFn({ method: 'POST' })
         }
       }
 
+      const todayWIB = getTodayWIB()
+
       const record = await db.insert(setoran).values({
         tenantId: session.user.tenantId,
         santriId: santriId,
@@ -426,6 +469,8 @@ export const inputMurojaah = createServerFn({ method: 'POST' })
         penilaianKustom: data.penilaianKustom,
         catatan: data.catatan || null,
         sumber: 'santri_self_report',
+        tanggalSetoran: todayWIB,
+        isBackdated: false,
       }).returning()
 
       return success(record[0], 'Murojaah berhasil dilaporkan!')
@@ -451,16 +496,16 @@ export const getMonthlyReport = createServerFn({ method: 'POST' })
       if (!session) throw new AuthenticationError()
       requireRole(session, 'admin')
 
-      const startDate = new Date(data.year, data.month - 1, 1)
-      const endDate = new Date(data.year, data.month, 1)
+      const startDateStr = new Date(data.year, data.month - 1, 1).toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' })
+      const endDateStr = new Date(data.year, data.month, 1).toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' })
 
       const reportData = await db.query.setoran.findMany({
         where: (setoran, { eq, and, gte, lt }) => and(
           eq(setoran.tenantId, session.user.tenantId),
-          gte(setoran.createdAt, startDate),
-          lt(setoran.createdAt, endDate)
+          gte(setoran.tanggalSetoran, startDateStr),
+          lt(setoran.tanggalSetoran, endDateStr)
         ),
-        orderBy: (setoran, { desc }) => [desc(setoran.createdAt)],
+        orderBy: (setoran, { desc }) => [desc(setoran.tanggalSetoran), desc(setoran.createdAt)],
         with: {
           santri: {
             columns: { nama: true },
@@ -507,7 +552,7 @@ export const getRiwayatSetoranSantri = createServerFn({ method: 'POST' }).handle
           eq(setoran.tenantId, tenantId),
           eq(setoran.santriId, santriId)
         ),
-        orderBy: [desc(setoran.createdAt)],
+        orderBy: [desc(setoran.tanggalSetoran), desc(setoran.createdAt)],
         limit: 50,
         with: {
           ustadz: { columns: { nama: true } }
@@ -526,7 +571,8 @@ export const getRiwayatSetoranSantri = createServerFn({ method: 'POST' }).handle
     }
   }
 )
-// ═══════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════
 // 9. EDIT MUROJAAH MANDIRI (OLEH SANTRI)
 // ═══════════════════════════════════════════════════════
 export const updateSetoranSantri = createServerFn({ method: 'POST' })

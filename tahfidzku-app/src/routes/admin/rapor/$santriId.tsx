@@ -171,6 +171,18 @@ function RaporPage() {
 
       {data && !loading && (
         <>
+          {/* Banner: Iqra mode tidak-bulanan belum support (Fase 3c: aktif semua mode Iqra) */}
+          {data?.profil?.tahapSantri === 'iqra' && (
+            <div className="print:hidden bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800 flex items-center gap-2 mb-4">
+              <span>📚</span>
+              <span>
+                <strong>{data.profil.nama}</strong> berada di jalur Iqra.
+                Rapor mode <strong>{mode === 'tahunan' ? 'Tahunan' : 'Semesteran'}</strong> untuk jalur Iqra
+                belum tersedia — gunakan mode <strong>Bulanan</strong> untuk melihat progres lengkap.
+              </span>
+            </div>
+          )}
+
           {/* Info banner pengaturan kosong — screen only */}
           {!data.raporSettings && (
             <div className="print:hidden bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800 flex items-center gap-2">

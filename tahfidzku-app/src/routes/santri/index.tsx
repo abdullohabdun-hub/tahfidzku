@@ -33,29 +33,38 @@ export const Route = createFileRoute('/santri/')({
 })
 
 function SantriDashboard() {
-  const { data, rubrikAktif, authError } = Route.useLoaderData()
+  const { data, authError } = Route.useLoaderData()
 
   if (authError) return <AuthErrorAlert error={authError} />
   if (!data) return null
 
-  const profil = data?.profil
-  const riwayat = data?.riwayat || []
-  const progress = data?.progress
+  const displayMode = data.displayMode
+  const profil = data.profil
+  const riwayat = data.riwayat || []
+  const progress = data.progress as any
+  const analitikChart = data.analitikChart || []
 
-  const chartData = [
+  const isIqra = displayMode === 'iqra'
+  
+  const chartData = isIqra ? [
+    { name: 'Selesai', value: progress?.jilidSekarang || 0 },
+    { name: 'Sisa', value: Math.max(0, 6 - (progress?.jilidSekarang || 0)) }
+  ] : [
     { name: 'Selesai', value: progress?.juzSelesai || 0 },
     { name: 'Sisa', value: (progress?.targetJuz || 30) - (progress?.juzSelesai || 0) }
   ]
-  const COLORS = ['#10b981', '#f1f5f9'] // Emerald for done, slate for remaining
-  
-  const murojaahChart = data?.murojaahChart || []
+  const COLORS = isIqra ? ['#8b5cf6', '#f1f5f9'] : ['#10b981', '#f1f5f9'] // Violet for Iqra, Emerald for Tahfidz
+  const mainColorClass = isIqra ? 'text-violet-600' : 'text-emerald-600'
+  const mainBgClass = isIqra ? 'bg-violet-600' : 'bg-emerald-600'
+  const lightBgClass = isIqra ? 'bg-violet-100' : 'bg-emerald-100'
+  const badgeColorClass = isIqra ? 'text-violet-600 bg-violet-100/50' : 'text-emerald-600 bg-emerald-100/50'
 
   return (
     <div className="space-y-6 pb-6">
       
       {/* Header Welcome */}
       <div>
-        <h1 className="text-xl font-bold text-slate-800">Ahlan, {profil?.nama}! ðŸ‘‹</h1>
+        <h1 className="text-xl font-bold text-slate-800">Ahlan, {profil?.nama}! ??</h1>
         <p className="text-sm text-slate-500 mt-0.5">Semoga istiqomah menjaga hafalan hari ini.</p>
       </div>
 
@@ -63,11 +72,11 @@ function SantriDashboard() {
       <div className="bg-gradient-to-r from-orange-400 to-amber-500 rounded-2xl p-4 text-white shadow-md flex items-center justify-between">
         <div>
           <h3 className="font-bold text-base opacity-90 flex items-center gap-1.5">
-            <Flame className="w-4 h-4" /> {data?.streakMode === 'daily' ? 'Daily' : 'Weekly'} Streak
+            <Flame className="w-4 h-4" /> {data.streakMode === 'daily' ? 'Daily' : 'Weekly'} Streak
           </h3>
-          <p className="text-2xl font-bold mt-1">{data?.streak} {data?.streakMode === 'daily' ? 'Hari' : 'Minggu'}</p>
+          <p className="text-2xl font-bold mt-1">{data.streak} {data.streakMode === 'daily' ? 'Hari' : 'Minggu'}</p>
           <p className="text-xs opacity-80 mt-1">
-            {data?.streakMode === 'daily' 
+            {data.streakMode === 'daily' 
               ? 'Setor setiap hari untuk menjaga api!' 
               : 'Minimal 1x setor per minggu!'}
           </p>
@@ -77,15 +86,15 @@ function SantriDashboard() {
         </div>
       </div>
 
-      {/* Ujian Kenaikan Juz â€” tampil jika ada pending */}
-      {profil?.juzUjianPending && (
+      {/* Ujian Kenaikan Juz — tampil jika ada pending (hanya tahfidz) */}
+      {profil?.juzUjianPending && !isIqra && (
         <div className="bg-amber-50 border border-amber-300 rounded-2xl p-4 flex items-center gap-3 shadow-sm">
           <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center shrink-0">
             <GraduationCap className="w-5 h-5 text-amber-600" />
           </div>
           <div className="flex-1">
             <p className="text-sm font-bold text-amber-900">
-              ðŸŽ“ Ujian Kenaikan Juz {profil.juzUjianPending}
+              ?? Ujian Kenaikan Juz {profil.juzUjianPending}
             </p>
             <p className="text-xs text-amber-700 mt-0.5">
               Hubungi ustadz Anda untuk menjadwalkan ujian sebelum bisa melanjutkan hafalan.
@@ -98,7 +107,7 @@ function SantriDashboard() {
       <Card className="rounded-2xl shadow-sm hover:shadow-md transition-shadow border-slate-100">
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-bold flex items-center gap-2 text-slate-800">
-            <Target className="w-4 h-4 text-emerald-600" /> Progres Hafalan
+            <Target className={`w-4 h-4 ${mainColorClass}`} /> {isIqra ? 'Progres Jilid Iqra' : 'Progres Hafalan'}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -130,32 +139,47 @@ function SantriDashboard() {
             </div>
             <div className="flex-1">
               <div className="space-y-3">
-                <div>
-                  <p className="text-xs text-slate-500 font-medium">Target Hafalan</p>
-                  <p className="font-bold text-slate-800">{progress?.targetJuz} Juz</p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500 font-medium">Telah Diselesaikan</p>
-                  <p className="font-bold text-emerald-600">{progress?.juzSelesai} Juz</p>
-                </div>
+                {isIqra ? (
+                  <>
+                    <div>
+                      <p className="text-xs text-slate-500 font-medium">Jilid Saat Ini</p>
+                      <p className={`font-bold ${mainColorClass}`}>Jilid {progress?.jilidSekarang}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 font-medium">Halaman Terakhir</p>
+                      <p className="font-bold text-slate-800">Hal {progress?.halamanSekarang}</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <p className="text-xs text-slate-500 font-medium">Target Hafalan</p>
+                      <p className="font-bold text-slate-800">{progress?.targetJuz} Juz</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 font-medium">Telah Diselesaikan</p>
+                      <p className={`font-bold ${mainColorClass}`}>{progress?.juzSelesai} Juz</p>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Grafik Murojaah */}
+      {/* Grafik Aktivitas Setoran / Murojaah */}
       <Card className="rounded-2xl shadow-sm hover:shadow-md transition-shadow border-slate-100">
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-bold flex items-center gap-2 text-slate-800">
-            <BookOpen className="w-4 h-4 text-emerald-600" /> Aktivitas Murojaah
+            <BookOpen className={`w-4 h-4 ${mainColorClass}`} /> {isIqra ? 'Aktivitas Setoran' : 'Aktivitas Murojaah'}
           </CardTitle>
           <p className="text-xs text-slate-500 font-medium">Halaman yang dibaca dalam 7 hari terakhir</p>
         </CardHeader>
         <CardContent>
           <div className="h-48 w-full mt-2">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={murojaahChart}>
+              <BarChart data={analitikChart}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis 
                   dataKey="name" 
@@ -168,23 +192,23 @@ function SantriDashboard() {
                   cursor={{ fill: '#f1f5f9' }}
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                 />
-                <Bar dataKey="halaman" fill="#10b981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="halaman" fill={COLORS[0]} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </CardContent>
       </Card>
 
-      {/* Dashboard Analitik Fase 4 */}
-      <DashboardAnalitikContainer santriId={profil.id} />
+      {/* Dashboard Analitik Fase 4 (Hanya Tahfidz) */}
+      {!isIqra && <DashboardAnalitikContainer santriId={profil.id} />}
 
-      {/* Timeline Riwayat Murojaah */}
+      {/* Timeline Riwayat Setoran */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-            <Clock className="w-4 h-4 text-emerald-600" /> Setoran Terakhir
+            <Clock className={`w-4 h-4 ${mainColorClass}`} /> Setoran Terakhir
           </h2>
-          <Link to="/santri/riwayat" className="text-sm text-emerald-600 font-medium hover:underline">
+          <Link to="/santri/riwayat" className={`text-sm ${mainColorClass} font-medium hover:underline`}>
             Lihat Semua
           </Link>
         </div>
@@ -192,12 +216,14 @@ function SantriDashboard() {
         {riwayat.length === 0 ? (
           <div className="bg-white p-6 rounded-2xl text-center border border-slate-200">
             <BookOpen className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-            <p className="text-slate-500 text-sm">Belum ada riwayat Murojaah.</p>
-            <Link to="/santri/input">
-              <Button variant="outline" className="mt-4 text-emerald-600 border-emerald-200 hover:bg-emerald-50">
-                Mulai Murojaah
-              </Button>
-            </Link>
+            <p className="text-slate-500 text-sm">Belum ada riwayat setoran.</p>
+            {!isIqra && (
+              <Link to="/santri/input">
+                <Button variant="outline" className={`mt-4 ${mainColorClass} border-emerald-200 hover:bg-emerald-50`}>
+                  Mulai Murojaah
+                </Button>
+              </Link>
+            )}
           </div>
         ) : (
           <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm relative">
@@ -207,23 +233,29 @@ function SantriDashboard() {
             <div className="space-y-6 relative">
               {riwayat.map((item: any) => (
                 <div key={item.id} className="flex gap-4">
-                  <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 z-10 ring-4 ring-white">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10 ring-4 ring-white ${lightBgClass} ${mainColorClass}`}>
                     <BookOpen className="w-4 h-4" />
                   </div>
-                  <div className="flex-1 bg-slate-50 hover:bg-white rounded-xl p-3.5 border border-slate-100 hover:border-emerald-100 relative shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
+                  <div className={`flex-1 bg-slate-50 hover:bg-white rounded-xl p-3.5 border border-slate-100 relative shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer ${isIqra ? 'hover:border-violet-100' : 'hover:border-emerald-100'}`}>
                     <div className="flex justify-between items-start mb-1">
-                      <span className="text-xs font-medium uppercase tracking-wider text-emerald-600 bg-emerald-100/50 px-2 py-0.5 rounded-md">
-                        {item.jenis}
+                      <span className={`text-xs font-medium uppercase tracking-wider px-2 py-0.5 rounded-md ${badgeColorClass}`}>
+                        {isIqra ? 'Iqra' : item.jenis}
                       </span>
                       <span className="text-[10px] text-slate-400 font-medium">
                         {item.createdAt ? format(new Date(item.createdAt), 'd MMM yyyy, HH:mm', { locale: id }) : '-'}
                       </span>
                     </div>
-                    {item.surah && <p className="font-semibold text-slate-800 text-sm">Surat {item.surah}</p>}
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <p className="text-xs text-slate-500">Juz {item.juz} â€¢ Hal {item.halamanAwal === item.halamanAkhir ? item.halamanAwal : `${item.halamanAwal}-${item.halamanAkhir}`} â€¢</p>
-                      <FormatPenilaian item={item} />
-                    </div>
+                    {isIqra ? (
+                      <p className="font-semibold text-slate-800 text-sm mt-1">Jilid {item.jilid} (Hal {item.halamanAwal === item.halamanAkhir ? item.halamanAwal : `${item.halamanAwal}-${item.halamanAkhir}`})</p>
+                    ) : (
+                      <>
+                        {item.surah && <p className="font-semibold text-slate-800 text-sm">{item.surah}</p>}
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <p className="text-xs text-slate-500">Juz {item.juz} • Hal {item.halamanAwal === item.halamanAkhir ? item.halamanAwal : `${item.halamanAwal}-${item.halamanAkhir}`} •</p>
+                          <FormatPenilaian item={item} />
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}

@@ -57,7 +57,7 @@ export const precomputeRekapMingguan = createServerFn({ method: 'POST' })
             AND EXISTS (
               SELECT 1 FROM setoran s
               WHERE s.santri_id = a.santri_id
-                AND (s.sesi_kelas_id = a.sesi_kelas_id OR (s.sesi_kelas_id IS NULL AND Date(s.created_at) = sk.tanggal))
+                AND (s.sesi_kelas_id = a.sesi_kelas_id OR (s.sesi_kelas_id IS NULL AND s.tanggal_setoran = sk.tanggal))
             )
           ) AS total_hadir_dengan_setoran
         FROM absensi a
