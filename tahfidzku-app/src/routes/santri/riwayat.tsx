@@ -11,6 +11,7 @@ import { FormatPenilaian } from '../../components/FormatPenilaian'
 import { EditSetoranModal } from '../../components/EditSetoranModal'
 import { AuthErrorAlert } from '../../components/AuthErrorAlert'
 import { getSantriDisplayMode } from '../../lib/santri-display'
+import { parseDateString } from '../../lib/dateUtils'
 
 export const Route = createFileRoute('/santri/riwayat')({
   component: SantriRiwayatSetoran,
@@ -144,7 +145,7 @@ function SantriRiwayatSetoran() {
             <div>
               <p className="text-xs font-semibold text-slate-500 flex items-center gap-1.5 mb-1">
                  <Calendar className="w-3.5 h-3.5" />
-                 {format(new Date(item.createdAt), 'dd MMM yyyy, HH:mm', { locale: id })}
+                 {format(parseDateString(item.tanggalSetoran), 'dd MMM yyyy', { locale: id })}
               </p>
               <h3 className="font-bold text-slate-800 text-base leading-tight">
                 {item.surahMeta?.label || (item.surah ? `${item.surah} ${item.ayatAwal}-${item.ayatAkhir}` : `Juz ${item.lintasJuz ? `${item.juzMulai}-${item.juzSelesai}` : (item.juzMulai || item.juz)}`)}
@@ -217,7 +218,7 @@ function SantriRiwayatSetoran() {
             <div>
               <p className="text-xs font-semibold text-slate-500 flex items-center gap-1.5 mb-1">
                  <Calendar className="w-3.5 h-3.5" />
-                 {format(new Date(item.date), 'dd MMM yyyy, HH:mm', { locale: id })}
+                 {format(parseDateString(item.date), 'dd MMM yyyy', { locale: id })}
               </p>
               <h3 className="font-bold text-slate-800 text-base leading-tight">
                 Jilid {data.jilid}

@@ -1,0 +1,1 @@
+ALTER TABLE "rapor_settings" ADD COLUMN "sesi_reguler_default" jsonb;

@@ -1,5 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
-import { eq, and, desc, asc, inArray, sql } from 'drizzle-orm'
+import { eq, and, desc, asc, inArray, sql, isNull } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '../db'
 import { absensi, sesiKelas, statusAbsensiEnum, waktuSesiEnum, rekapMingguanSantri } from '../db/schema/absensi'
@@ -28,7 +28,11 @@ export const getKelasYangDiampu = createServerFn({ method: 'POST' })
         .select({
           id: kelas.id,
           nama: kelas.nama,
-          hariPertemuan: kelas.hariPertemuan
+          hariPertemuan: kelas.hariPertemuan,
+          tipeKelas: kelas.tipeKelas,
+          waktuShalatDiizinkan: kelas.waktuShalatDiizinkan,
+          jamMulai: kelas.jamMulai,
+          jamSelesai: kelas.jamSelesai,
         })
         .from(kelas)
         .where(and(eq(kelas.ustadzId, userId), eq(kelas.tenantId, tenantId)))
@@ -47,7 +51,7 @@ export const bukaSesiAbsensi = createServerFn({ method: 'POST' })
   .validator((d: unknown) => z.object({
     kelasId: z.string().uuid(),
     tanggal: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format tanggal YYYY-MM-DD'),
-    waktuSesi: z.enum(waktuSesiEnum.enumValues)
+    waktuSesi: z.enum(waktuSesiEnum.enumValues).optional().nullable()
   }).parse(d))
   .handler(async ({ data }) => {
     try {
@@ -60,7 +64,7 @@ export const bukaSesiAbsensi = createServerFn({ method: 'POST' })
 
       // 1. Validasi otoritas ustadz pengampu kelas
       const [kelasTarget] = await db
-        .select({ id: kelas.id, ustadzId: kelas.ustadzId, hariPertemuan: kelas.hariPertemuan })
+        .select({ id: kelas.id, ustadzId: kelas.ustadzId, hariPertemuan: kelas.hariPertemuan, tipeKelas: kelas.tipeKelas })
         .from(kelas)
         .where(and(eq(kelas.id, data.kelasId), eq(kelas.tenantId, tenantId)))
         .limit(1)
@@ -70,6 +74,12 @@ export const bukaSesiAbsensi = createServerFn({ method: 'POST' })
         throw new ForbiddenError('Anda bukan pengampu kelas ini')
       }
 
+      if (kelasTarget.tipeKelas === 'reguler' && !data.waktuSesi) {
+        throw new ValidationError('Waktu sesi shalat wajib dipilih untuk kelas reguler')
+      }
+
+      const waktuSesiToSave = kelasTarget.tipeKelas === 'online' ? null : data.waktuSesi;
+
       // 2. Pendekatan Catch Conflict (Anti Race Condition, Tanpa Transaction)
       let sesiId: string;
       try {
@@ -77,7 +87,7 @@ export const bukaSesiAbsensi = createServerFn({ method: 'POST' })
           tenantId,
           kelasId: data.kelasId,
           tanggal: data.tanggal,
-          waktuSesi: data.waktuSesi,
+          waktuSesi: waktuSesiToSave,
           createdBy: userId
         }).returning({ id: sesiKelas.id })
         sesiId = newSesi.id
@@ -87,14 +97,21 @@ export const bukaSesiAbsensi = createServerFn({ method: 'POST' })
         const isDuplicate = err.code === '23505' || err?.cause?.code === '23505'
         
         if (isDuplicate) {
+          const conditions = [
+            eq(sesiKelas.kelasId, data.kelasId),
+            eq(sesiKelas.tanggal, data.tanggal)
+          ];
+          
+          if (waktuSesiToSave === null) {
+            conditions.push(isNull(sesiKelas.waktuSesi))
+          } else {
+            conditions.push(eq(sesiKelas.waktuSesi, waktuSesiToSave as any))
+          }
+
           const [existingSesi] = await db
             .select({ id: sesiKelas.id })
             .from(sesiKelas)
-            .where(and(
-              eq(sesiKelas.kelasId, data.kelasId),
-              eq(sesiKelas.tanggal, data.tanggal),
-              eq(sesiKelas.waktuSesi, data.waktuSesi)
-            ))
+            .where(and(...conditions))
             .limit(1)
           
           if (!existingSesi) {

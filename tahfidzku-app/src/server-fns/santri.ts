@@ -297,13 +297,26 @@ export const updateSantri = createServerFn({ method: 'POST' })
       let newPosisiTerakhir = currentSantri?.posisiTerakhir
       let newUrutanHafalan = currentSantri?.urutanHafalan || bangunUrutanHafalan(data.juzProgress)
       
-      // Guard: Jangan pernah menimpa urutanHafalan & posisiTerakhir jika santri sudah punya progres
-      // (yaitu posisiTerakhir !== null). Update juzProgress via form ini hanya diizinkan
-      // saat onboarding / posisiTerakhir masih kosong.
-      if (currentSantri?.posisiTerakhir !== null && currentSantri?.posisiTerakhir !== undefined) {
-        // Abaikan perubahan juzProgress dari input admin, gunakan yang lama
-        data.juzProgress = currentSantri.juzProgress || []
-      } else {
+      // Jika Admin mengedit batasHafalan (Juz, Surah, atau Ayat), perbarui posisiTerakhir & urutanHafalan
+      const isBatasHafalanEdited = 
+        data.batasHafalanJuz !== undefined || 
+        data.batasHafalanSurah !== undefined || 
+        data.batasHafalanAyat !== undefined;
+
+      if (isBatasHafalanEdited) {
+        const effectiveJuzProg = (data.juzProgress && data.juzProgress.length > 0) 
+          ? data.juzProgress 
+          : (currentSantri?.juzProgress || []);
+          
+        const buildPosisi = bangunPosisiDariAdminInput(
+           effectiveJuzProg,
+           data.batasHafalanJuz !== undefined ? data.batasHafalanJuz : currentSantri?.batasHafalanJuz,
+           data.batasHafalanSurah !== undefined ? data.batasHafalanSurah : currentSantri?.batasHafalanSurah,
+           data.batasHafalanAyat !== undefined ? data.batasHafalanAyat : currentSantri?.batasHafalanAyat
+        );
+        newPosisiTerakhir = buildPosisi.posisiTerakhir;
+        newUrutanHafalan = buildPosisi.urutanHafalan;
+      } else if (currentSantri?.posisiTerakhir === null || currentSantri?.posisiTerakhir === undefined) {
         const buildPosisi = bangunPosisiDariAdminInput(
            data.juzProgress,
            data.batasHafalanJuz,
@@ -313,6 +326,7 @@ export const updateSantri = createServerFn({ method: 'POST' })
         newPosisiTerakhir = buildPosisi.posisiTerakhir;
         newUrutanHafalan = buildPosisi.urutanHafalan;
       }
+
 
       const effectiveTahapSantri = data.tahapSantri !== undefined ? data.tahapSantri : (currentSantri?.tahapSantri ?? 'tahfidz');
 

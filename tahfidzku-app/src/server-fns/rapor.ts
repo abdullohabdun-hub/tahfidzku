@@ -6,6 +6,7 @@ import { raporSettings, santri, setoran, ujian, absensi, sesiKelas, kelas, setor
 import { getAuthSession, requireRole } from '../middleware/auth.middleware'
 import { success, handleError } from '../lib/response'
 import { AuthenticationError, ValidationError } from '../lib/errors'
+import { WAKTU_SHALAT_OPTIONS } from '../lib/constants'
 
 // ═══════════════════════════════════════════════════════
 // 1. GET RAPOR SETTINGS (admin, ustadz)
@@ -87,6 +88,51 @@ export const upsertRaporSettings = createServerFn({ method: 'POST' })
       }
 
       return success(null, 'Pengaturan rapor berhasil disimpan')
+    } catch (err) {
+      return handleError(err)
+    }
+  })
+
+export const updateSesiRegulerDefault = createServerFn({ method: 'POST' })
+  .validator((data: unknown) => {
+    const schema = z.object({
+      sesiRegulerDefault: z.array(z.enum(WAKTU_SHALAT_OPTIONS)).nullable()
+    })
+    return schema.parse(data)
+  })
+  .handler(async ({ data }) => {
+    try {
+      const session = await getAuthSession()
+      if (!session) throw new AuthenticationError()
+      requireRole(session, 'admin')
+
+      const tenantId = session.user.tenantId
+
+      // Cek apakah sudah ada record untuk tenant ini
+      const existing = await db
+        .select({ id: raporSettings.id })
+        .from(raporSettings)
+        .where(eq(raporSettings.tenantId, tenantId))
+        .limit(1)
+
+      if (existing.length > 0) {
+        await db
+          .update(raporSettings)
+          .set({
+            sesiRegulerDefault: data.sesiRegulerDefault,
+            updatedAt: new Date(),
+          })
+          .where(eq(raporSettings.tenantId, tenantId))
+      } else {
+        await db
+          .insert(raporSettings)
+          .values({
+            tenantId,
+            sesiRegulerDefault: data.sesiRegulerDefault,
+          })
+      }
+
+      return success(null, 'Pengaturan Sesi Reguler Default berhasil disimpan')
     } catch (err) {
       return handleError(err)
     }

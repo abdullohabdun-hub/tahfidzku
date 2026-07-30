@@ -41,10 +41,22 @@ export function error(
 // ── Tipe Gabungan ────────────────────────────────────
 export type ApiResponse<T> = ApiSuccess<T> | ApiError
 
+import { ZodError } from 'zod'
+
 // ── Helper: Tangkap error apapun, kembalikan format standar ──
 export function handleError(err: unknown): ApiError {
   // Jangan pernah melempar error mentah ke frontend
   console.error('[ServerError]', err)
+
+  if (err instanceof ZodError) {
+    const firstIssue = err.issues[0]
+    const message = firstIssue ? firstIssue.message : 'Input tidak valid'
+    const details = err.issues.map(issue => ({
+      field: issue.path.join('.'),
+      message: issue.message,
+    }))
+    return error('VALIDATION_ERROR', message, details)
+  }
 
   if (err instanceof Error && 'code' in err) {
     const appErr = err as Error & { code: string; details?: ApiErrorDetail[] }
@@ -63,3 +75,4 @@ export function handleError(err: unknown): ApiError {
     'Terjadi kesalahan pada server. Silakan coba lagi nanti.',
   )
 }
+

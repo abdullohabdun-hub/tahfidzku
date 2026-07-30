@@ -1,9 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { Settings, Save, Loader2, Building, Link as LinkIcon, FileText, MapPin, User, Hash, AlignLeft, Image } from 'lucide-react'
+import { Settings, Save, Loader2, Building, Link as LinkIcon } from 'lucide-react'
 import { getTenantInfo, updateTenantInfo, runDbMigration } from '../../server-fns/admin-settings'
-import { getRaporSettings, upsertRaporSettings } from '../../server-fns/rapor'
+import { getRaporSettings, updateSesiRegulerDefault } from '../../server-fns/rapor'
 import { Button } from '../../components/ui/button'
+import { WAKTU_SHALAT_OPTIONS, WAKTU_SHALAT_LABEL, type WaktuShalat } from '../../lib/constants'
 import { LabelPenilaianSettings } from '../../components/admin/LabelPenilaianSettings'
 import { ChangePasswordForm } from '../../components/ChangePasswordForm'
 
@@ -17,6 +18,8 @@ function PengaturanPage() {
   
   const [namaLembaga, setNamaLembaga] = useState('')
   const [slug, setSlug] = useState('')
+  const [sesiRegulerDefault, setSesiRegulerDefault] = useState<WaktuShalat[]>([])
+  const [savingSesiDefault, setSavingSesiDefault] = useState(false)
 
   // State Pengaturan Rapor
   const [raporNamaLembaga, setRaporNamaLembaga] = useState('')
@@ -26,7 +29,6 @@ function PengaturanPage() {
   const [raporNamaMudir, setRaporNamaMudir] = useState('')
   const [raporNipMudir, setRaporNipMudir] = useState('')
   const [raporCatatanFooter, setRaporCatatanFooter] = useState('')
-  const [savingRapor, setSavingRapor] = useState(false)
 
   async function loadData() {
     setLoading(true)
@@ -38,6 +40,7 @@ function PengaturanPage() {
     const raporRes = await getRaporSettings()
     if (raporRes.success && raporRes.data) {
       const d = raporRes.data
+      setSesiRegulerDefault((d.sesiRegulerDefault as WaktuShalat[]) || [])
       setRaporNamaLembaga(d.namaLembaga ?? '')
       setRaporAlamat(d.alamatLembaga ?? '')
       setRaporLogoUrl(d.logoUrl ?? '')
@@ -137,6 +140,55 @@ function PengaturanPage() {
           </form>
         </div>
       </div>
+      
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden p-6 mt-8">
+        <h3 className="font-semibold text-lg text-slate-800 mb-2">Sesi Reguler Default Lembaga</h3>
+        <p className="text-xs text-slate-500 mb-4">Pengaturan waktu shalat yang otomatis dipilih setiap kali Admin membuat Kelas Reguler baru.</p>
+        
+        <div className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            {WAKTU_SHALAT_OPTIONS.map(ws => {
+              const isSelected = sesiRegulerDefault.includes(ws)
+              return (
+                <button
+                  key={ws}
+                  type="button"
+                  onClick={() => {
+                    setSesiRegulerDefault(prev => isSelected ? prev.filter(w => w !== ws) : [...prev, ws])
+                  }}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-colors ${isSelected ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100'}`}
+                >
+                  {WAKTU_SHALAT_LABEL[ws]}
+                </button>
+              )
+            })}
+          </div>
+          
+          {sesiRegulerDefault.length === 0 && (
+            <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-100">
+              Jika dikosongkan, form pembuatan kelas baru tidak akan memberikan batasan jadwal — ustadz bebas membuka sesi di waktu shalat manapun secara default.
+            </p>
+          )}
+
+          <Button 
+            onClick={async () => {
+              setSavingSesiDefault(true)
+              const res = await updateSesiRegulerDefault({
+                data: { sesiRegulerDefault: sesiRegulerDefault.length > 0 ? sesiRegulerDefault : null }
+              })
+              if(res.success) alert(res.message)
+              else alert(res.error?.message)
+              setSavingSesiDefault(false)
+            }} 
+            disabled={savingSesiDefault}
+            className="bg-indigo-600 hover:bg-indigo-700"
+          >
+            {savingSesiDefault ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+            Simpan Default Sesi
+          </Button>
+        </div>
+      </div>
+
       <LabelPenilaianSettings />
 
       {/* Pengaturan Rapor Digital sudah dipindah ke halaman Cetak Rapor */}

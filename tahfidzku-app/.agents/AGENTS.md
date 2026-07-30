@@ -13,6 +13,38 @@ Untuk SEMUA migrasi skema (Fase 2, Fase 3, dan seterusnya), mekanisme berikut WA
 **Wajib dijalankan sebelum commit kode apa pun:**
 Sebelum melaporkan "siap commit", Anda WAJIB menjalankan `npx tsc --noEmit` untuk mendeteksi *syntax error* atau *TypeScript error*. Jangan biarkan kode yang merusak *build* lolos ke commit.
 
+## Production Deployment & Migration Protocol
+
+### 1. Verification of Environment Variables
+- `DATABASE_URL` di Vercel Dashboard (Production) harus selalu berisi URL Neon DB Production (`ep-twilight-feather-ao5fmi2r`) yang valid, tidak boleh berupa string kosong `""`.
+- Setelah melakukan update environment variable di Vercel, **selalu lakukan Redeploy** (`npx vercel --prod --yes`) agar serverless function Vercel memuat nilai environment terbaru. **PERHATIAN: Tindakan redeploy ini tetap tunduk mutlak pada Aturan 3 (Strict Guardrail) di bawah ini — WAJIB ada kata "approved" eksplisit dari USER sebelum mengeksekusinya, tanpa terkecuali.**
+
+### 2. Prosedur Eksekusi Migrasi Production (Fail-Fast & Explicit Target)
+- Jangan pernah menjalankan script migrasi tanpa menentukan target environment secara eksplisit.
+- Gunakan flag `--prod` pada script `scripts/run-migration.ts` agar script secara eksplisit membaca `.env.production` (Database Production).
+- Format perintah eksekusi migrasi production yang aman:
+  ```powershell
+  $env:CONFIRM_PRODUCTION="yes"; npx tsx scripts/run-migration.ts src/db/migrations/<nama_file_migrasi>.sql --prod
+  ```
+- Script `scripts/run-migration.ts` harus memiliki fitur *Safe-Skip* untuk error DDL duplikat (`already exists` / PostgreSQL code `42710`, `42701`, `42P07`) agar tidak berhenti secara tidak sengaja pada tabel/kolom yang sudah ada.
+- **PERHATIAN: Walaupun perintah di atas formatnya sudah aman, eksekusi migrasi ke production ini tetap tunduk mutlak pada Aturan 3 dan Aturan Induk (Database Migrations poin 4) — WAJIB ada kata "approved" eksplisit dari USER sebelum dieksekusi.**
+
+### 3. Eksekusi Deployment ke Production (Strict Guardrail)
+- **TIDAK BOLEH** menjalankan perintah `npx vercel --prod` atau deploy ke production tanpa ada kata **"approved"** atau persetujuan eksplisit secara literal dari USER di dalam percakapan. Jangan pernah berasumsi bahwa perbaikan yang berhasil secara teknis berarti otomatis disetujui untuk di-deploy.
+- Selalu tahan eksekusi (halt) dan tunggu lampu hijau (sign-off) dari USER sebelum menyentuh production.
+
+### 4. Skrip Langsung ke Database Production (Strict Guardrail)
+- Jika harus menjalankan skrip diagnostik / audit ke database production di luar flow aplikasi utama, **wajib** menggunakan kredensial/role DB yang khusus read-only (jika tersedia) untuk menjamin skrip bersifat read-only secara struktural.
+- Jika role read-only belum tersedia dan terpaksa menggunakan `DATABASE_URL` dengan hak akses penuh, isi literal dari file skrip tersebut **WAJIB** ditunjukkan kepada USER untuk direview **SEBELUM** skrip tersebut dieksekusi. Jangan mem-bypass dengan alasan "ini hanya query SELECT".
+
+### 5. Checklist Diagnosis Error "Akses Ditolak / Terjadi Kesalahan pada Server"
+- Jika frontend menampilkan `AuthErrorAlert` ("Terjadi kesalahan pada server"), penyebab utamanya biasanya salah satu dari dua hal ini:
+  1. **Autentikasi/Koneksi DB Gagal**: `DATABASE_URL` di Vercel kosong atau password kedaluwarsa (`password authentication failed`).
+  2. **Schema Mismatch (Missing Column)**: Fitur/kolom baru di kodingan belum dieksekusi di database production (`column ... does not exist` / PostgreSQL code `42703`).
+- Selalu jalankan uji query langsung ke database production dengan script diagnostic sebelum membuat hipotesis atau mengubah kode UI frontend.
+
+
+
 
 <!-- intent-skills:start -->
 # TanStack Intent - before editing files, run the matching guidance command.

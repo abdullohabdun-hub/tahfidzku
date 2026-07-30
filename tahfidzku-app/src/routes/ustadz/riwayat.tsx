@@ -9,6 +9,7 @@ import { EditSetoranModal } from '../../components/EditSetoranModal'
 import { getKelasYangDiampu, getRiwayatAbsensiKelas } from '../../server-fns/absensi'
 import { FormatPenilaian } from '../../components/FormatPenilaian'
 import { AuthErrorAlert } from '../../components/AuthErrorAlert'
+import { parseDateString } from '../../lib/dateUtils'
 
 export const Route = createFileRoute('/ustadz/riwayat')({
   component: UstadzRiwayatSetoran,
@@ -200,7 +201,7 @@ function UstadzRiwayatSetoran() {
                        <div>
                          <p className="text-xs font-semibold text-slate-500 flex items-center gap-1.5 mb-1">
                             <Calendar className="w-3.5 h-3.5" />
-                            {format(new Date(item.createdAt), 'dd MMM yyyy, HH:mm', { locale: id })}
+                            {format(parseDateString(item.tanggalSetoran), 'dd MMM yyyy', { locale: id })}
                          </p>
                          <h3 className="font-bold text-slate-800 text-base leading-tight">
                            {item.surahMeta?.label || (item.surah ? `${item.surah} ${item.ayatAwal}-${item.ayatAkhir}` : `Juz ${item.lintasJuz ? `${item.juzMulai}-${item.juzSelesai}` : (item.juzMulai || item.juz)}`)}
@@ -280,7 +281,7 @@ function UstadzRiwayatSetoran() {
                        <div>
                          <p className="text-xs font-semibold text-slate-500 flex items-center gap-1.5 mb-1">
                             <Calendar className="w-3.5 h-3.5" />
-                            {format(new Date(item.date), 'dd MMM yyyy, HH:mm', { locale: id })}
+                            {format(parseDateString(item.date), 'dd MMM yyyy', { locale: id })}
                          </p>
                          <h3 className="font-bold text-slate-800 text-base leading-tight">
                            Jilid {data.jilid}
@@ -355,7 +356,7 @@ function UstadzRiwayatSetoran() {
                       <Calendar className="w-4 h-4 text-emerald-600" />
                       {format(new Date(sesi.tanggal), 'EEEE, dd MMMM yyyy', { locale: id })}
                       <span className="bg-slate-100 text-slate-600 text-xs px-2 py-0.5 rounded ml-2 capitalize">
-                        Sesi {sesi.waktuSesi}
+                        {sesi.waktuSesi ? `Sesi ${sesi.waktuSesi}` : 'Sesi Online'}
                       </span>
                     </div>
                     <span className="text-xs font-semibold text-slate-400 bg-slate-50 px-2 py-1 rounded-full">{format(new Date(sesi.createdAt), 'HH:mm')}</span>

@@ -50,9 +50,17 @@ export const createSetoranSchema = z
       if (!data.surahNomor) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Nomor Surah wajib diisi untuk Ziyadah', path: ['surahNomor'] });
       if (!data.ayatAwal) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Ayat awal wajib diisi untuk Ziyadah', path: ['ayatAwal'] });
       if (!data.ayatAkhir) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Ayat akhir wajib diisi untuk Ziyadah', path: ['ayatAkhir'] });
-      if (data.ayatAwal && data.ayatAkhir && data.ayatAkhir < data.ayatAwal) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Ayat akhir tidak boleh kurang dari ayat awal', path: ['ayatAkhir'] });
+      const surahMulaiNo = data.surahNomor;
+      const surahSelesaiNo = (data.surahMeta as any)?.meta?.[0]?.surahSelesai?.nomor ?? data.surahNomor;
+
+      if (surahMulaiNo && surahSelesaiNo && surahMulaiNo === surahSelesaiNo) {
+        if (data.ayatAwal && data.ayatAkhir && data.ayatAkhir < data.ayatAwal) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Ayat akhir tidak boleh kurang dari ayat awal', path: ['ayatAkhir'] });
+        }
+      } else if (surahMulaiNo && surahSelesaiNo && surahSelesaiNo < surahMulaiNo) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Surah selesai harus berada setelah surah mulai', path: ['surahNomor'] });
       }
+
     } else {
       if (!data.juzMulai) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Juz wajib diisi untuk Sabqi/Manzil', path: ['juzMulai'] });
       if (!data.halamanAwal) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Halaman awal wajib diisi untuk Sabqi/Manzil', path: ['halamanAwal'] });

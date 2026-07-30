@@ -20,3 +20,19 @@ export function getLegacyMingguMulaiKey(date: Date = new Date()): string {
 export function getTodayWIB(): string {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' })
 }
+
+/**
+ * Parsing aman untuk format YYYY-MM-DD (menghindari UTC shift menjadi hari sebelumnya)
+ * String akan ditambahkan time T12:00:00 untuk memastikan berada di tengah hari,
+ * sehingga aman saat diformat ulang ke string lokal.
+ */
+export function parseDateString(dateStr: string | Date | null | undefined): Date {
+  if (!dateStr) return new Date();
+  if (dateStr instanceof Date) return dateStr;
+  
+  // Jika formatnya hanya YYYY-MM-DD, tambahkan noon time
+  if (dateStr.length === 10 && dateStr.indexOf('-') === 4) {
+    return new Date(`${dateStr}T12:00:00`);
+  }
+  return new Date(dateStr);
+}

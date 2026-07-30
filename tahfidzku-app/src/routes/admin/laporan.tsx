@@ -5,6 +5,8 @@ import { flexRender, getCoreRowModel, useReactTable, getSortedRowModel } from "@
 import type { SortingState } from "@tanstack/react-table"
 import { getMonthlyReport } from '../../server-fns/setoran'
 import { getMonthlyReportIqra } from '../../server-fns/setoran-iqra'
+import { getAllRubrikTenant } from '../../server-fns/rubrik'
+
 
 import { FormatPenilaian } from '../../components/FormatPenilaian'
 import { Button } from '../../components/ui/button'

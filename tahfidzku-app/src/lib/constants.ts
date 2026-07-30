@@ -26,3 +26,17 @@ export const KUALITAS_LABEL: Record<KualitasBacaan, string> = {
 // Batas waktu untuk edit entri yang membutuhkan validitas data (Setoran, Absensi)
 export const MAX_EDIT_AGE_DAYS = 7;
 export const MAX_EDIT_AGE_MS = MAX_EDIT_AGE_DAYS * 24 * 60 * 60 * 1000;
+
+export const WAKTU_SHALAT_OPTIONS = [
+  'subuh', 'dhuha', 'dzuhur', 'ashar', 'maghrib', 'isya'
+] as const
+export type WaktuShalat = typeof WAKTU_SHALAT_OPTIONS[number]
+
+export const WAKTU_SHALAT_LABEL: Record<WaktuShalat, string> = {
+  subuh: 'Subuh',
+  dhuha: 'Dhuha',
+  dzuhur: 'Dzuhur',
+  ashar: 'Ashar',
+  maghrib: 'Maghrib',
+  isya: 'Isya',
+}

@@ -1,19 +1,18 @@
 import { useEffect } from 'react'
+import { registerSW } from 'virtual:pwa-register'
 
 export function PwaReloadPrompt() {
   useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker
-        .register('/sw.js', { scope: '/' })
-        .then((registration) => {
-          console.log('✅ Service Worker terdaftar:', registration.scope)
-        })
-        .catch((err) => {
-          console.error('❌ Gagal mendaftar Service Worker:', err)
-        })
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      registerSW({
+        immediate: true,
+        onRegisterError(error) {
+          console.warn('⚠️ Service Worker registration error:', error)
+        },
+      })
     }
   }, [])
 
-  // Tidak ada UI prompt karena autoUpdate (SW akan update otomatis di background)
   return null
 }
+

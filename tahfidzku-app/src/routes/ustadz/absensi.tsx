@@ -85,7 +85,16 @@ function AbsensiUstadzPage() {
     setSuccessMsg('')
     setSesiId(null)
 
-    const res = await bukaSesiAbsensi({ data: { kelasId: selectedKelasId, tanggal, waktuSesi } })
+    const selectedKelasData = kelasList.find(k => k.id === selectedKelasId)
+    const isOnline = selectedKelasData?.tipeKelas === 'online'
+
+    const res = await bukaSesiAbsensi({ 
+      data: { 
+        kelasId: selectedKelasId, 
+        tanggal, 
+        waktuSesi: isOnline ? undefined : waktuSesi 
+      } 
+    })
     if (res.success && res.data) {
       setSesiId(res.data.sesiId)
       
@@ -203,17 +212,24 @@ function AbsensiUstadzPage() {
               </span>
             )}
           </div>
-          <div className="flex-1 w-full">
-            <label className="block text-sm font-medium mb-1">Waktu Sesi</label>
-            <select required value={waktuSesi} onChange={e => setWaktuSesi(e.target.value as any)} className="w-full border p-2.5 rounded-lg bg-slate-50">
-              <option value="subuh">Subuh</option>
-              <option value="dhuha">Dhuha</option>
-              <option value="dzuhur">Dzuhur</option>
-              <option value="ashar">Ashar</option>
-              <option value="maghrib">Maghrib</option>
-              <option value="isya">Isya</option>
-            </select>
-          </div>
+          
+          {kelasList.find(k => k.id === selectedKelasId)?.tipeKelas === 'reguler' && (
+            <div className="flex-1 w-full animate-in fade-in slide-in-from-top-2 duration-200">
+              <label className="block text-sm font-medium mb-1">Waktu Sesi Shalat</label>
+              <select required value={waktuSesi} onChange={e => setWaktuSesi(e.target.value as any)} className="w-full border p-2.5 rounded-lg bg-slate-50">
+                {['subuh', 'dhuha', 'dzuhur', 'ashar', 'maghrib', 'isya']
+                  .filter(ws => {
+                    const allowed = kelasList.find(k => k.id === selectedKelasId)?.waktuShalatDiizinkan
+                    return !allowed?.length || allowed.includes(ws)
+                  })
+                  .map(ws => (
+                    <option key={ws} value={ws}>{ws.charAt(0).toUpperCase() + ws.slice(1)}</option>
+                  ))
+                }
+              </select>
+            </div>
+          )}
+
           <Button type="submit" disabled={loadingSesi || !selectedKelasId} className="w-full md:w-auto bg-slate-900 hover:bg-slate-800 text-white h-[46px] px-8">
             {loadingSesi ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Calendar className="w-4 h-4 mr-2" />}
             Buka Sesi

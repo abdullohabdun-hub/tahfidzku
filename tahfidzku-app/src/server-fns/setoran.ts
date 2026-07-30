@@ -87,13 +87,17 @@ export const createSetoran = createServerFn({ method: 'POST' })
 
         // ② Guard posisiTerakhir + juzUjianPending (satu CTE, atomik)
         if (data.jenis === 'ziyadah' && data.surahNomor && data.ayatAkhir) {
-          const newPosisi = { surahNomor: data.surahNomor, ayat: data.ayatAkhir }
+          const surahSelesaiNo = data.surahMeta?.meta?.[0]?.surahSelesai?.nomor;
+          if (!surahSelesaiNo) {
+            throw new ValidationError('Data surahSelesai tidak ditemukan dalam meta Ziyadah');
+          }
+          const newPosisi = { surahNomor: surahSelesaiNo, ayat: data.ayatAkhir }
           
           let juzSelesaiToSet: number | null = null
-          const juzSelesaiNow = cariJuzUntukAyat(data.surahNomor, data.ayatAkhir)
+          const juzSelesaiNow = cariJuzUntukAyat(surahSelesaiNo, data.ayatAkhir)
           if (juzSelesaiNow) {
             const akhirJuz = getAyatTerakhirJuz(juzSelesaiNow)
-            if (data.surahNomor === akhirJuz.surahNomor && data.ayatAkhir === akhirJuz.ayat) {
+            if (surahSelesaiNo === akhirJuz.surahNomor && data.ayatAkhir === akhirJuz.ayat) {
               juzSelesaiToSet = juzSelesaiNow
             }
           }
@@ -111,10 +115,11 @@ export const createSetoran = createServerFn({ method: 'POST' })
             )
             UPDATE santri SET
               posisi_terakhir   = CASE WHEN (SELECT boleh_update FROM is_latest)
-                                    THEN ${newPosisi}::jsonb ELSE posisi_terakhir END,
+                                    THEN ${JSON.stringify(newPosisi)}::jsonb ELSE posisi_terakhir END,
               juz_ujian_pending = CASE WHEN (SELECT boleh_update FROM is_latest)
                                          AND ${juzSelesaiToSet ?? null}::integer IS NOT NULL
-                                    THEN ${juzSelesaiToSet} ELSE juz_ujian_pending END
+                                    THEN ${juzSelesaiToSet}::integer ELSE juz_ujian_pending END
+
             WHERE id = ${data.santriId}
           `)
         }
@@ -204,7 +209,7 @@ export const updateSetoran = createServerFn({ method: 'POST' })
             "surah" = ${data.surah},
             "ayat_awal" = ${data.ayatAwal},
             "ayat_akhir" = ${data.ayatAkhir},
-            "surah_meta" = ${data.surahMeta}::jsonb,
+            "surah_meta" = ${data.surahMeta ? JSON.stringify(data.surahMeta) : null}::jsonb,
             "kualitas" = ${data.kualitas ?? null},
             "skor_kualitas" = ${(data as any).skorKualitas ?? null},
             "status_hafalan" = ${(data as any).statusHafalan ?? null},
@@ -212,7 +217,8 @@ export const updateSetoran = createServerFn({ method: 'POST' })
             "catatan" = ${data.catatan || null},
             "updated_at" = NOW(),
             "updated_by" = ${session.user.id},
-            "previous_data" = ${previousData}::jsonb
+            "previous_data" = ${JSON.stringify(previousData)}::jsonb
+
           WHERE "id" = ${data.id}
             AND "tenant_id" = ${tenantId}
             AND "ustadz_id" = ${session.user.id}
@@ -231,11 +237,15 @@ export const updateSetoran = createServerFn({ method: 'POST' })
         }
 
         // Cek apakah posisi tepat di ayat terakhir sebuah juz → trigger ujian pending, else clear
-        const juzSelesaiNow = cariJuzUntukAyat(data.surahNomor, data.ayatAkhir)
+        const surahSelesaiNo = data.surahMeta?.meta?.[0]?.surahSelesai?.nomor;
+        if (!surahSelesaiNo) {
+          throw new ValidationError('Data surahSelesai tidak ditemukan dalam meta Ziyadah saat update');
+        }
+        const juzSelesaiNow = cariJuzUntukAyat(surahSelesaiNo, data.ayatAkhir)
         let setJuzPending: number | null = null;
         if (juzSelesaiNow) {
           const akhirJuz = getAyatTerakhirJuz(juzSelesaiNow)
-          if (data.surahNomor === akhirJuz.surahNomor && data.ayatAkhir === akhirJuz.ayat) {
+          if (surahSelesaiNo === akhirJuz.surahNomor && data.ayatAkhir === akhirJuz.ayat) {
             setJuzPending = juzSelesaiNow;
           }
         }
@@ -244,7 +254,7 @@ export const updateSetoran = createServerFn({ method: 'POST' })
         await db
           .update(santri)
           .set({ 
-            posisiTerakhir: { surahNomor: data.surahNomor, ayat: data.ayatAkhir },
+            posisiTerakhir: { surahNomor: surahSelesaiNo, ayat: data.ayatAkhir },
             juzUjianPending: setJuzPending
           })
           .where(eq(santri.id, data.santriId))

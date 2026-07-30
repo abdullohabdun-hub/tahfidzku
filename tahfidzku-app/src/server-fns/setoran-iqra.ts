@@ -8,7 +8,7 @@ import { createSetoranIqraSchema, createUjianIqraSchema } from '../lib/validator
 import { success, handleError } from '../lib/response'
 import { AuthenticationError, ForbiddenError, NotFoundError } from '../lib/errors'
 import { verifyAksesSantri } from '../lib/authz'
-import { getTodayWIB } from '../lib/dateUtils'
+import { getTodayWIB, parseDateString } from '../lib/dateUtils'
 
 export const createSetoranIqra = createServerFn({ method: 'POST' })
   .validator(createSetoranIqraSchema)
@@ -203,11 +203,11 @@ export const getRiwayatIqraSantriSelf = createServerFn({ method: 'POST' }).handl
     })
 
     const combined = [
-      ...setoranData.map(s => ({ type: 'setoran' as const, date: s.createdAt, data: s, ustadzNama: s.createdBy?.nama })),
+      ...setoranData.map(s => ({ type: 'setoran' as const, date: s.tanggalSetoran, data: s, ustadzNama: s.createdBy?.nama })),
       ...ujianData.map(u => ({ type: 'ujian' as const, date: u.tanggalUjian, data: u, ustadzNama: u.ujiOlehUstadz?.nama }))
     ]
 
-    combined.sort((a, b) => b.date.getTime() - a.date.getTime())
+    combined.sort((a, b) => parseDateString(b.date).getTime() - parseDateString(a.date).getTime())
 
     return success(combined, 'Berhasil memuat riwayat Iqra santri')
   } catch (err) {
@@ -250,11 +250,11 @@ export const getRiwayatIqraUstadz = createServerFn({ method: 'POST' }).handler(a
     })
 
     const combined = [
-      ...setoranData.map(s => ({ type: 'setoran' as const, date: s.createdAt, data: s, santriNama: s.santri.nama })),
+      ...setoranData.map(s => ({ type: 'setoran' as const, date: s.tanggalSetoran, data: s, santriNama: s.santri.nama })),
       ...ujianData.map(u => ({ type: 'ujian' as const, date: u.tanggalUjian, data: u, santriNama: u.santri.nama }))
     ]
 
-    combined.sort((a, b) => b.date.getTime() - a.date.getTime())
+    combined.sort((a, b) => parseDateString(b.date).getTime() - parseDateString(a.date).getTime())
     // Ambil top 50 saja dari gabungan
     const sliced = combined.slice(0, 50)
 
@@ -317,7 +317,7 @@ export const getMonthlyReportIqra = createServerFn({ method: 'POST' })
       const combined = [
         ...setoranData.map(s => ({
           type: 'setoran' as const,
-          date: s.createdAt,
+          date: s.tanggalSetoran,
           data: s,
           santriNama: s.santri?.nama || 'Unknown',
           kelasNama: s.santri?.kelas?.nama || 'Unknown',
@@ -333,7 +333,7 @@ export const getMonthlyReportIqra = createServerFn({ method: 'POST' })
         }))
       ]
 
-      combined.sort((a, b) => b.date.getTime() - a.date.getTime())
+      combined.sort((a, b) => parseDateString(b.date).getTime() - parseDateString(a.date).getTime())
 
       return success(combined, 'Berhasil mengambil laporan Iqra bulanan')
     } catch (err) {

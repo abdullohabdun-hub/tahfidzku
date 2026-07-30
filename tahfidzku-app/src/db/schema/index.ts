@@ -8,7 +8,7 @@ export { setoran, jenisSetoranEnum, kualitasEnum, sumberSetoranEnum, rubrikPenil
 export { setoranIqra } from './setoranIqra'
 export { ujianIqra } from './ujianIqra'
 export { ujian, statusUjianEnum, skorKelancaranEnum, skorTajwidEnum } from './ujian'
-export { kelas, hariEnum } from './kelas'
+export { kelas, hariEnum, tipeKelasEnum } from './kelas'
 export { impersonationLogs, impersonationTargetRoleEnum } from './impersonation'
 export { billingLogs, billingActionEnum } from './billing-logs'
 export { sesiKelas, absensi, statusAbsensiEnum, rekapMingguanSantri } from './absensi'

@@ -17,12 +17,10 @@ export const sesiKelas = pgTable('sesi_kelas', {
   tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   kelasId: uuid('kelas_id').notNull().references(() => kelas.id, { onDelete: 'cascade' }),
   tanggal: date('tanggal').notNull(),
-  waktuSesi: waktuSesiEnum('waktu_sesi').notNull(),
+  waktuSesi: waktuSesiEnum('waktu_sesi'),
   createdBy: uuid('created_by').notNull().references(() => users.id),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-}, (table) => ({
-  uniqSesi: uniqueIndex('uniq_sesi_kelas_tanggal_waktu').on(table.kelasId, table.tanggal, table.waktuSesi),
-}))
+})
 
 export const absensi = pgTable('absensi', {
   id: uuid('id').defaultRandom().primaryKey(),

@@ -28,6 +28,11 @@ export const raporSettings = pgTable('rapor_settings', {
   // Contoh: { skor5: 'Mumtaz', skor4: 'Jayyid Jiddan', skor3: 'Jayyid', skor2: "Da'if", skor1: "Da'if Jiddan" }
   labelPenilaian: jsonb('label_penilaian').$type<Record<string, string>>(),
 
+  // Pengaturan default waktu shalat untuk sesi kelas reguler
+  // nullable — null berarti "semua waktu shalat diizinkan" (fallback existing)
+  // NOTE: semantik absensi, bukan rapor — kandidat refactor ke tenant_settings generik
+  sesiRegulerDefault: jsonb('sesi_reguler_default').$type<string[]>(),
+
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })
