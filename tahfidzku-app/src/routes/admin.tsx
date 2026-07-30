@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "../components/ui/button"
 import { checkAuth, logout } from "../server-fns/auth"
 import { getTenantInfo } from "../server-fns/admin-settings"
+import { HelpTicketButton } from "../components/tiket/HelpTicketButton"
 
 export const Route = createFileRoute('/admin')({
   component: AdminLayout,
@@ -181,6 +182,7 @@ function AdminLayout() {
             <div className="hidden sm:block text-right mr-2">
               <p className="text-xs font-medium text-slate-900">{new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
             </div>
+            <HelpTicketButton baseUrl="/admin/tiket" />
             <button className="p-2 rounded-full hover:bg-slate-100 text-slate-400 transition-colors relative">
               <Bell className="w-5 h-5" />
             </button>

@@ -1,8 +1,10 @@
 import { createFileRoute, Outlet, Link, useLocation, useRouter } from "@tanstack/react-router"
 import { Home, PlusCircle, History, Award, Clock, LogOut, BookOpen, Calendar } from "lucide-react"
 import { useState, useEffect } from "react"
+import { Button } from "../components/ui/button"
 import { checkAuth, logout } from "../server-fns/auth"
 import { getTenantInfo } from "../server-fns/admin-settings"
+import { HelpTicketButton } from "../components/tiket/HelpTicketButton"
 
 export const Route = createFileRoute('/ustadz')({
   component: UstadzLayout,
@@ -64,7 +66,8 @@ function UstadzLayout() {
           </div>
           <span className="font-bold text-base text-emerald-950 tracking-tight">{tenantName} Ustadz</span>
         </div>
-        <div className="flex gap-3 items-center">
+        <div className="flex gap-2 items-center">
+          <HelpTicketButton baseUrl="/ustadz/tiket" />
           <Link to="/ustadz/profil" className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold border border-emerald-200 uppercase text-xs md:text-sm hover:ring-2 hover:ring-emerald-500 hover:bg-emerald-200 transition-all cursor-pointer">
             {user?.nama ? user.nama.substring(0, 2) : "US"}
           </Link>

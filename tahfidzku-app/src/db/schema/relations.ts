@@ -12,6 +12,7 @@ import { billingLogs } from './billing-logs'
 import { absensi, sesiKelas } from './absensi'
 import { waliSantri } from './wali-santri'
 import { raporSettings } from './rapor-settings'
+import { tiket, tiketBalasan } from './tiket'
 export const tenantsRelations = relations(tenants, ({ one, many }) => ({
   users: many(users),
   kelas: many(kelas),
@@ -26,6 +27,7 @@ export const tenantsRelations = relations(tenants, ({ one, many }) => ({
     fields: [tenants.id],
     references: [raporSettings.tenantId],
   }),
+  tiket: many(tiket),
 }))
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -42,6 +44,8 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     references: [santri.id],
   }),
   daftarAnak: many(waliSantri), // Untuk role wali (many-to-many)
+  tiketDikirim: many(tiket),
+  tiketBalasan: many(tiketBalasan),
 }))
 
 export const kelasRelations = relations(kelas, ({ one, many }) => ({
@@ -228,3 +232,25 @@ export const ujianIqraRelations = relations(ujianIqra, ({ one }) => ({
   }),
 }))
 
+export const tiketRelations = relations(tiket, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [tiket.tenantId],
+    references: [tenants.id],
+  }),
+  submitter: one(users, {
+    fields: [tiket.submitterId],
+    references: [users.id],
+  }),
+  balasan: many(tiketBalasan),
+}))
+
+export const tiketBalasanRelations = relations(tiketBalasan, ({ one }) => ({
+  tiket: one(tiket, {
+    fields: [tiketBalasan.tiketId],
+    references: [tiket.id],
+  }),
+  author: one(users, {
+    fields: [tiketBalasan.authorId],
+    references: [users.id],
+  }),
+}))

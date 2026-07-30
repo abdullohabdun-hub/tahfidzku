@@ -3,6 +3,7 @@ import { checkAuth, logout } from '../server-fns/auth'
 import { LayoutDashboard, Building2, LogOut, Loader2, Menu, X, ChevronLeft, ChevronRight, Bell } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { useState, useEffect } from 'react'
+import { HelpTicketButton } from '../components/tiket/HelpTicketButton'
 
 export const Route = createFileRoute('/superadmin')({
   beforeLoad: async () => {
@@ -167,6 +168,7 @@ function SuperAdminLayout() {
           </div>
 
           <div className="flex items-center gap-4">
+            <HelpTicketButton baseUrl="/superadmin/tiket" />
             <button className="p-2 rounded-full hover:bg-slate-100 text-slate-400 transition-colors relative">
               <Bell className="w-5 h-5" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 border-2 border-white"></span>

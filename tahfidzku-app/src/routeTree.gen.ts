@@ -41,9 +41,24 @@ import { Route as AdminSantriRouteImport } from './routes/admin/santri'
 import { Route as AdminPengaturanRouteImport } from './routes/admin/pengaturan'
 import { Route as AdminLaporanRouteImport } from './routes/admin/laporan'
 import { Route as AdminKelasRouteImport } from './routes/admin/kelas'
+import { Route as WaliTiketIndexRouteImport } from './routes/wali/tiket/index'
+import { Route as UstadzTiketIndexRouteImport } from './routes/ustadz/tiket/index'
+import { Route as SuperadminTiketIndexRouteImport } from './routes/superadmin/tiket/index'
 import { Route as SuperadminLembagaIndexRouteImport } from './routes/superadmin/lembaga/index'
+import { Route as SantriTiketIndexRouteImport } from './routes/santri/tiket/index'
+import { Route as AdminTiketIndexRouteImport } from './routes/admin/tiket/index'
 import { Route as AdminRaporIndexRouteImport } from './routes/admin/rapor/index'
+import { Route as WaliTiketBuatRouteImport } from './routes/wali/tiket/buat'
+import { Route as WaliTiketTiketIdRouteImport } from './routes/wali/tiket/$tiketId'
+import { Route as UstadzTiketBuatRouteImport } from './routes/ustadz/tiket/buat'
+import { Route as UstadzTiketTiketIdRouteImport } from './routes/ustadz/tiket/$tiketId'
+import { Route as SuperadminTiketBuatRouteImport } from './routes/superadmin/tiket/buat'
+import { Route as SuperadminTiketTiketIdRouteImport } from './routes/superadmin/tiket/$tiketId'
 import { Route as SuperadminLembagaTenantIdRouteImport } from './routes/superadmin/lembaga/$tenantId'
+import { Route as SantriTiketBuatRouteImport } from './routes/santri/tiket/buat'
+import { Route as SantriTiketTiketIdRouteImport } from './routes/santri/tiket/$tiketId'
+import { Route as AdminTiketBuatRouteImport } from './routes/admin/tiket/buat'
+import { Route as AdminTiketTiketIdRouteImport } from './routes/admin/tiket/$tiketId'
 import { Route as AdminRaporSantriIdRouteImport } from './routes/admin/rapor/$santriId'
 
 const WaliRoute = WaliRouteImport.update({
@@ -206,15 +221,70 @@ const AdminKelasRoute = AdminKelasRouteImport.update({
   path: '/kelas',
   getParentRoute: () => AdminRoute,
 } as any)
+const WaliTiketIndexRoute = WaliTiketIndexRouteImport.update({
+  id: '/tiket/',
+  path: '/tiket/',
+  getParentRoute: () => WaliRoute,
+} as any)
+const UstadzTiketIndexRoute = UstadzTiketIndexRouteImport.update({
+  id: '/tiket/',
+  path: '/tiket/',
+  getParentRoute: () => UstadzRoute,
+} as any)
+const SuperadminTiketIndexRoute = SuperadminTiketIndexRouteImport.update({
+  id: '/tiket/',
+  path: '/tiket/',
+  getParentRoute: () => SuperadminRoute,
+} as any)
 const SuperadminLembagaIndexRoute = SuperadminLembagaIndexRouteImport.update({
   id: '/lembaga/',
   path: '/lembaga/',
   getParentRoute: () => SuperadminRoute,
 } as any)
+const SantriTiketIndexRoute = SantriTiketIndexRouteImport.update({
+  id: '/tiket/',
+  path: '/tiket/',
+  getParentRoute: () => SantriRoute,
+} as any)
+const AdminTiketIndexRoute = AdminTiketIndexRouteImport.update({
+  id: '/tiket/',
+  path: '/tiket/',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminRaporIndexRoute = AdminRaporIndexRouteImport.update({
   id: '/rapor/',
   path: '/rapor/',
   getParentRoute: () => AdminRoute,
+} as any)
+const WaliTiketBuatRoute = WaliTiketBuatRouteImport.update({
+  id: '/tiket/buat',
+  path: '/tiket/buat',
+  getParentRoute: () => WaliRoute,
+} as any)
+const WaliTiketTiketIdRoute = WaliTiketTiketIdRouteImport.update({
+  id: '/tiket/$tiketId',
+  path: '/tiket/$tiketId',
+  getParentRoute: () => WaliRoute,
+} as any)
+const UstadzTiketBuatRoute = UstadzTiketBuatRouteImport.update({
+  id: '/tiket/buat',
+  path: '/tiket/buat',
+  getParentRoute: () => UstadzRoute,
+} as any)
+const UstadzTiketTiketIdRoute = UstadzTiketTiketIdRouteImport.update({
+  id: '/tiket/$tiketId',
+  path: '/tiket/$tiketId',
+  getParentRoute: () => UstadzRoute,
+} as any)
+const SuperadminTiketBuatRoute = SuperadminTiketBuatRouteImport.update({
+  id: '/tiket/buat',
+  path: '/tiket/buat',
+  getParentRoute: () => SuperadminRoute,
+} as any)
+const SuperadminTiketTiketIdRoute = SuperadminTiketTiketIdRouteImport.update({
+  id: '/tiket/$tiketId',
+  path: '/tiket/$tiketId',
+  getParentRoute: () => SuperadminRoute,
 } as any)
 const SuperadminLembagaTenantIdRoute =
   SuperadminLembagaTenantIdRouteImport.update({
@@ -222,6 +292,26 @@ const SuperadminLembagaTenantIdRoute =
     path: '/lembaga/$tenantId',
     getParentRoute: () => SuperadminRoute,
   } as any)
+const SantriTiketBuatRoute = SantriTiketBuatRouteImport.update({
+  id: '/tiket/buat',
+  path: '/tiket/buat',
+  getParentRoute: () => SantriRoute,
+} as any)
+const SantriTiketTiketIdRoute = SantriTiketTiketIdRouteImport.update({
+  id: '/tiket/$tiketId',
+  path: '/tiket/$tiketId',
+  getParentRoute: () => SantriRoute,
+} as any)
+const AdminTiketBuatRoute = AdminTiketBuatRouteImport.update({
+  id: '/tiket/buat',
+  path: '/tiket/buat',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTiketTiketIdRoute = AdminTiketTiketIdRouteImport.update({
+  id: '/tiket/$tiketId',
+  path: '/tiket/$tiketId',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminRaporSantriIdRoute = AdminRaporSantriIdRouteImport.update({
   id: '/rapor/$santriId',
   path: '/rapor/$santriId',
@@ -262,9 +352,24 @@ export interface FileRoutesByFullPath {
   '/ustadz/': typeof UstadzIndexRoute
   '/wali/': typeof WaliIndexRoute
   '/admin/rapor/$santriId': typeof AdminRaporSantriIdRoute
+  '/admin/tiket/$tiketId': typeof AdminTiketTiketIdRoute
+  '/admin/tiket/buat': typeof AdminTiketBuatRoute
+  '/santri/tiket/$tiketId': typeof SantriTiketTiketIdRoute
+  '/santri/tiket/buat': typeof SantriTiketBuatRoute
   '/superadmin/lembaga/$tenantId': typeof SuperadminLembagaTenantIdRoute
+  '/superadmin/tiket/$tiketId': typeof SuperadminTiketTiketIdRoute
+  '/superadmin/tiket/buat': typeof SuperadminTiketBuatRoute
+  '/ustadz/tiket/$tiketId': typeof UstadzTiketTiketIdRoute
+  '/ustadz/tiket/buat': typeof UstadzTiketBuatRoute
+  '/wali/tiket/$tiketId': typeof WaliTiketTiketIdRoute
+  '/wali/tiket/buat': typeof WaliTiketBuatRoute
   '/admin/rapor/': typeof AdminRaporIndexRoute
+  '/admin/tiket/': typeof AdminTiketIndexRoute
+  '/santri/tiket/': typeof SantriTiketIndexRoute
   '/superadmin/lembaga/': typeof SuperadminLembagaIndexRoute
+  '/superadmin/tiket/': typeof SuperadminTiketIndexRoute
+  '/ustadz/tiket/': typeof UstadzTiketIndexRoute
+  '/wali/tiket/': typeof WaliTiketIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -295,9 +400,24 @@ export interface FileRoutesByTo {
   '/ustadz': typeof UstadzIndexRoute
   '/wali': typeof WaliIndexRoute
   '/admin/rapor/$santriId': typeof AdminRaporSantriIdRoute
+  '/admin/tiket/$tiketId': typeof AdminTiketTiketIdRoute
+  '/admin/tiket/buat': typeof AdminTiketBuatRoute
+  '/santri/tiket/$tiketId': typeof SantriTiketTiketIdRoute
+  '/santri/tiket/buat': typeof SantriTiketBuatRoute
   '/superadmin/lembaga/$tenantId': typeof SuperadminLembagaTenantIdRoute
+  '/superadmin/tiket/$tiketId': typeof SuperadminTiketTiketIdRoute
+  '/superadmin/tiket/buat': typeof SuperadminTiketBuatRoute
+  '/ustadz/tiket/$tiketId': typeof UstadzTiketTiketIdRoute
+  '/ustadz/tiket/buat': typeof UstadzTiketBuatRoute
+  '/wali/tiket/$tiketId': typeof WaliTiketTiketIdRoute
+  '/wali/tiket/buat': typeof WaliTiketBuatRoute
   '/admin/rapor': typeof AdminRaporIndexRoute
+  '/admin/tiket': typeof AdminTiketIndexRoute
+  '/santri/tiket': typeof SantriTiketIndexRoute
   '/superadmin/lembaga': typeof SuperadminLembagaIndexRoute
+  '/superadmin/tiket': typeof SuperadminTiketIndexRoute
+  '/ustadz/tiket': typeof UstadzTiketIndexRoute
+  '/wali/tiket': typeof WaliTiketIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -334,9 +454,24 @@ export interface FileRoutesById {
   '/ustadz/': typeof UstadzIndexRoute
   '/wali/': typeof WaliIndexRoute
   '/admin/rapor/$santriId': typeof AdminRaporSantriIdRoute
+  '/admin/tiket/$tiketId': typeof AdminTiketTiketIdRoute
+  '/admin/tiket/buat': typeof AdminTiketBuatRoute
+  '/santri/tiket/$tiketId': typeof SantriTiketTiketIdRoute
+  '/santri/tiket/buat': typeof SantriTiketBuatRoute
   '/superadmin/lembaga/$tenantId': typeof SuperadminLembagaTenantIdRoute
+  '/superadmin/tiket/$tiketId': typeof SuperadminTiketTiketIdRoute
+  '/superadmin/tiket/buat': typeof SuperadminTiketBuatRoute
+  '/ustadz/tiket/$tiketId': typeof UstadzTiketTiketIdRoute
+  '/ustadz/tiket/buat': typeof UstadzTiketBuatRoute
+  '/wali/tiket/$tiketId': typeof WaliTiketTiketIdRoute
+  '/wali/tiket/buat': typeof WaliTiketBuatRoute
   '/admin/rapor/': typeof AdminRaporIndexRoute
+  '/admin/tiket/': typeof AdminTiketIndexRoute
+  '/santri/tiket/': typeof SantriTiketIndexRoute
   '/superadmin/lembaga/': typeof SuperadminLembagaIndexRoute
+  '/superadmin/tiket/': typeof SuperadminTiketIndexRoute
+  '/ustadz/tiket/': typeof UstadzTiketIndexRoute
+  '/wali/tiket/': typeof WaliTiketIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -374,9 +509,24 @@ export interface FileRouteTypes {
     | '/ustadz/'
     | '/wali/'
     | '/admin/rapor/$santriId'
+    | '/admin/tiket/$tiketId'
+    | '/admin/tiket/buat'
+    | '/santri/tiket/$tiketId'
+    | '/santri/tiket/buat'
     | '/superadmin/lembaga/$tenantId'
+    | '/superadmin/tiket/$tiketId'
+    | '/superadmin/tiket/buat'
+    | '/ustadz/tiket/$tiketId'
+    | '/ustadz/tiket/buat'
+    | '/wali/tiket/$tiketId'
+    | '/wali/tiket/buat'
     | '/admin/rapor/'
+    | '/admin/tiket/'
+    | '/santri/tiket/'
     | '/superadmin/lembaga/'
+    | '/superadmin/tiket/'
+    | '/ustadz/tiket/'
+    | '/wali/tiket/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -407,9 +557,24 @@ export interface FileRouteTypes {
     | '/ustadz'
     | '/wali'
     | '/admin/rapor/$santriId'
+    | '/admin/tiket/$tiketId'
+    | '/admin/tiket/buat'
+    | '/santri/tiket/$tiketId'
+    | '/santri/tiket/buat'
     | '/superadmin/lembaga/$tenantId'
+    | '/superadmin/tiket/$tiketId'
+    | '/superadmin/tiket/buat'
+    | '/ustadz/tiket/$tiketId'
+    | '/ustadz/tiket/buat'
+    | '/wali/tiket/$tiketId'
+    | '/wali/tiket/buat'
     | '/admin/rapor'
+    | '/admin/tiket'
+    | '/santri/tiket'
     | '/superadmin/lembaga'
+    | '/superadmin/tiket'
+    | '/ustadz/tiket'
+    | '/wali/tiket'
   id:
     | '__root__'
     | '/'
@@ -445,9 +610,24 @@ export interface FileRouteTypes {
     | '/ustadz/'
     | '/wali/'
     | '/admin/rapor/$santriId'
+    | '/admin/tiket/$tiketId'
+    | '/admin/tiket/buat'
+    | '/santri/tiket/$tiketId'
+    | '/santri/tiket/buat'
     | '/superadmin/lembaga/$tenantId'
+    | '/superadmin/tiket/$tiketId'
+    | '/superadmin/tiket/buat'
+    | '/ustadz/tiket/$tiketId'
+    | '/ustadz/tiket/buat'
+    | '/wali/tiket/$tiketId'
+    | '/wali/tiket/buat'
     | '/admin/rapor/'
+    | '/admin/tiket/'
+    | '/santri/tiket/'
     | '/superadmin/lembaga/'
+    | '/superadmin/tiket/'
+    | '/ustadz/tiket/'
+    | '/wali/tiket/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -687,12 +867,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminKelasRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/wali/tiket/': {
+      id: '/wali/tiket/'
+      path: '/tiket'
+      fullPath: '/wali/tiket/'
+      preLoaderRoute: typeof WaliTiketIndexRouteImport
+      parentRoute: typeof WaliRoute
+    }
+    '/ustadz/tiket/': {
+      id: '/ustadz/tiket/'
+      path: '/tiket'
+      fullPath: '/ustadz/tiket/'
+      preLoaderRoute: typeof UstadzTiketIndexRouteImport
+      parentRoute: typeof UstadzRoute
+    }
+    '/superadmin/tiket/': {
+      id: '/superadmin/tiket/'
+      path: '/tiket'
+      fullPath: '/superadmin/tiket/'
+      preLoaderRoute: typeof SuperadminTiketIndexRouteImport
+      parentRoute: typeof SuperadminRoute
+    }
     '/superadmin/lembaga/': {
       id: '/superadmin/lembaga/'
       path: '/lembaga'
       fullPath: '/superadmin/lembaga/'
       preLoaderRoute: typeof SuperadminLembagaIndexRouteImport
       parentRoute: typeof SuperadminRoute
+    }
+    '/santri/tiket/': {
+      id: '/santri/tiket/'
+      path: '/tiket'
+      fullPath: '/santri/tiket/'
+      preLoaderRoute: typeof SantriTiketIndexRouteImport
+      parentRoute: typeof SantriRoute
+    }
+    '/admin/tiket/': {
+      id: '/admin/tiket/'
+      path: '/tiket'
+      fullPath: '/admin/tiket/'
+      preLoaderRoute: typeof AdminTiketIndexRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/rapor/': {
       id: '/admin/rapor/'
@@ -701,12 +916,82 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRaporIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/wali/tiket/buat': {
+      id: '/wali/tiket/buat'
+      path: '/tiket/buat'
+      fullPath: '/wali/tiket/buat'
+      preLoaderRoute: typeof WaliTiketBuatRouteImport
+      parentRoute: typeof WaliRoute
+    }
+    '/wali/tiket/$tiketId': {
+      id: '/wali/tiket/$tiketId'
+      path: '/tiket/$tiketId'
+      fullPath: '/wali/tiket/$tiketId'
+      preLoaderRoute: typeof WaliTiketTiketIdRouteImport
+      parentRoute: typeof WaliRoute
+    }
+    '/ustadz/tiket/buat': {
+      id: '/ustadz/tiket/buat'
+      path: '/tiket/buat'
+      fullPath: '/ustadz/tiket/buat'
+      preLoaderRoute: typeof UstadzTiketBuatRouteImport
+      parentRoute: typeof UstadzRoute
+    }
+    '/ustadz/tiket/$tiketId': {
+      id: '/ustadz/tiket/$tiketId'
+      path: '/tiket/$tiketId'
+      fullPath: '/ustadz/tiket/$tiketId'
+      preLoaderRoute: typeof UstadzTiketTiketIdRouteImport
+      parentRoute: typeof UstadzRoute
+    }
+    '/superadmin/tiket/buat': {
+      id: '/superadmin/tiket/buat'
+      path: '/tiket/buat'
+      fullPath: '/superadmin/tiket/buat'
+      preLoaderRoute: typeof SuperadminTiketBuatRouteImport
+      parentRoute: typeof SuperadminRoute
+    }
+    '/superadmin/tiket/$tiketId': {
+      id: '/superadmin/tiket/$tiketId'
+      path: '/tiket/$tiketId'
+      fullPath: '/superadmin/tiket/$tiketId'
+      preLoaderRoute: typeof SuperadminTiketTiketIdRouteImport
+      parentRoute: typeof SuperadminRoute
+    }
     '/superadmin/lembaga/$tenantId': {
       id: '/superadmin/lembaga/$tenantId'
       path: '/lembaga/$tenantId'
       fullPath: '/superadmin/lembaga/$tenantId'
       preLoaderRoute: typeof SuperadminLembagaTenantIdRouteImport
       parentRoute: typeof SuperadminRoute
+    }
+    '/santri/tiket/buat': {
+      id: '/santri/tiket/buat'
+      path: '/tiket/buat'
+      fullPath: '/santri/tiket/buat'
+      preLoaderRoute: typeof SantriTiketBuatRouteImport
+      parentRoute: typeof SantriRoute
+    }
+    '/santri/tiket/$tiketId': {
+      id: '/santri/tiket/$tiketId'
+      path: '/tiket/$tiketId'
+      fullPath: '/santri/tiket/$tiketId'
+      preLoaderRoute: typeof SantriTiketTiketIdRouteImport
+      parentRoute: typeof SantriRoute
+    }
+    '/admin/tiket/buat': {
+      id: '/admin/tiket/buat'
+      path: '/tiket/buat'
+      fullPath: '/admin/tiket/buat'
+      preLoaderRoute: typeof AdminTiketBuatRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/tiket/$tiketId': {
+      id: '/admin/tiket/$tiketId'
+      path: '/tiket/$tiketId'
+      fullPath: '/admin/tiket/$tiketId'
+      preLoaderRoute: typeof AdminTiketTiketIdRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/rapor/$santriId': {
       id: '/admin/rapor/$santriId'
@@ -727,7 +1012,10 @@ interface AdminRouteChildren {
   AdminUstadzRoute: typeof AdminUstadzRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminRaporSantriIdRoute: typeof AdminRaporSantriIdRoute
+  AdminTiketTiketIdRoute: typeof AdminTiketTiketIdRoute
+  AdminTiketBuatRoute: typeof AdminTiketBuatRoute
   AdminRaporIndexRoute: typeof AdminRaporIndexRoute
+  AdminTiketIndexRoute: typeof AdminTiketIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
@@ -739,7 +1027,10 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminUstadzRoute: AdminUstadzRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminRaporSantriIdRoute: AdminRaporSantriIdRoute,
+  AdminTiketTiketIdRoute: AdminTiketTiketIdRoute,
+  AdminTiketBuatRoute: AdminTiketBuatRoute,
   AdminRaporIndexRoute: AdminRaporIndexRoute,
+  AdminTiketIndexRoute: AdminTiketIndexRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
@@ -750,6 +1041,9 @@ interface SantriRouteChildren {
   SantriRiwayatRoute: typeof SantriRiwayatRoute
   SantriUjianRoute: typeof SantriUjianRoute
   SantriIndexRoute: typeof SantriIndexRoute
+  SantriTiketTiketIdRoute: typeof SantriTiketTiketIdRoute
+  SantriTiketBuatRoute: typeof SantriTiketBuatRoute
+  SantriTiketIndexRoute: typeof SantriTiketIndexRoute
 }
 
 const SantriRouteChildren: SantriRouteChildren = {
@@ -758,6 +1052,9 @@ const SantriRouteChildren: SantriRouteChildren = {
   SantriRiwayatRoute: SantriRiwayatRoute,
   SantriUjianRoute: SantriUjianRoute,
   SantriIndexRoute: SantriIndexRoute,
+  SantriTiketTiketIdRoute: SantriTiketTiketIdRoute,
+  SantriTiketBuatRoute: SantriTiketBuatRoute,
+  SantriTiketIndexRoute: SantriTiketIndexRoute,
 }
 
 const SantriRouteWithChildren =
@@ -766,13 +1063,19 @@ const SantriRouteWithChildren =
 interface SuperadminRouteChildren {
   SuperadminIndexRoute: typeof SuperadminIndexRoute
   SuperadminLembagaTenantIdRoute: typeof SuperadminLembagaTenantIdRoute
+  SuperadminTiketTiketIdRoute: typeof SuperadminTiketTiketIdRoute
+  SuperadminTiketBuatRoute: typeof SuperadminTiketBuatRoute
   SuperadminLembagaIndexRoute: typeof SuperadminLembagaIndexRoute
+  SuperadminTiketIndexRoute: typeof SuperadminTiketIndexRoute
 }
 
 const SuperadminRouteChildren: SuperadminRouteChildren = {
   SuperadminIndexRoute: SuperadminIndexRoute,
   SuperadminLembagaTenantIdRoute: SuperadminLembagaTenantIdRoute,
+  SuperadminTiketTiketIdRoute: SuperadminTiketTiketIdRoute,
+  SuperadminTiketBuatRoute: SuperadminTiketBuatRoute,
   SuperadminLembagaIndexRoute: SuperadminLembagaIndexRoute,
+  SuperadminTiketIndexRoute: SuperadminTiketIndexRoute,
 }
 
 const SuperadminRouteWithChildren = SuperadminRoute._addFileChildren(
@@ -787,6 +1090,9 @@ interface UstadzRouteChildren {
   UstadzRiwayatRoute: typeof UstadzRiwayatRoute
   UstadzUjianRoute: typeof UstadzUjianRoute
   UstadzIndexRoute: typeof UstadzIndexRoute
+  UstadzTiketTiketIdRoute: typeof UstadzTiketTiketIdRoute
+  UstadzTiketBuatRoute: typeof UstadzTiketBuatRoute
+  UstadzTiketIndexRoute: typeof UstadzTiketIndexRoute
 }
 
 const UstadzRouteChildren: UstadzRouteChildren = {
@@ -797,6 +1103,9 @@ const UstadzRouteChildren: UstadzRouteChildren = {
   UstadzRiwayatRoute: UstadzRiwayatRoute,
   UstadzUjianRoute: UstadzUjianRoute,
   UstadzIndexRoute: UstadzIndexRoute,
+  UstadzTiketTiketIdRoute: UstadzTiketTiketIdRoute,
+  UstadzTiketBuatRoute: UstadzTiketBuatRoute,
+  UstadzTiketIndexRoute: UstadzTiketIndexRoute,
 }
 
 const UstadzRouteWithChildren =
@@ -807,6 +1116,9 @@ interface WaliRouteChildren {
   WaliProfilRoute: typeof WaliProfilRoute
   WaliUjianRoute: typeof WaliUjianRoute
   WaliIndexRoute: typeof WaliIndexRoute
+  WaliTiketTiketIdRoute: typeof WaliTiketTiketIdRoute
+  WaliTiketBuatRoute: typeof WaliTiketBuatRoute
+  WaliTiketIndexRoute: typeof WaliTiketIndexRoute
 }
 
 const WaliRouteChildren: WaliRouteChildren = {
@@ -814,6 +1126,9 @@ const WaliRouteChildren: WaliRouteChildren = {
   WaliProfilRoute: WaliProfilRoute,
   WaliUjianRoute: WaliUjianRoute,
   WaliIndexRoute: WaliIndexRoute,
+  WaliTiketTiketIdRoute: WaliTiketTiketIdRoute,
+  WaliTiketBuatRoute: WaliTiketBuatRoute,
+  WaliTiketIndexRoute: WaliTiketIndexRoute,
 }
 
 const WaliRouteWithChildren = WaliRoute._addFileChildren(WaliRouteChildren)

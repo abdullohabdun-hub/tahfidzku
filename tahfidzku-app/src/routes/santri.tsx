@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, Link, useLocation, useRouter } from "@tanstack
 import { Home, PencilLine, Award, BookOpen, LogOut, History } from "lucide-react"
 import { useState, useEffect } from "react"
 import { checkAuth, logout } from "../server-fns/auth"
+import { HelpTicketButton } from "../components/tiket/HelpTicketButton"
 
 export const Route = createFileRoute('/santri')({
   component: SantriLayout,
@@ -55,7 +56,8 @@ function SantriLayout() {
           </div>
           <span className="font-bold text-base text-emerald-950 tracking-tight">TahfidzKu Santri</span>
         </div>
-        <div className="flex gap-3 items-center">
+        <div className="flex gap-2 items-center">
+          <HelpTicketButton baseUrl="/santri/tiket" />
           <Link to="/santri/profil" className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold border border-emerald-200 uppercase text-xs md:text-sm hover:ring-2 hover:ring-emerald-500 hover:bg-emerald-200 transition-all cursor-pointer">
             {user?.nama ? user.nama.substring(0, 2) : "SA"}
           </Link>

@@ -1,6 +1,6 @@
 {
-  "id": "aaca7617-3e15-4725-abb2-4437a3cff0ea",
-  "prevId": "56a8405c-9895-4d68-997c-138cda24ca74",
+  "id": "219ae2d7-12bd-4e35-a416-aa692dc2ceba",
+  "prevId": "6076be1c-f36a-4597-9fc9-398eabed3af0",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -499,6 +499,12 @@
         },
         "label_penilaian": {
           "name": "label_penilaian",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sesi_reguler_default": {
+          "name": "sesi_reguler_default",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false
@@ -1649,6 +1655,192 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.tiket": {
+      "name": "tiket",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "submitter_id": {
+          "name": "submitter_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "submitter_role": {
+          "name": "submitter_role",
+          "type": "user_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kategori": {
+          "name": "kategori",
+          "type": "tiket_kategori",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "subject": {
+          "name": "subject",
+          "type": "varchar(150)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "message": {
+          "name": "message",
+          "type": "varchar(2000)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "tiket_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'baru'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "tiket_tenant_id_tenants_id_fk": {
+          "name": "tiket_tenant_id_tenants_id_fk",
+          "tableFrom": "tiket",
+          "tableTo": "tenants",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "tiket_submitter_id_users_id_fk": {
+          "name": "tiket_submitter_id_users_id_fk",
+          "tableFrom": "tiket",
+          "tableTo": "users",
+          "columnsFrom": [
+            "submitter_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.tiket_balasan": {
+      "name": "tiket_balasan",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tiket_id": {
+          "name": "tiket_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "author_id": {
+          "name": "author_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "author_role": {
+          "name": "author_role",
+          "type": "author_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pesan": {
+          "name": "pesan",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "tiket_balasan_tiket_id_tiket_id_fk": {
+          "name": "tiket_balasan_tiket_id_tiket_id_fk",
+          "tableFrom": "tiket_balasan",
+          "tableTo": "tiket",
+          "columnsFrom": [
+            "tiket_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "tiket_balasan_author_id_users_id_fk": {
+          "name": "tiket_balasan_author_id_users_id_fk",
+          "tableFrom": "tiket_balasan",
+          "tableTo": "users",
+          "columnsFrom": [
+            "author_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.ujian": {
       "name": "ujian",
       "schema": "",
@@ -2116,6 +2308,17 @@
     }
   },
   "enums": {
+    "public.author_role": {
+      "name": "author_role",
+      "schema": "public",
+      "values": [
+        "admin",
+        "ustadz",
+        "santri",
+        "wali",
+        "superadmin"
+      ]
+    },
     "public.billing_action": {
       "name": "billing_action",
       "schema": "public",
@@ -2241,6 +2444,25 @@
         "aktif",
         "suspend",
         "rejected"
+      ]
+    },
+    "public.tiket_kategori": {
+      "name": "tiket_kategori",
+      "schema": "public",
+      "values": [
+        "bug",
+        "fitur",
+        "pertanyaan",
+        "lainnya"
+      ]
+    },
+    "public.tiket_status": {
+      "name": "tiket_status",
+      "schema": "public",
+      "values": [
+        "baru",
+        "diproses",
+        "selesai"
       ]
     },
     "public.tipe_kelas": {

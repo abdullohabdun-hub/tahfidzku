@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, Link, useLocation } from "@tanstack/react-router"
 import { PieChart, CalendarDays, User, Award } from "lucide-react"
+import { HelpTicketButton } from "../components/tiket/HelpTicketButton"
 
 export const Route = createFileRoute('/wali')({
   component: WaliLayout,
@@ -19,8 +20,10 @@ function WaliLayout() {
     <div className="min-h-[100dvh] bg-slate-50 flex flex-col font-sans text-slate-900 pb-[76px]">
       
       {/* Top Header */}
-      <header className="bg-white border-b border-slate-200 p-4 sticky top-0 z-50 flex justify-center items-center shadow-sm">
+      <header className="bg-white border-b border-slate-200 p-4 sticky top-0 z-50 flex justify-between items-center shadow-sm">
+        <div className="w-9" /> {/* Spacer to keep title centered */}
         <h1 className="font-bold text-lg text-slate-800 tracking-tight">Pemantauan Hafalan</h1>
+        <HelpTicketButton baseUrl="/wali/tiket" />
       </header>
 
       {/* Main Content Area (Scrollable) */}
