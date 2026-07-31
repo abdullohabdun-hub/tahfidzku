@@ -18,6 +18,7 @@ const createUjianSchema = z.object({
   kelancaran: z.enum(['lancar', 'mengulang', 'terbata']),
   tajwid:     z.enum(['sempurna', 'cukup', 'kurang']),
   status:     z.enum(['lulus', 'tidak_lulus']), // Keputusan final ustadz
+  cakupanMateri: z.string().max(250).optional(),
   catatan:    z.string().max(500).optional(),
 })
 
@@ -102,6 +103,7 @@ export const createUjian = createServerFn({ method: 'POST' })
           tajwid:     data.tajwid,
           skor,
           status:     data.status,
+          cakupanMateri: data.cakupanMateri ?? null,
           catatan:    data.catatan ?? null,
           attempt,
         })

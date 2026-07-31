@@ -28,6 +28,7 @@ export const ujian = pgTable('ujian', {
   skor:       integer('skor').notNull(),               // Skor referensi 0-100 (bukan penentu lulus)
   status:     statusUjianEnum('status').notNull(),     // Keputusan final ustadz: lulus/tidak_lulus
   catatan:    text('catatan'),                         // Catatan opsional ustadz
+  cakupanMateri: text('cakupan_materi'),                   // Opsional: cakupan materi ujian (misal: An-Naba 1-20)
   attempt:    integer('attempt').notNull().default(1), // Percobaan ke berapa untuk juz ini
 
   createdAt:  timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

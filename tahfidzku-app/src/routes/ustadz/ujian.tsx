@@ -28,6 +28,7 @@ type UjianRecord = {
   tajwid: string
   skor: number
   status: 'lulus' | 'tidak_lulus'
+  cakupanMateri: string | null
   catatan: string | null
   attempt: number
   createdAt: Date | string
@@ -46,6 +47,7 @@ function UjianPage() {
   const [kelancaran, setKelancaran] = useState<'lancar' | 'mengulang' | 'terbata' | ''>('')
   const [tajwid, setTajwid] = useState<'sempurna' | 'cukup' | 'kurang' | ''>('')
   const [status, setStatus] = useState<'lulus' | 'tidak_lulus' | ''>('')
+  const [cakupanMateri, setCakupanMateri] = useState('')
   const [catatan, setCatatan] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitMsg, setSubmitMsg] = useState<{ ok: boolean; msg: string } | null>(null)
@@ -91,6 +93,7 @@ function UjianPage() {
         kelancaran: kelancaran as any,
         tajwid: tajwid as any,
         status: status as any,
+        cakupanMateri: cakupanMateri || undefined,
         catatan: catatan || undefined,
       }
     })
@@ -98,7 +101,7 @@ function UjianPage() {
     if (res.success) {
       setSubmitMsg({ ok: true, msg: res.message || 'Berhasil' })
       setSelectedSantri(null)
-      setKelancaran(''); setTajwid(''); setStatus(''); setCatatan('')
+      setKelancaran(''); setTajwid(''); setStatus(''); setCakupanMateri(''); setCatatan('')
       await loadData()
     } else {
       setSubmitMsg({ ok: false, msg: (res as any).error?.message || 'Gagal menyimpan ujian' })
@@ -182,7 +185,7 @@ function UjianPage() {
                         </p>
                       </div>
                       <button
-                        onClick={() => { setSelectedSantri(p); setKelancaran(''); setTajwid(''); setStatus(''); setCatatan(''); setSubmitMsg(null) }}
+                        onClick={() => { setSelectedSantri(p); setKelancaran(''); setTajwid(''); setStatus(''); setCakupanMateri(''); setCatatan(''); setSubmitMsg(null) }}
                         className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2 rounded-xl flex items-center gap-1.5 transition-colors"
                       >
                         Mulai Ujian <ChevronRight className="w-4 h-4" />
@@ -194,9 +197,9 @@ function UjianPage() {
 
               {/* Form Ujian Modal */}
               {selectedSantri && (
-                <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 transition-all">
-                  <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-slate-100 max-w-md w-full p-6 space-y-5 animate-in zoom-in-95 duration-200">
-                    <div>
+                <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 transition-all overflow-y-auto">
+                  <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-slate-100 max-w-md w-full animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+                    <div className="p-6 shrink-0 border-b border-slate-100">
                       <h2 className="text-lg font-bold text-slate-900">🎓 Ujian Kenaikan Juz {selectedSantri.juzUjianPending}</h2>
                       <p className="text-slate-500 text-sm mt-0.5">Santri: <strong>{selectedSantri.santriNama}</strong></p>
                       {selectedSantri.warningGagal && (
@@ -207,8 +210,9 @@ function UjianPage() {
                       )}
                     </div>
 
-                    <form onSubmit={handleSubmitUjian} className="space-y-4">
-                      {/* Kelancaran */}
+                    <form onSubmit={handleSubmitUjian} className="flex-1 min-h-0 flex flex-col">
+                      <div className="p-6 space-y-4 overflow-y-auto">
+                        {/* Kelancaran */}
                       <div>
                         <label className="block text-sm font-semibold text-slate-700 mb-2">📖 Kelancaran Bacaan</label>
                         <div className="space-y-1.5">
@@ -269,25 +273,34 @@ function UjianPage() {
                         </div>
                       </div>
 
-                      {/* Catatan */}
-                      <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1.5">Catatan (opsional)</label>
-                        <textarea rows={2} value={catatan} onChange={e => setCatatan(e.target.value)} placeholder="Masukan untuk santri..." className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-emerald-300 focus:outline-none resize-none" />
+                        {/* Cakupan Materi */}
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Cakupan Materi (opsional)</label>
+                          <input type="text" value={cakupanMateri} onChange={e => setCakupanMateri(e.target.value)} placeholder="Misal: An-Naba 1-20" className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-emerald-300 focus:outline-none" />
+                        </div>
+
+                        {/* Catatan */}
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Catatan (opsional)</label>
+                          <textarea rows={2} value={catatan} onChange={e => setCatatan(e.target.value)} placeholder="Masukan untuk santri..." className="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-emerald-300 focus:outline-none resize-none" />
+                        </div>
                       </div>
 
-                      {submitMsg && (
-                        <div className={`text-sm rounded-xl p-3 ${submitMsg.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
-                          {submitMsg.msg}
-                        </div>
-                      )}
+                      <div className="p-6 shrink-0 border-t border-slate-100 bg-white rounded-b-2xl">
+                        {submitMsg && (
+                          <div className={`mb-3 text-sm rounded-xl p-3 ${submitMsg.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                            {submitMsg.msg}
+                          </div>
+                        )}
 
-                      <div className="flex gap-2 pt-1">
-                        <button type="button" onClick={() => setSelectedSantri(null)} className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition-colors">
-                          Batal
-                        </button>
-                        <button type="submit" disabled={!kelancaran || !tajwid || !status || submitting} className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold transition-colors">
-                          {submitting ? 'Menyimpan...' : 'Submit Ujian'}
-                        </button>
+                        <div className="flex gap-2">
+                          <button type="button" onClick={() => setSelectedSantri(null)} className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition-colors">
+                            Batal
+                          </button>
+                          <button type="submit" disabled={!kelancaran || !tajwid || !status || submitting} className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold transition-colors">
+                            {submitting ? 'Menyimpan...' : 'Submit Ujian'}
+                          </button>
+                        </div>
                       </div>
                     </form>
                   </div>
@@ -306,7 +319,7 @@ function UjianPage() {
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase tracking-wider">
                       <th className="text-left p-3 pl-4">Santri</th>
-                      <th className="text-left p-3">Juz</th>
+                      <th className="text-left p-3">Juz / Materi</th>
                       <th className="text-left p-3">Kelancaran</th>
                       <th className="text-left p-3">Tajwid</th>
                       <th className="text-left p-3">Skor</th>
@@ -318,7 +331,10 @@ function UjianPage() {
                     {riwayat.map(u => (
                       <tr key={u.id} className="hover:bg-slate-50 transition-colors">
                         <td className="p-3 pl-4 font-semibold text-slate-800">{u.santriNama}</td>
-                        <td className="p-3 text-slate-600 font-medium">Juz {u.juz}</td>
+                        <td className="p-3 text-slate-600 font-medium">
+                          <div>Juz {u.juz}</div>
+                          {u.cakupanMateri && <div className="text-xs font-normal text-slate-400 mt-0.5">{u.cakupanMateri}</div>}
+                        </td>
                         <td className="p-3 text-slate-600 capitalize">{u.kelancaran}</td>
                         <td className="p-3 text-slate-600 capitalize">{u.tajwid}</td>
                         <td className="p-3">

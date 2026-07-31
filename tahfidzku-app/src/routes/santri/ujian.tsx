@@ -145,6 +145,9 @@ function SantriRiwayatUjian() {
                           </span>
                         )}
                       </h3>
+                      {item.cakupanMateri && (
+                        <p className="text-xs text-slate-500 mt-0.5">{item.cakupanMateri}</p>
+                      )}
                     </div>
                   </div>
 

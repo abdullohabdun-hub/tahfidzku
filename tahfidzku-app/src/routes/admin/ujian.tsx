@@ -19,6 +19,7 @@ type UjianRecord = {
   tajwid: string
   skor: number
   status: 'lulus' | 'tidak_lulus'
+  cakupanMateri: string | null
   catatan: string | null
   attempt: number
   createdAt: string | Date
@@ -63,7 +64,7 @@ function AdminUjianPage() {
                   <tr className="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase tracking-wider">
                     <th className="text-left p-4">Santri</th>
                     <th className="text-left p-4">Ustadz</th>
-                    <th className="text-left p-4">Juz</th>
+                    <th className="text-left p-4">Juz / Materi</th>
                     <th className="text-left p-4">Kelancaran</th>
                     <th className="text-left p-4">Tajwid</th>
                     <th className="text-left p-4">Skor</th>
@@ -76,7 +77,10 @@ function AdminUjianPage() {
                     <tr key={u.id} className="hover:bg-slate-50 transition-colors">
                       <td className="p-4 font-semibold text-slate-800">{u.santriNama}</td>
                       <td className="p-4 text-slate-600">{u.ustadzNama}</td>
-                      <td className="p-4 font-medium text-emerald-700">Juz {u.juz}</td>
+                      <td className="p-4">
+                        <div className="font-medium text-emerald-700">Juz {u.juz}</div>
+                        {u.cakupanMateri && <div className="text-xs text-slate-500 mt-0.5">{u.cakupanMateri}</div>}
+                      </td>
                       <td className="p-4 text-slate-600 capitalize">{u.kelancaran}</td>
                       <td className="p-4 text-slate-600 capitalize">{u.tajwid}</td>
                       <td className="p-4">
