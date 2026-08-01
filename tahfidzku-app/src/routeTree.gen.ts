@@ -29,6 +29,7 @@ import { Route as UstadzUjianRouteImport } from './routes/ustadz/ujian'
 import { Route as UstadzRiwayatRouteImport } from './routes/ustadz/riwayat'
 import { Route as UstadzProfilRouteImport } from './routes/ustadz/profil'
 import { Route as UstadzPantauRouteImport } from './routes/ustadz/pantau'
+import { Route as UstadzNotifikasiRouteImport } from './routes/ustadz/notifikasi'
 import { Route as UstadzInputRouteImport } from './routes/ustadz/input'
 import { Route as UstadzAbsensiRouteImport } from './routes/ustadz/absensi'
 import { Route as SantriUjianRouteImport } from './routes/santri/ujian'
@@ -53,6 +54,7 @@ import { Route as WaliTiketBuatRouteImport } from './routes/wali/tiket/buat'
 import { Route as WaliTiketTiketIdRouteImport } from './routes/wali/tiket/$tiketId'
 import { Route as UstadzTiketBuatRouteImport } from './routes/ustadz/tiket/buat'
 import { Route as UstadzTiketTiketIdRouteImport } from './routes/ustadz/tiket/$tiketId'
+import { Route as UstadzSetoranSetIdRouteImport } from './routes/ustadz/setoran/$setId'
 import { Route as SuperadminTiketBuatRouteImport } from './routes/superadmin/tiket/buat'
 import { Route as SuperadminTiketTiketIdRouteImport } from './routes/superadmin/tiket/$tiketId'
 import { Route as SuperadminLembagaTenantIdRouteImport } from './routes/superadmin/lembaga/$tenantId'
@@ -161,6 +163,11 @@ const UstadzProfilRoute = UstadzProfilRouteImport.update({
 const UstadzPantauRoute = UstadzPantauRouteImport.update({
   id: '/pantau',
   path: '/pantau',
+  getParentRoute: () => UstadzRoute,
+} as any)
+const UstadzNotifikasiRoute = UstadzNotifikasiRouteImport.update({
+  id: '/notifikasi',
+  path: '/notifikasi',
   getParentRoute: () => UstadzRoute,
 } as any)
 const UstadzInputRoute = UstadzInputRouteImport.update({
@@ -283,6 +290,11 @@ const UstadzTiketTiketIdRoute = UstadzTiketTiketIdRouteImport.update({
   path: '/tiket/$tiketId',
   getParentRoute: () => UstadzRoute,
 } as any)
+const UstadzSetoranSetIdRoute = UstadzSetoranSetIdRouteImport.update({
+  id: '/setoran/$setId',
+  path: '/setoran/$setId',
+  getParentRoute: () => UstadzRoute,
+} as any)
 const SuperadminTiketBuatRoute = SuperadminTiketBuatRouteImport.update({
   id: '/tiket/buat',
   path: '/tiket/buat',
@@ -351,6 +363,7 @@ export interface FileRoutesByFullPath {
   '/santri/ujian': typeof SantriUjianRoute
   '/ustadz/absensi': typeof UstadzAbsensiRoute
   '/ustadz/input': typeof UstadzInputRoute
+  '/ustadz/notifikasi': typeof UstadzNotifikasiRoute
   '/ustadz/pantau': typeof UstadzPantauRoute
   '/ustadz/profil': typeof UstadzProfilRoute
   '/ustadz/riwayat': typeof UstadzRiwayatRoute
@@ -372,6 +385,7 @@ export interface FileRoutesByFullPath {
   '/superadmin/lembaga/$tenantId': typeof SuperadminLembagaTenantIdRoute
   '/superadmin/tiket/$tiketId': typeof SuperadminTiketTiketIdRoute
   '/superadmin/tiket/buat': typeof SuperadminTiketBuatRoute
+  '/ustadz/setoran/$setId': typeof UstadzSetoranSetIdRoute
   '/ustadz/tiket/$tiketId': typeof UstadzTiketTiketIdRoute
   '/ustadz/tiket/buat': typeof UstadzTiketBuatRoute
   '/wali/tiket/$tiketId': typeof WaliTiketTiketIdRoute
@@ -401,6 +415,7 @@ export interface FileRoutesByTo {
   '/santri/ujian': typeof SantriUjianRoute
   '/ustadz/absensi': typeof UstadzAbsensiRoute
   '/ustadz/input': typeof UstadzInputRoute
+  '/ustadz/notifikasi': typeof UstadzNotifikasiRoute
   '/ustadz/pantau': typeof UstadzPantauRoute
   '/ustadz/profil': typeof UstadzProfilRoute
   '/ustadz/riwayat': typeof UstadzRiwayatRoute
@@ -422,6 +437,7 @@ export interface FileRoutesByTo {
   '/superadmin/lembaga/$tenantId': typeof SuperadminLembagaTenantIdRoute
   '/superadmin/tiket/$tiketId': typeof SuperadminTiketTiketIdRoute
   '/superadmin/tiket/buat': typeof SuperadminTiketBuatRoute
+  '/ustadz/setoran/$setId': typeof UstadzSetoranSetIdRoute
   '/ustadz/tiket/$tiketId': typeof UstadzTiketTiketIdRoute
   '/ustadz/tiket/buat': typeof UstadzTiketBuatRoute
   '/wali/tiket/$tiketId': typeof WaliTiketTiketIdRoute
@@ -457,6 +473,7 @@ export interface FileRoutesById {
   '/santri/ujian': typeof SantriUjianRoute
   '/ustadz/absensi': typeof UstadzAbsensiRoute
   '/ustadz/input': typeof UstadzInputRoute
+  '/ustadz/notifikasi': typeof UstadzNotifikasiRoute
   '/ustadz/pantau': typeof UstadzPantauRoute
   '/ustadz/profil': typeof UstadzProfilRoute
   '/ustadz/riwayat': typeof UstadzRiwayatRoute
@@ -478,6 +495,7 @@ export interface FileRoutesById {
   '/superadmin/lembaga/$tenantId': typeof SuperadminLembagaTenantIdRoute
   '/superadmin/tiket/$tiketId': typeof SuperadminTiketTiketIdRoute
   '/superadmin/tiket/buat': typeof SuperadminTiketBuatRoute
+  '/ustadz/setoran/$setId': typeof UstadzSetoranSetIdRoute
   '/ustadz/tiket/$tiketId': typeof UstadzTiketTiketIdRoute
   '/ustadz/tiket/buat': typeof UstadzTiketBuatRoute
   '/wali/tiket/$tiketId': typeof WaliTiketTiketIdRoute
@@ -514,6 +532,7 @@ export interface FileRouteTypes {
     | '/santri/ujian'
     | '/ustadz/absensi'
     | '/ustadz/input'
+    | '/ustadz/notifikasi'
     | '/ustadz/pantau'
     | '/ustadz/profil'
     | '/ustadz/riwayat'
@@ -535,6 +554,7 @@ export interface FileRouteTypes {
     | '/superadmin/lembaga/$tenantId'
     | '/superadmin/tiket/$tiketId'
     | '/superadmin/tiket/buat'
+    | '/ustadz/setoran/$setId'
     | '/ustadz/tiket/$tiketId'
     | '/ustadz/tiket/buat'
     | '/wali/tiket/$tiketId'
@@ -564,6 +584,7 @@ export interface FileRouteTypes {
     | '/santri/ujian'
     | '/ustadz/absensi'
     | '/ustadz/input'
+    | '/ustadz/notifikasi'
     | '/ustadz/pantau'
     | '/ustadz/profil'
     | '/ustadz/riwayat'
@@ -585,6 +606,7 @@ export interface FileRouteTypes {
     | '/superadmin/lembaga/$tenantId'
     | '/superadmin/tiket/$tiketId'
     | '/superadmin/tiket/buat'
+    | '/ustadz/setoran/$setId'
     | '/ustadz/tiket/$tiketId'
     | '/ustadz/tiket/buat'
     | '/wali/tiket/$tiketId'
@@ -619,6 +641,7 @@ export interface FileRouteTypes {
     | '/santri/ujian'
     | '/ustadz/absensi'
     | '/ustadz/input'
+    | '/ustadz/notifikasi'
     | '/ustadz/pantau'
     | '/ustadz/profil'
     | '/ustadz/riwayat'
@@ -640,6 +663,7 @@ export interface FileRouteTypes {
     | '/superadmin/lembaga/$tenantId'
     | '/superadmin/tiket/$tiketId'
     | '/superadmin/tiket/buat'
+    | '/ustadz/setoran/$setId'
     | '/ustadz/tiket/$tiketId'
     | '/ustadz/tiket/buat'
     | '/wali/tiket/$tiketId'
@@ -805,6 +829,13 @@ declare module '@tanstack/react-router' {
       path: '/pantau'
       fullPath: '/ustadz/pantau'
       preLoaderRoute: typeof UstadzPantauRouteImport
+      parentRoute: typeof UstadzRoute
+    }
+    '/ustadz/notifikasi': {
+      id: '/ustadz/notifikasi'
+      path: '/notifikasi'
+      fullPath: '/ustadz/notifikasi'
+      preLoaderRoute: typeof UstadzNotifikasiRouteImport
       parentRoute: typeof UstadzRoute
     }
     '/ustadz/input': {
@@ -975,6 +1006,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UstadzTiketTiketIdRouteImport
       parentRoute: typeof UstadzRoute
     }
+    '/ustadz/setoran/$setId': {
+      id: '/ustadz/setoran/$setId'
+      path: '/setoran/$setId'
+      fullPath: '/ustadz/setoran/$setId'
+      preLoaderRoute: typeof UstadzSetoranSetIdRouteImport
+      parentRoute: typeof UstadzRoute
+    }
     '/superadmin/tiket/buat': {
       id: '/superadmin/tiket/buat'
       path: '/tiket/buat'
@@ -1127,11 +1165,13 @@ const SuperadminRouteWithChildren = SuperadminRoute._addFileChildren(
 interface UstadzRouteChildren {
   UstadzAbsensiRoute: typeof UstadzAbsensiRoute
   UstadzInputRoute: typeof UstadzInputRoute
+  UstadzNotifikasiRoute: typeof UstadzNotifikasiRoute
   UstadzPantauRoute: typeof UstadzPantauRoute
   UstadzProfilRoute: typeof UstadzProfilRoute
   UstadzRiwayatRoute: typeof UstadzRiwayatRoute
   UstadzUjianRoute: typeof UstadzUjianRoute
   UstadzIndexRoute: typeof UstadzIndexRoute
+  UstadzSetoranSetIdRoute: typeof UstadzSetoranSetIdRoute
   UstadzTiketTiketIdRoute: typeof UstadzTiketTiketIdRoute
   UstadzTiketBuatRoute: typeof UstadzTiketBuatRoute
   UstadzTiketIndexRoute: typeof UstadzTiketIndexRoute
@@ -1140,11 +1180,13 @@ interface UstadzRouteChildren {
 const UstadzRouteChildren: UstadzRouteChildren = {
   UstadzAbsensiRoute: UstadzAbsensiRoute,
   UstadzInputRoute: UstadzInputRoute,
+  UstadzNotifikasiRoute: UstadzNotifikasiRoute,
   UstadzPantauRoute: UstadzPantauRoute,
   UstadzProfilRoute: UstadzProfilRoute,
   UstadzRiwayatRoute: UstadzRiwayatRoute,
   UstadzUjianRoute: UstadzUjianRoute,
   UstadzIndexRoute: UstadzIndexRoute,
+  UstadzSetoranSetIdRoute: UstadzSetoranSetIdRoute,
   UstadzTiketTiketIdRoute: UstadzTiketTiketIdRoute,
   UstadzTiketBuatRoute: UstadzTiketBuatRoute,
   UstadzTiketIndexRoute: UstadzTiketIndexRoute,

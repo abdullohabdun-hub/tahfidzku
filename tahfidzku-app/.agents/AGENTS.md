@@ -8,6 +8,7 @@ Untuk SEMUA migrasi skema (Fase 2, Fase 3, dan seterusnya), mekanisme berikut WA
 2. **Review Manual**: Selalu review isi file migrasi tersebut secara manual sebelum dieksekusi.
 3. **Fail-Fast Script**: Eksekusi SQL harus menggunakan script yang **BERHENTI TOTAL (fail-fast)** pada statement pertama yang gagal (tidak boleh ada `try-catch` yang hanya melakukan *log-and-continue*). Script wajib melaporkan persis statement mana yang berhasil dan mana yang gagal.
 4. **Eksekusi Production**: Untuk *PRODUCTION*, eksekusi migrasi HANYA boleh dijalankan secara manual oleh USER (menggunakan kredensial production sementara). Antigravity tidak boleh mengeksekusi migrasi ke production secara mandiri.
+5. **No Stealth Mutations (Raw SQL / Push)**: Setiap eksekusi raw SQL (`ALTER TABLE`, dsb) atau penggunaan `drizzle-kit push` terhadap database **mana pun (termasuk Dev/Local)** WAJIB dilaporkan dan di-flag/disepakati terlebih dahulu bersama USER sebelum dieksekusi. Tidak boleh ada eksekusi diam-diam tanpa persetujuan eksplisit sebagai jalan pintas.
 
 ## Type Checking Sebelum Commit
 **Wajib dijalankan sebelum commit kode apa pun:**

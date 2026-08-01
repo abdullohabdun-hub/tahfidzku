@@ -8,7 +8,7 @@ import { getAuthSession, requireRole } from '../middleware/auth.middleware'
 import { createSetoranSchema, updateSetoranSchema } from '../lib/validators'
 import { success, handleError } from '../lib/response'
 import { kelas } from '../db/schema'
-import { AuthenticationError, ForbiddenError, ValidationError } from '../lib/errors'
+import { AuthenticationError, ForbiddenError, ValidationError, NotFoundError } from '../lib/errors'
 import { z } from 'zod'
 import { cariJuzUntukAyat, getAyatTerakhirJuz, getValidJuzList } from '../lib/quranMapper'
 
@@ -426,7 +426,7 @@ export const inputMurojaah = createServerFn({ method: 'POST' })
 
       // Cari ustadz yang mengajar kelas santri ini (atau biarkan null jika tidak ada)
       // Untuk MVP, ustadzId wajib di skema setoran. Kita akan mencari ustadz yang ada di tenant ini.
-      const santriKelas = await db.select({ ustadzId: kelas.ustadzId })
+      const santriKelas = await db.select({ ustadzId: kelas.ustadzId, kelasId: kelas.id })
         .from(santri)
         .leftJoin(kelas, eq(santri.kelasId, kelas.id))
         .where(eq(santri.id, santriId))
@@ -479,11 +479,32 @@ export const inputMurojaah = createServerFn({ method: 'POST' })
         penilaianKustom: data.penilaianKustom,
         catatan: data.catatan || null,
         sumber: 'santri_self_report',
+        ditinjauOlehUstadz: false,
         tanggalSetoran: todayWIB,
         isBackdated: false,
       }).returning()
 
-      return success(record[0], 'Murojaah berhasil dilaporkan!')
+      const newSetoran = record[0]
+      const actualKelasUstadzId = santriKelas[0]?.ustadzId
+
+      if (actualKelasUstadzId) {
+        try {
+          const { notifikasiUstadz } = await import('../db/schema/notifikasi')
+          await db.insert(notifikasiUstadz).values({
+            tenantId: session.user.tenantId,
+            ustadzId: actualKelasUstadzId,
+            setoranId: newSetoran.id,
+            tipe: 'setoran_mandiri_baru',
+            pesan: `Santri telah melakukan setoran mandiri (${data.jenis.toUpperCase()}). Menunggu tinjauan Anda.`,
+          })
+        } catch (e) {
+          console.error(`Gagal membuat notifikasi untuk ustadz (santriId: ${santriId}, setoranId: ${newSetoran.id})`, e)
+        }
+      } else {
+        console.warn(`[NOTIFIKASI_SKIPPED] Kelas santri tidak memiliki ustadz pengampu. santriId: ${santriId}, kelasId: ${santriKelas[0]?.kelasId || 'unknown'}, setoranId: ${newSetoran.id}`)
+      }
+
+      return success(newSetoran, 'Murojaah berhasil dilaporkan!')
     } catch (err) {
       return handleError(err)
     }
@@ -686,6 +707,109 @@ export const updateSetoranSantri = createServerFn({ method: 'POST' })
         .returning()
 
       return success(result, 'Laporan Murojaah berhasil diperbarui')
+    } catch (err) {
+      return handleError(err)
+    }
+  })
+
+// ═══════════════════════════════════════════════════════
+// 11. GET SETORAN DETAIL (USTADZ)
+// ═══════════════════════════════════════════════════════
+export const getSetoranDetailUstadz = createServerFn({ method: 'POST' })
+  .validator((data: unknown) => {
+    const schema = z.object({
+      setoranId: z.string().uuid()
+    })
+    return schema.parse(data)
+  })
+  .handler(async ({ data }) => {
+    try {
+      const session = await getAuthSession()
+      if (!session) throw new AuthenticationError()
+      requireRole(session, 'ustadz')
+
+      const detail = await db.query.setoran.findFirst({
+        where: eq(setoran.id, data.setoranId),
+        with: {
+          santri: {
+            columns: { nama: true },
+            with: { kelas: { columns: { nama: true } } }
+          }
+        }
+      })
+
+      if (!detail) throw new NotFoundError('Setoran tidak ditemukan')
+      if (detail.tenantId !== session.user.tenantId) throw new ForbiddenError('Akses ditolak')
+
+      return success(detail, 'Data setoran ditemukan')
+    } catch (err) {
+      return handleError(err)
+    }
+  })
+
+// ═══════════════════════════════════════════════════════
+// 10. SUBMIT FEEDBACK SETORAN MANDIRI (OLEH USTADZ)
+// ═══════════════════════════════════════════════════════
+export const submitFeedbackSetoran = createServerFn({ method: 'POST' })
+  .validator((data: unknown) => {
+    const schema = z.object({
+      setoranId: z.string().uuid(),
+      tipe: z.enum(['disetujui', 'perlu_perbaikan', 'komentar']),
+      catatan: z.string().optional()
+    })
+    return schema.parse(data)
+  })
+  .handler(async ({ data }) => {
+    try {
+      const session = await getAuthSession()
+      if (!session) throw new AuthenticationError()
+      requireRole(session, 'ustadz')
+
+      // Verifikasi IDOR: ustadz hanya boleh memberi feedback pada setoran 
+      // yang dibuat oleh santri di kelasnya (ustadzId = session.user.id)
+      const targetSetoran = await db.select({ 
+          id: setoran.id, 
+          tenantId: setoran.tenantId, 
+          kelasUstadzId: kelas.ustadzId 
+        })
+        .from(setoran)
+        .leftJoin(santri, eq(setoran.santriId, santri.id))
+        .leftJoin(kelas, eq(santri.kelasId, kelas.id))
+        .where(eq(setoran.id, data.setoranId))
+        .limit(1)
+
+      if (targetSetoran.length === 0) {
+        throw new NotFoundError('Setoran tidak ditemukan')
+      }
+
+      const s = targetSetoran[0]
+
+      if (s.tenantId !== session.user.tenantId || s.kelasUstadzId !== session.user.id) {
+        throw new ForbiddenError('Anda tidak diizinkan merespons setoran dari santri di kelas lain.')
+      }
+
+      await db.update(setoran).set({
+        ditinjauOlehUstadz: true,
+        responUstadz: {
+          tipe: data.tipe,
+          catatan: data.catatan,
+          diresponOlehUstadzId: session.user.id,
+          diresponPada: new Date().toISOString()
+        }
+      }).where(eq(setoran.id, data.setoranId))
+
+      // Tandai notifikasi terkait dibaca
+      const { notifikasiUstadz } = await import('../db/schema/notifikasi')
+      await db.update(notifikasiUstadz)
+        .set({ dibacaPada: new Date() })
+        .where(
+          and(
+             eq(notifikasiUstadz.setoranId, data.setoranId),
+             eq(notifikasiUstadz.ustadzId, session.user.id)
+          )
+        )
+
+      return success(null, 'Feedback berhasil dikirim')
     } catch (err) {
       return handleError(err)
     }

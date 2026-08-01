@@ -41,6 +41,13 @@ export const setoran = pgTable('setoran', {
   penilaianKustom: jsonb('penilaian_kustom').$type<Record<string, any>>(),
   catatan: text('catatan'),
   sumber: sumberSetoranEnum('sumber').notNull().default('ustadz'),
+  ditinjauOlehUstadz: boolean('ditinjau_oleh_ustadz').default(false).notNull(),
+  responUstadz: jsonb('respon_ustadz').$type<{
+    tipe: 'disetujui' | 'perlu_perbaikan' | 'komentar';
+    catatan?: string;
+    diresponOlehUstadzId?: string;
+    diresponPada?: string;
+  }>(),
   updatedBy: uuid('updated_by').references(() => users.id, { onDelete: 'set null' }),
   previousData: jsonb('previous_data').$type<Record<string, any>>(),
   tanggalSetoran: date('tanggal_setoran').notNull(),

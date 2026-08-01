@@ -1,8 +1,7 @@
 // src/db/schema/users.ts
 // Tabel users — mencakup semua role (admin, ustadz, santri, wali)
 
-import { pgTable, uuid, varchar, timestamp, pgEnum, integer, boolean, index } from 'drizzle-orm/pg-core'
-import type { AnyPgColumn } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, varchar, timestamp, pgEnum, integer, boolean, index, text } from 'drizzle-orm/pg-core'
 import { tenants } from './tenants'
 
 export const roleEnum = pgEnum('user_role', ['admin', 'ustadz', 'santri', 'wali'])
@@ -16,7 +15,7 @@ export const users = pgTable('users', {
   username: varchar('username', { length: 255 }).unique(),
   email: varchar('email', { length: 255 }).unique(),
   noWa: varchar('no_wa', { length: 50 }).unique(),
-  passwordHash: varchar('password_hash', { length: 255 }).notNull(),
+  passwordHash: text('password_hash').notNull(),
   role: roleEnum('role').notNull(),
   // Untuk role 'santri' dan 'wali', merujuk ke data santri terkait
   santriId: uuid('santri_id'),
@@ -25,7 +24,7 @@ export const users = pgTable('users', {
   failedPasswordAttempts: integer('failed_password_attempts').default(0).notNull(),
   lockedUntil: timestamp('locked_until', { withTimezone: true }),
   isActive: boolean('is_active').default(true).notNull(),
-  createdByAdminId: uuid('created_by_admin_id').references((): AnyPgColumn => users.id),
+  createdByAdminId: uuid('created_by_admin_id').references((): any => users.id),
   forcePasswordChange: boolean('force_password_change').default(false).notNull(),
 }, (table) => ({
   createdByAdminIdx: index('created_by_admin_idx').on(table.createdByAdminId)

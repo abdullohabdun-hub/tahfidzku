@@ -13,6 +13,7 @@ import { absensi, sesiKelas } from './absensi'
 import { waliSantri } from './wali-santri'
 import { raporSettings } from './rapor-settings'
 import { tiket, tiketBalasan } from './tiket'
+import { notifikasiUstadz } from './notifikasi'
 export const tenantsRelations = relations(tenants, ({ one, many }) => ({
   users: many(users),
   kelas: many(kelas),
@@ -28,6 +29,7 @@ export const tenantsRelations = relations(tenants, ({ one, many }) => ({
     references: [raporSettings.tenantId],
   }),
   tiket: many(tiket),
+  notifikasiUstadz: many(notifikasiUstadz),
 }))
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -50,6 +52,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     fields: [users.createdByAdminId],
     references: [users.id],
   }),
+  notifikasiUstadz: many(notifikasiUstadz),
 }))
 
 export const kelasRelations = relations(kelas, ({ one, many }) => ({
@@ -81,7 +84,7 @@ export const santriRelations = relations(santri, ({ one, many }) => ({
   daftarWali: many(waliSantri), // Relasi ke wali (many-to-many)
 }))
 
-export const setoranRelations = relations(setoran, ({ one }) => ({
+export const setoranRelations = relations(setoran, ({ one, many }) => ({
   tenant: one(tenants, {
     fields: [setoran.tenantId],
     references: [tenants.id],
@@ -94,6 +97,7 @@ export const setoranRelations = relations(setoran, ({ one }) => ({
     fields: [setoran.ustadzId],
     references: [users.id],
   }),
+  notifikasiUstadz: many(notifikasiUstadz),
 }))
 
 export const ujianRelations = relations(ujian, ({ one }) => ({
@@ -256,5 +260,20 @@ export const tiketBalasanRelations = relations(tiketBalasan, ({ one }) => ({
   author: one(users, {
     fields: [tiketBalasan.authorId],
     references: [users.id],
+  }),
+}))
+
+export const notifikasiUstadzRelations = relations(notifikasiUstadz, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [notifikasiUstadz.tenantId],
+    references: [tenants.id],
+  }),
+  ustadz: one(users, {
+    fields: [notifikasiUstadz.ustadzId],
+    references: [users.id],
+  }),
+  setoran: one(setoran, {
+    fields: [notifikasiUstadz.setoranId],
+    references: [setoran.id],
   }),
 }))

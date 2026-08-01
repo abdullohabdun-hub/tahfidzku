@@ -5,6 +5,9 @@ import { Button } from "../components/ui/button"
 import { checkAuth, logout } from "../server-fns/auth"
 import { getTenantInfo } from "../server-fns/admin-settings"
 import { HelpTicketButton } from "../components/tiket/HelpTicketButton"
+import { useServerFn } from "@tanstack/react-start"
+import { getUnreadCount } from "../server-fns/notifikasi-ustadz"
+import { Bell } from "lucide-react"
 
 export const Route = createFileRoute('/ustadz')({
   component: UstadzLayout,
@@ -34,6 +37,24 @@ function UstadzLayout() {
     }
     loadProfile()
   }, [])
+
+  const [unreadCount, setUnreadCount] = useState(0)
+  const fetchUnreadCount = useServerFn(getUnreadCount)
+
+  useEffect(() => {
+    if (!user) return
+    const checkCount = async () => {
+      try {
+        const count = await fetchUnreadCount()
+        setUnreadCount(count)
+      } catch (e) {
+        // ignore
+      }
+    }
+    checkCount()
+    const interval = setInterval(checkCount, 30000) // Poll every 30s
+    return () => clearInterval(interval)
+  }, [user, fetchUnreadCount])
 
   const handleLogout = async () => {
     try {
@@ -68,6 +89,12 @@ function UstadzLayout() {
         </div>
         <div className="flex gap-2 items-center">
           <HelpTicketButton baseUrl="/ustadz/tiket" />
+          <Link to="/ustadz/notifikasi" className="relative p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-colors mr-1">
+            <Bell className="w-5 h-5" />
+            {unreadCount > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
+            )}
+          </Link>
           <Link to="/ustadz/profil" className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold border border-emerald-200 uppercase text-xs md:text-sm hover:ring-2 hover:ring-emerald-500 hover:bg-emerald-200 transition-all cursor-pointer">
             {user?.nama ? user.nama.substring(0, 2) : "US"}
           </Link>

@@ -161,6 +161,29 @@ function SantriRiwayatSetoran() {
             </div>
           )}
 
+          {isSelfReport && item.ditinjauOlehUstadz && item.responUstadz && (
+            <div className={`rounded-lg p-3 text-sm border ${
+              item.responUstadz.tipe === 'disetujui' ? 'bg-emerald-50 border-emerald-100 text-emerald-800' :
+              item.responUstadz.tipe === 'perlu_perbaikan' ? 'bg-red-50 border-red-100 text-red-800' :
+              'bg-blue-50 border-blue-100 text-blue-800'
+            }`}>
+              <div className="flex justify-between items-center mb-1">
+                <p className="text-[10px] font-bold uppercase opacity-70">
+                  Tanggapan Ustadz ({item.responUstadz.tipe.replace('_', ' ')})
+                </p>
+                {item.responUstadz.diresponPada && (
+                  <p className="text-[9px] opacity-60">
+                    {format(new Date(item.responUstadz.diresponPada), 'dd MMM HH:mm', { locale: id })}
+                  </p>
+                )}
+              </div>
+              {item.responUstadz.catatan && (
+                <p className="italic font-medium">{item.responUstadz.catatan}</p>
+              )}
+            </div>
+          )}
+
+
           <div className="pt-2 border-t border-slate-50 flex justify-between items-center text-[11px]">
              <div className="flex flex-col">
                <span className="text-slate-400">
@@ -171,13 +194,17 @@ function SantriRiwayatSetoran() {
                </span>
              </div>
 
-             {isSelfReport && (
+             {isSelfReport && !item.ditinjauOlehUstadz && (
                <button 
                  onClick={() => handleEdit(item)}
                  className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100 flex items-center gap-1.5 hover:bg-emerald-100 transition-colors"
                >
                  <Edit2 className="w-3.5 h-3.5" /> Edit
                </button>
+             )}
+             
+             {isSelfReport && item.ditinjauOlehUstadz && (
+               <span className="text-xs font-semibold text-slate-400">Telah ditinjau</span>
              )}
           </div>
         </div>
