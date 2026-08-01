@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/button'
 import { WAKTU_SHALAT_OPTIONS, WAKTU_SHALAT_LABEL, type WaktuShalat } from '../../lib/constants'
 import { LabelPenilaianSettings } from '../../components/admin/LabelPenilaianSettings'
 import { ChangePasswordForm } from '../../components/ChangePasswordForm'
+import { checkAuth } from '../../server-fns/auth'
 
 export const Route = createFileRoute('/admin/pengaturan')({
   component: PengaturanPage,
@@ -21,6 +22,7 @@ function PengaturanPage() {
   const [minHariMasukSantri, setMinHariMasukSantri] = useState(2)
   const [sesiRegulerDefault, setSesiRegulerDefault] = useState<WaktuShalat[]>([])
   const [savingSesiDefault, setSavingSesiDefault] = useState(false)
+  const [forcePasswordChange, setForcePasswordChange] = useState(false)
 
   // State Pengaturan Rapor
   const [raporNamaLembaga, setRaporNamaLembaga] = useState('')
@@ -33,6 +35,11 @@ function PengaturanPage() {
 
   async function loadData() {
     setLoading(true)
+    const auth = await checkAuth()
+    if (auth && auth.forcePasswordChange) {
+      setForcePasswordChange(true)
+    }
+
     const res = await getTenantInfo()
     if (res.success && res.data) {
       setNamaLembaga(res.data.namaLembaga)
@@ -80,6 +87,15 @@ function PengaturanPage() {
 
   return (
     <div className="space-y-6 max-w-2xl">
+      {forcePasswordChange && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-3">
+          <div className="flex-1">
+            <strong className="block font-bold">Wajib Ganti Password!</strong>
+            <span className="text-sm">Anda baru saja login dengan password default. Silakan ganti password Anda di bawah ini sebelum dapat menggunakan fitur lainnya.</span>
+          </div>
+        </div>
+      )}
+
       <div>
         <h2 className="text-2xl font-bold tracking-tight text-slate-900">Pengaturan Web</h2>
         <p className="text-slate-500">Kelola identitas dasar dari lembaga Anda.</p>
@@ -155,7 +171,7 @@ function PengaturanPage() {
             data: { sesiRegulerDefault: sesiRegulerDefault.length > 0 ? sesiRegulerDefault : null }
           })
           if(res1.success && res2.success) alert('Berhasil memperbarui pengaturan kelas dan absensi')
-          else alert(res1.error?.message || res2.error?.message || 'Terjadi kesalahan')
+          else alert((!res1.success ? res1.error?.message : (!res2.success ? res2.error?.message : 'Terjadi kesalahan')))
           setSavingSesiDefault(false)
         }} className="space-y-8">
           

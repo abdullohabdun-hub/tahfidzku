@@ -14,6 +14,7 @@ export type SessionUser = {
   originalAdminId?: string
   impersonationLogId?: string
   impersonateExpiresAt?: number
+  forcePasswordChange?: boolean
 }
 
 export type Session = {
@@ -36,6 +37,9 @@ export function requireRole(session: Session, ...allowedRoles: Role[]): void {
   if (!session) {
     throw new AuthenticationError()
   }
+  if (session.user.forcePasswordChange) {
+    throw new AuthenticationError('Anda wajib mengganti password sebelum dapat mengakses sistem.')
+  }
   if (!allowedRoles.includes(session.user.role)) {
     throw new ForbiddenError()
   }
@@ -48,6 +52,9 @@ export function requireRole(session: Session, ...allowedRoles: Role[]): void {
 export function requireSuperAdmin(session: Session): void {
   if (!session) {
     throw new AuthenticationError()
+  }
+  if (session.user.forcePasswordChange) {
+    throw new AuthenticationError('Anda wajib mengganti password sebelum dapat mengakses sistem.')
   }
   if (session.user.id !== process.env.SUPERADMIN_USER_ID) {
     throw new ForbiddenError()
@@ -64,6 +71,9 @@ export async function requireAuth() {
   if (!session) {
     throw new AuthenticationError()
   }
+  if (session.user.forcePasswordChange) {
+    throw new AuthenticationError('Anda wajib mengganti password sebelum dapat mengakses sistem.')
+  }
   return {
     user: session.user,
   }
@@ -76,6 +86,9 @@ export async function requireAuth() {
 export function requireTenantRole(user: SessionUser, allowedRoles: Role[]): void {
   if (!user) {
     throw new AuthenticationError()
+  }
+  if (user.forcePasswordChange) {
+    throw new AuthenticationError('Anda wajib mengganti password sebelum dapat mengakses sistem.')
   }
   if (!allowedRoles.includes(user.role)) {
     throw new ForbiddenError()

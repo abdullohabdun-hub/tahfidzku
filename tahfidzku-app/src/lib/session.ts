@@ -46,15 +46,24 @@ export async function getSession(): Promise<{ user: SessionUser } | null> {
       algorithms: ['HS256'],
     })
 
-    // Validasi Sesi: Cek apakah password sudah diganti setelah token ini dibuat
+    // Validasi Sesi: Cek apakah password sudah diganti setelah token ini dibuat, cek aktif, dan cek forcePasswordChange
     const userId = payload.id as string
-    const [userRecord] = await db.select({ passwordChangedAt: users.passwordChangedAt }).from(users).where(eq(users.id, userId)).limit(1)
+    const [userRecord] = await db.select({ 
+      passwordChangedAt: users.passwordChangedAt,
+      isActive: users.isActive,
+      forcePasswordChange: users.forcePasswordChange 
+    }).from(users).where(eq(users.id, userId)).limit(1)
     
-    if (userRecord && userRecord.passwordChangedAt && payload.iat) {
-      // iat adalah detik, getTime adalah milidetik
-      // Kita tolak token jika dibuat (iat) sebelum password diubah
-      if (payload.iat * 1000 < userRecord.passwordChangedAt.getTime()) {
-        return null // Token revoked
+    if (userRecord) {
+      if (!userRecord.isActive) {
+        return null // Akun dinonaktifkan
+      }
+      if (userRecord.passwordChangedAt && payload.iat) {
+        // iat adalah detik, getTime adalah milidetik
+        // Kita tolak token jika dibuat (iat) sebelum password diubah
+        if (payload.iat * 1000 < userRecord.passwordChangedAt.getTime()) {
+          return null // Token revoked
+        }
       }
     }
 
@@ -72,6 +81,7 @@ export async function getSession(): Promise<{ user: SessionUser } | null> {
         originalAdminId: (payload.originalAdminId as string) || undefined,
         impersonationLogId: (payload.impersonationLogId as string) || undefined,
         impersonateExpiresAt: (payload.impersonateExpiresAt as number) || undefined,
+        forcePasswordChange: userRecord ? userRecord.forcePasswordChange : (payload.forcePasswordChange as boolean | undefined),
       },
     }
   } catch (error) {

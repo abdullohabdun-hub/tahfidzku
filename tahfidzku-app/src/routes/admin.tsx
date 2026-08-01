@@ -1,5 +1,5 @@
-import { createFileRoute, Outlet, Link, useLocation, useRouter } from "@tanstack/react-router"
-import { LayoutDashboard, PieChart, GraduationCap, Contact, Users, Library, Settings, LogOut, Menu, ChevronLeft, ChevronRight, Bell, Loader2, Printer } from "lucide-react"
+import { createFileRoute, Outlet, Link, useLocation, useRouter, redirect } from "@tanstack/react-router"
+import { LayoutDashboard, PieChart, GraduationCap, Contact, Users, Library, Settings, LogOut, Menu, ChevronLeft, ChevronRight, Bell, Loader2, Printer, ShieldCheck } from "lucide-react"
 import { useState, useEffect } from "react"
 import { Button } from "../components/ui/button"
 import { checkAuth, logout } from "../server-fns/auth"
@@ -7,6 +7,14 @@ import { getTenantInfo } from "../server-fns/admin-settings"
 import { HelpTicketButton } from "../components/tiket/HelpTicketButton"
 
 export const Route = createFileRoute('/admin')({
+  beforeLoad: async ({ location }) => {
+    const user = await checkAuth()
+    if (user && user.forcePasswordChange) {
+      if (location.pathname !== '/admin/pengaturan') {
+        throw redirect({ to: '/admin/pengaturan' })
+      }
+    }
+  },
   component: AdminLayout,
 })
 
@@ -58,6 +66,7 @@ function AdminLayout() {
     { name: "Data Santri", path: "/admin/santri", icon: Users },
     { name: "Cetak Rapor", path: "/admin/rapor", icon: Printer },
     { name: "Kelas / Halaqoh", path: "/admin/kelas", icon: Library },
+    { name: "Kelola Admin", path: "/admin/kelola-admin", icon: ShieldCheck },
     { name: "Pengaturan", path: "/admin/pengaturan", icon: Settings },
   ]
 

@@ -33,9 +33,9 @@ export const login = createServerFn({ method: 'POST' })
         )
         .limit(1)
 
-      // Jika user tidak ditemukan
-      if (!user) {
-        throw new AuthenticationError('Data pengguna tidak ditemukan.')
+      // Jika user tidak ditemukan atau tidak aktif
+      if (!user || !user.isActive) {
+        throw new AuthenticationError('Nomor HP/Email/Username atau PIN Anda kurang tepat.')
       }
 
       // 🔴 Verifikasi Password (PIN) 🔴
@@ -81,6 +81,7 @@ export const login = createServerFn({ method: 'POST' })
         noWa: user.noWa,
         role: user.role,
         santriId: user.santriId,
+        forcePasswordChange: user.forcePasswordChange,
       })
 
       console.log('✅ Login berhasil untuk:', user.nama, '(', user.role, ')')
@@ -182,13 +183,14 @@ export const changePassword = createServerFn({ method: 'POST' })
           passwordHash: newPasswordHash,
           passwordChangedAt: new Date(),
           failedPasswordAttempts: 0,
-          lockedUntil: null
+          lockedUntil: null,
+          forcePasswordChange: false
         })
         .where(eq(users.id, userId))
       
       // Regenerate session supaya device saat ini tidak ter-logout
       // Karena getSession mengandalkan cookies, kita panggil createSession() untuk nimpa JWT lama
-      await createSession(session.user)
+      await createSession({ ...session.user, forcePasswordChange: false })
 
       return success(null, 'Password berhasil diubah.')
     } catch (err) {

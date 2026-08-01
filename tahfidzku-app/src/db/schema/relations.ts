@@ -46,6 +46,10 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   daftarAnak: many(waliSantri), // Untuk role wali (many-to-many)
   tiketDikirim: many(tiket),
   tiketBalasan: many(tiketBalasan),
+  createdByAdmin: one(users, {
+    fields: [users.createdByAdminId],
+    references: [users.id],
+  }),
 }))
 
 export const kelasRelations = relations(kelas, ({ one, many }) => ({
