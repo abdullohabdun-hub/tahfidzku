@@ -110,7 +110,7 @@ export const runDbMigration = createServerFn({ method: 'POST' }).handler(
 export const updateTenantInfo = createServerFn({ method: 'POST' })
   .validator((data: unknown) => {
     const schema = z.object({
-      namaLembaga: z.string().min(3, 'Nama lembaga minimal 3 karakter'),
+      namaLembaga: z.string().min(3, 'Nama lembaga minimal 3 karakter').optional(),
       minHariMasukSantri: z.number().int().min(1).max(7).optional()
     })
     return schema.parse(data)
@@ -124,7 +124,7 @@ export const updateTenantInfo = createServerFn({ method: 'POST' })
       await db
         .update(tenants)
         .set({ 
-          namaLembaga: data.namaLembaga,
+          ...(data.namaLembaga !== undefined && { namaLembaga: data.namaLembaga }),
           ...(data.minHariMasukSantri !== undefined && { minHariMasukSantri: data.minHariMasukSantri })
         })
         .where(eq(tenants.id, session.user.tenantId))
