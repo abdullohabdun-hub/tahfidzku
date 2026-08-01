@@ -1,1 +1,1 @@
-ALTER TYPE "public"."tipe_kelas" ADD VALUE 'reguler_non_mukim';
+ALTER TYPE "public"."tipe_kelas" ADD VALUE IF NOT EXISTS 'reguler_non_mukim';
