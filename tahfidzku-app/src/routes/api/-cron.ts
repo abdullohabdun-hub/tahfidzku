@@ -7,7 +7,7 @@ import { sendEmail } from '../../lib/email'
 import { precomputeRekapMingguan } from '../../server-fns/cron'
 
 export const APIRoute = createAPIFileRoute('/api/cron')({
-  POST: async ({ request }) => {
+  POST: async ({ request }: { request: any }) => {
     // 1. Validasi Secret Token (Opsional, untuk keamanan agar tidak sembarang dipanggil)
     const authHeader = request.headers.get('Authorization')
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {

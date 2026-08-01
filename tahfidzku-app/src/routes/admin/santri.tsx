@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { Users, Plus, Loader2, Trash2, Edit, VenetianMask, Printer, Search } from 'lucide-react'
 import { getSantriList, createSantri, deleteSantri, updateSantri } from '../../server-fns/santri'
 import { getKelasList } from '../../server-fns/kelas'
+import { getTenantInfo } from '../../server-fns/admin-settings'
 import { impersonateUser } from '../../server-fns/impersonate'
 import { getSurahByJuz, getAyatRangeInJuz } from '../../lib/quranMapper'
 import { Button } from '../../components/ui/button'
@@ -35,6 +36,9 @@ function DataSantriPage() {
   const [ayatMax, setAyatMax] = useState<number>(999)
 
   const [kelasId, setKelasId] = useState('')
+  const [hariMasuk, setHariMasuk] = useState<string[]>([])
+  const [minHariMasukSantri, setMinHariMasukSantri] = useState(2)
+
   const [tipe, setTipe] = useState<'reguler' | 'dewasa'>('dewasa')
   const [email, setEmail] = useState('')
   const [noWa, setNoWa] = useState('')
@@ -58,12 +62,14 @@ function DataSantriPage() {
 
   async function loadData() {
     setLoading(true)
-    const [resSantri, resKelas] = await Promise.all([
+    const [resSantri, resKelas, resTenant] = await Promise.all([
       getSantriList(),
-      getKelasList()
+      getKelasList(),
+      getTenantInfo()
     ])
     if (resSantri.success && resSantri.data) setSantri(resSantri.data)
     if (resKelas.success && resKelas.data) setKelasList(resKelas.data)
+    if (resTenant.success && resTenant.data) setMinHariMasukSantri(resTenant.data.minHariMasukSantri ?? 2)
     setLoading(false)
   }
 
@@ -101,10 +107,25 @@ function DataSantriPage() {
     }
   }, [batasHafalanSurah, batasHafalanJuz, surahOptions])
 
-
+  // Sinkronisasi checkbox hariMasuk dengan hariPertemuan kelas terpilih
+  useEffect(() => {
+    if (kelasId) {
+      const kelasTarget = kelasList.find(k => k.id === kelasId);
+      if (kelasTarget && kelasTarget.hariPertemuan) {
+        setHariMasuk(prev => prev.filter(h => kelasTarget.hariPertemuan.includes(h)));
+      }
+    } else {
+      setHariMasuk([]);
+    }
+  }, [kelasId, kelasList])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (kelasId && hariMasuk.length < minHariMasukSantri) {
+      alert(`Minimal hari masuk untuk lembaga ini adalah ${minHariMasukSantri} hari. Harap tambahkan hari masuk santri.`);
+      return;
+    }
     
     // Konfirmasi perubahan tahapSantri jika di mode Edit
     if (editingId && tahapSantri !== initialTahapSantri) {
@@ -133,6 +154,7 @@ function DataSantriPage() {
         batasHafalanSurah: tahapSantri === 'tahfidz' && batasHafalanSurah ? batasHafalanSurah : undefined,
         batasHafalanAyat: tahapSantri === 'tahfidz' && batasHafalanAyat !== '' ? Number(batasHafalanAyat) : undefined,
         kelasId: kelasId ? kelasId : undefined,
+        hariMasuk: kelasId ? hariMasuk : [],
         tipe,
         email: tipe === 'dewasa' ? (email || undefined) : undefined,
         noWa: tipe === 'dewasa' ? (noWa || undefined) : undefined,
@@ -182,6 +204,7 @@ function DataSantriPage() {
     }, 50)
     
     setKelasId(s.kelasId || '')
+    setHariMasuk(s.hariMasuk || [])
     setTipe(s.tipe || 'dewasa')
     setEmail(s.email || '')
     setNoWa(s.noWa || '')
@@ -210,6 +233,7 @@ function DataSantriPage() {
     setBatasHafalanSurah('')
     setBatasHafalanAyat('')
     setKelasId('')
+    setHariMasuk([])
     setTipe('dewasa')
     setEmail('')
     setNoWa('')
@@ -397,6 +421,64 @@ function DataSantriPage() {
                 ))}
               </select>
             </div>
+
+            {(() => {
+              const selectedKelas = kelasList.find(k => k.id === kelasId);
+              const isMukim = selectedKelas && (!selectedKelas.hariPertemuan || selectedKelas.hariPertemuan.length === 0);
+
+              return (
+                <div className="border border-slate-200 rounded-lg p-4 bg-slate-50 space-y-4">
+                  <label className="block text-sm font-medium mb-1 flex justify-between items-center">
+                    <span>Hari Masuk (Jadwal Kehadiran Santri)</span>
+                    {kelasId && !isMukim && <span className="text-xs text-slate-500 font-normal">Minimal {minHariMasukSantri} Hari</span>}
+                  </label>
+                  
+                  {!kelasId ? (
+                    <div className="text-sm font-medium text-amber-700 bg-amber-50 p-2 rounded border border-amber-200">
+                      Pilih Kelompok (Kelas) terlebih dahulu untuk mengatur hari masuk.
+                    </div>
+                  ) : isMukim ? (
+                    <div className="text-sm font-medium text-indigo-700 bg-indigo-50 p-3 rounded-lg border border-indigo-200">
+                      ℹ️ Kelas ini bersifat mukim — santri dianggap hadir setiap hari (7 hari penuh).
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        {selectedKelas.hariPertemuan.map((hari: string) => {
+                          const HARI_LABEL: Record<string, string> = {
+                            senin: 'Senin', selasa: 'Selasa', rabu: 'Rabu', 
+                            kamis: 'Kamis', jumat: 'Jumat', sabtu: 'Sabtu', minggu: 'Minggu'
+                          };
+                          return (
+                            <label key={hari} className="flex items-center gap-2 cursor-pointer bg-white border border-slate-200 p-2 rounded-lg hover:bg-slate-50">
+                              <input 
+                                type="checkbox" 
+                                checked={hariMasuk.includes(hari)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setHariMasuk(prev => [...prev, hari]);
+                                  } else {
+                                    setHariMasuk(prev => prev.filter(h => h !== hari));
+                                  }
+                                }}
+                                className="w-4 h-4 text-emerald-600 focus:ring-emerald-500 rounded border-slate-300" 
+                              />
+                              <span className="text-sm capitalize">{HARI_LABEL[hari] || hari}</span>
+                            </label>
+                          )
+                        })}
+                      </div>
+                      {hariMasuk.length < minHariMasukSantri && (
+                        <p className="text-xs text-amber-600 mt-2">
+                          ⚠️ Peringatan: Anda baru memilih {hariMasuk.length} hari. Minimal yang diizinkan lembaga adalah {minHariMasukSantri} hari.
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
+              );
+            })()}
+
             <div>
               <label className="block text-sm font-medium mb-1">Tipe Santri</label>
               <div className="flex gap-4 items-center mt-2">
@@ -587,7 +669,7 @@ function DataSantriPage() {
                         <div className="flex flex-col gap-0.5 text-xs">
                           {s.juzProgress && s.juzProgress.length > 0 ? (
                             <span className="font-semibold text-emerald-600">
-                              Selesai: {s.juzProgress.length} Juz ({s.juzProgress.slice().sort((a,b)=>b-a).join(', ')})
+                              Selesai: {s.juzProgress.length} Juz ({s.juzProgress.slice().sort((a: number, b: number)=>b-a).join(', ')})
                             </span>
                           ) : <span className="text-slate-400 italic">Selesai: 0 Juz</span>}
                           <span className="text-slate-500">

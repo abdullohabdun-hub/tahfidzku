@@ -1,6 +1,6 @@
 {
-  "id": "219ae2d7-12bd-4e35-a416-aa692dc2ceba",
-  "prevId": "6076be1c-f36a-4597-9fc9-398eabed3af0",
+  "id": "10a7c621-8a67-400f-9935-ba030e713705",
+  "prevId": "219ae2d7-12bd-4e35-a416-aa692dc2ceba",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -994,6 +994,14 @@
           "primaryKey": false,
           "notNull": false
         },
+        "hari_masuk": {
+          "name": "hari_masuk",
+          "type": "hari[]",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::hari[]"
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -1637,6 +1645,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": false
+        },
+        "min_hari_masuk_santri": {
+          "name": "min_hari_masuk_santri",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 2
         }
       },
       "indexes": {},
@@ -1905,6 +1920,12 @@
         },
         "catatan": {
           "name": "catatan",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cakupan_materi": {
+          "name": "cakupan_materi",
           "type": "text",
           "primaryKey": false,
           "notNull": false

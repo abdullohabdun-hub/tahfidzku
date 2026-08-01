@@ -1,1 +1,0 @@
-ALTER TABLE "ujian" ADD COLUMN "cakupan_materi" text;

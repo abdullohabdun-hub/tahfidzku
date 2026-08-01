@@ -23,7 +23,7 @@ function DataKelasPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [nama, setNama] = useState('')
   const [ustadzId, setUstadzId] = useState('')
-  const [tipeKelas, setTipeKelas] = useState<'reguler' | 'online' | ''>('')
+  const [tipeKelas, setTipeKelas] = useState<'reguler' | 'reguler_non_mukim' | 'online' | ''>('')
   const [hariPertemuan, setHariPertemuan] = useState<string[]>([])
   const [jamMulai, setJamMulai] = useState('')
   const [jamSelesai, setJamSelesai] = useState('')
@@ -57,40 +57,46 @@ function DataKelasPage() {
       setErrorMsg('Pilih tipe kelas (Reguler / Online)')
       return
     }
-    if (tipeKelas === 'online' && jamMulai && jamSelesai && jamSelesai <= jamMulai) {
+    if ((tipeKelas === 'online' || tipeKelas === 'reguler_non_mukim') && jamMulai && jamSelesai && jamSelesai <= jamMulai) {
       setErrorMsg('Jam selesai harus lebih akhir dari jam mulai')
       return
     }
 
     setSubmitting(true)
 
-    const payload = { 
-      data: { 
-        nama, 
-        ustadzId: ustadzId ? ustadzId : undefined,
-        tipeKelas: tipeKelas as any,
-        hariPertemuan: tipeKelas === 'online' ? hariPertemuan : undefined,
-        jamMulai: (tipeKelas === 'online' && jamMulai) ? jamMulai : undefined,
-        jamSelesai: (tipeKelas === 'online' && jamSelesai) ? jamSelesai : undefined,
-        waktuShalatDiizinkan: tipeKelas === 'reguler' ? (waktuShalatDiizinkan as any) : undefined
-      } 
+    try {
+      const payload = { 
+        data: { 
+          nama, 
+          ustadzId: ustadzId ? ustadzId : undefined,
+          tipeKelas: tipeKelas as any,
+          hariPertemuan: (tipeKelas === 'online' || tipeKelas === 'reguler_non_mukim') ? hariPertemuan : undefined,
+          jamMulai: ((tipeKelas === 'online' || tipeKelas === 'reguler_non_mukim') && jamMulai) ? jamMulai : undefined,
+          jamSelesai: ((tipeKelas === 'online' || tipeKelas === 'reguler_non_mukim') && jamSelesai) ? jamSelesai : undefined,
+          waktuShalatDiizinkan: tipeKelas === 'reguler' ? (waktuShalatDiizinkan as any) : undefined
+        } 
+      }
+      
+      let res;
+      if (editingId) {
+        res = await updateKelas({ data: { ...payload.data, id: editingId } })
+      } else {
+        res = await createKelas(payload)
+      }
+      
+      if (res.success) {
+        alert(res.message || 'Berhasil menyimpan data')
+        handleCloseForm()
+        loadData()
+      } else {
+        alert(res.error?.message || 'Gagal')
+      }
+    } catch (err: any) {
+      console.error(err)
+      alert(err.message || 'Terjadi kesalahan sistem')
+    } finally {
+      setSubmitting(false)
     }
-    
-    let res;
-    if (editingId) {
-      res = await updateKelas({ data: { ...payload.data, id: editingId } })
-    } else {
-      res = await createKelas(payload)
-    }
-    
-    if (res.success) {
-      alert(res.message || 'Berhasil menyimpan data')
-      handleCloseForm()
-      loadData()
-    } else {
-      alert(res.error?.message || 'Gagal')
-    }
-    setSubmitting(false)
   }
 
   const handleEdit = (k: any) => {
@@ -177,15 +183,19 @@ function DataKelasPage() {
                   <span className="text-sm">Kelas Reguler (Santri Mukim)</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" name="tipeKelas" value="reguler_non_mukim" checked={tipeKelas === 'reguler_non_mukim'} onChange={() => setTipeKelas('reguler_non_mukim')} className="w-4 h-4 text-emerald-600" />
+                  <span className="text-sm">Reguler (Non-Mukim)</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
                   <input type="radio" name="tipeKelas" value="online" checked={tipeKelas === 'online'} onChange={() => setTipeKelas('online')} className="w-4 h-4 text-emerald-600" />
                   <span className="text-sm">Kelas Online</span>
                 </label>
               </div>
             </div>
 
-            {tipeKelas === 'online' && (
+            {(tipeKelas === 'online' || tipeKelas === 'reguler_non_mukim') && (
               <div className="pt-2 border-t border-slate-100 animate-in fade-in slide-in-from-top-2 duration-200">
-                <label className="block text-sm font-medium mb-2">Jadwal Pertemuan (Online)</label>
+                <label className="block text-sm font-medium mb-2">Jadwal Pertemuan</label>
                 <div className="flex flex-wrap gap-2 mb-3">
                   {HARI_OPTIONS.map(hari => {
                     const isSelected = hariPertemuan.includes(hari)
@@ -282,9 +292,13 @@ function DataKelasPage() {
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide bg-blue-50 text-blue-700 border border-blue-200">
                           Online
                         </span>
+                      ) : k.tipeKelas === 'reguler_non_mukim' ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide bg-amber-50 text-amber-700 border border-amber-200">
+                          Reguler (Non-Mukim)
+                        </span>
                       ) : (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide bg-indigo-50 text-indigo-700 border border-indigo-200">
-                          Reguler
+                          Reguler (Mukim)
                         </span>
                       )}
                     </td>
@@ -292,7 +306,7 @@ function DataKelasPage() {
                       {k.ustadzNama ? <span className="font-medium text-emerald-700">Ust. {k.ustadzNama}</span> : <span className="text-slate-400 italic">Belum ada</span>}
                     </td>
                     <td className="px-4 py-3">
-                      {k.tipeKelas === 'online' ? (
+                      {k.tipeKelas === 'online' || k.tipeKelas === 'reguler_non_mukim' ? (
                         k.hariPertemuan && k.hariPertemuan.length > 0 ? (
                           <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
                             <span className="capitalize">{k.hariPertemuan.join(', ')}</span>

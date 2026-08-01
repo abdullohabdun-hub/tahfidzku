@@ -7,6 +7,7 @@ import { kelas, santri } from '../db/schema'
 import { getAuthSession, requireRole } from '../middleware/auth.middleware'
 import { verifyAksesSantri } from '../lib/authz'
 import { getLegacyMingguMulaiKey } from '../lib/dateUtils'
+import { getHariFromTanggal, getSantriValidIdForSession } from '../lib/absensiHelpers'
 import { success, handleError } from '../lib/response'
 import { AuthenticationError, ForbiddenError, ValidationError } from '../lib/errors'
 import { MAX_EDIT_AGE_MS } from '../lib/constants'
@@ -125,10 +126,15 @@ export const bukaSesiAbsensi = createServerFn({ method: 'POST' })
       }
 
       // 3. Ambil daftar santri di kelas tersebut
+      const hariSesi = getHariFromTanggal(data.tanggal);
       const daftarSantri = await db
         .select({ id: santri.id, nama: santri.nama })
         .from(santri)
-        .where(and(eq(santri.kelasId, data.kelasId), eq(santri.tenantId, tenantId)))
+        .where(and(
+          eq(santri.kelasId, data.kelasId), 
+          eq(santri.tenantId, tenantId),
+          sql`${hariSesi} = ANY(${santri.hariMasuk})`
+        ))
         .orderBy(asc(santri.nama))
 
       // 4. Ambil absensi yang sudah tersimpan untuk sesi ini (jika ada)
@@ -177,7 +183,7 @@ export const simpanAbsensi = createServerFn({ method: 'POST' })
 
       // 1. Validasi sesi dan otoritas ustadz
       const [sesi] = await db
-        .select({ id: sesiKelas.id, kelasId: sesiKelas.kelasId })
+        .select({ id: sesiKelas.id, kelasId: sesiKelas.kelasId, tanggal: sesiKelas.tanggal })
         .from(sesiKelas)
         .where(and(eq(sesiKelas.id, data.sesiKelasId), eq(sesiKelas.tenantId, tenantId)))
         .limit(1)
@@ -192,6 +198,28 @@ export const simpanAbsensi = createServerFn({ method: 'POST' })
 
       if (!kelasTarget || kelasTarget.ustadzId !== userId) {
         throw new ForbiddenError('Anda bukan pengampu kelas dari sesi ini')
+      }
+
+      // Validasi Santri ID
+      const hariSesi = getHariFromTanggal(sesi.tanggal);
+
+      const validSantriIds = await getSantriValidIdForSession({
+        kelasId: sesi.kelasId,
+        tenantId,
+        hariSesi
+      });
+
+      // Membuang data payload dari klien yang santriId-nya tidak sah & Reject seluruh batch jika ada anomali
+      const santriTidakValid = data.daftarStatus
+        .filter(item => !validSantriIds.has(item.santriId))
+        .map(item => item.santriId);
+
+      if (santriTidakValid.length > 0) {
+        throw new ValidationError(
+          `${santriTidakValid.length} santri tidak sah untuk sesi ini ` +
+          `(bukan anggota kelas atau libur pada hari ini). ` +
+          `Operasi dibatalkan. IDs: ${santriTidakValid.join(', ')}`
+        );
       }
 
       // 2. Pre-flight Validation: Cek aturan edit 7 hari untuk data yang SUDAH ADA (semua atau tidak sama sekali)

@@ -7,7 +7,7 @@ export const hariEnum = pgEnum('hari', [
   'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu', 'minggu'
 ])
 
-export const tipeKelasEnum = pgEnum('tipe_kelas', ['reguler', 'online'])
+export const tipeKelasEnum = pgEnum('tipe_kelas', ['reguler', 'online', 'reguler_non_mukim'])
 
 export const kelas = pgTable('kelas', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -16,6 +16,7 @@ export const kelas = pgTable('kelas', {
     .references(() => tenants.id, { onDelete: 'cascade' }),
   nama: varchar('nama', { length: 255 }).notNull(),
   ustadzId: uuid('ustadz_id').references(() => users.id, { onDelete: 'set null' }), // Penanggung jawab halaqoh
+  // kelas.tipeKelas, JANGAN disamakan dengan santri.tipe (di sini reguler = mukim, online = non-mukim)
   tipeKelas: tipeKelasEnum('tipe_kelas'),
   waktuShalatDiizinkan: jsonb('waktu_shalat_diizinkan').$type<string[]>(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

@@ -58,6 +58,15 @@ export const createKelas = createServerFn({ method: 'POST' })
       waktuShalatDiizinkan: z.null().optional(),
     }).refine(d => d.jamSelesai > d.jamMulai, { message: 'Jam selesai harus lebih akhir dari jam mulai', path: ['jamSelesai'] }),
     z.object({
+      tipeKelas: z.literal('reguler_non_mukim'),
+      nama: z.string().min(1, 'Nama kelas wajib diisi'),
+      ustadzId: z.string().uuid().optional().nullable(),
+      hariPertemuan: z.array(z.enum(['senin','selasa','rabu','kamis','jumat','sabtu','minggu'])).min(1, 'Minimal pilih satu hari'),
+      jamMulai: z.string().regex(/^\d{2}:\d{2}$/),
+      jamSelesai: z.string().regex(/^\d{2}:\d{2}$/),
+      waktuShalatDiizinkan: z.null().optional(),
+    }).refine(d => d.jamSelesai > d.jamMulai, { message: 'Jam selesai harus lebih akhir dari jam mulai', path: ['jamSelesai'] }),
+    z.object({
       tipeKelas: z.literal('reguler'),
       nama: z.string().min(1, 'Nama kelas wajib diisi'),
       ustadzId: z.string().uuid().optional().nullable(),
@@ -78,9 +87,9 @@ export const createKelas = createServerFn({ method: 'POST' })
         nama: data.nama,
         ustadzId: data.ustadzId || null,
         tipeKelas: data.tipeKelas,
-        hariPertemuan: data.tipeKelas === 'online' ? data.hariPertemuan : [],
-        jamMulai: data.tipeKelas === 'online' ? data.jamMulai : null,
-        jamSelesai: data.tipeKelas === 'online' ? data.jamSelesai : null,
+        hariPertemuan: (data.tipeKelas === 'online' || data.tipeKelas === 'reguler_non_mukim') ? data.hariPertemuan : [],
+        jamMulai: (data.tipeKelas === 'online' || data.tipeKelas === 'reguler_non_mukim') ? data.jamMulai : null,
+        jamSelesai: (data.tipeKelas === 'online' || data.tipeKelas === 'reguler_non_mukim') ? data.jamSelesai : null,
         waktuShalatDiizinkan: data.tipeKelas === 'reguler'
           ? (data.waktuShalatDiizinkan?.length ? data.waktuShalatDiizinkan : null)
           : null,
@@ -121,6 +130,16 @@ export const updateKelas = createServerFn({ method: 'POST' })
     }).refine(d => d.jamSelesai > d.jamMulai, { message: 'Jam selesai harus lebih akhir dari jam mulai', path: ['jamSelesai'] }),
     z.object({
       id: z.string(),
+      tipeKelas: z.literal('reguler_non_mukim'),
+      nama: z.string().min(1, 'Nama kelas wajib diisi'),
+      ustadzId: z.string().uuid().optional().nullable(),
+      hariPertemuan: z.array(z.enum(['senin','selasa','rabu','kamis','jumat','sabtu','minggu'])).min(1, 'Minimal pilih satu hari'),
+      jamMulai: z.string().regex(/^\d{2}:\d{2}$/),
+      jamSelesai: z.string().regex(/^\d{2}:\d{2}$/),
+      waktuShalatDiizinkan: z.null().optional(),
+    }).refine(d => d.jamSelesai > d.jamMulai, { message: 'Jam selesai harus lebih akhir dari jam mulai', path: ['jamSelesai'] }),
+    z.object({
+      id: z.string(),
       tipeKelas: z.literal('reguler'),
       nama: z.string().min(1, 'Nama kelas wajib diisi'),
       ustadzId: z.string().uuid().optional().nullable(),
@@ -144,9 +163,9 @@ export const updateKelas = createServerFn({ method: 'POST' })
         nama: data.nama,
         ustadzId: data.ustadzId || null,
         tipeKelas: data.tipeKelas,
-        hariPertemuan: data.tipeKelas === 'online' ? data.hariPertemuan : [],
-        jamMulai: data.tipeKelas === 'online' ? data.jamMulai : null,
-        jamSelesai: data.tipeKelas === 'online' ? data.jamSelesai : null,
+        hariPertemuan: (data.tipeKelas === 'online' || data.tipeKelas === 'reguler_non_mukim') ? data.hariPertemuan : [],
+        jamMulai: (data.tipeKelas === 'online' || data.tipeKelas === 'reguler_non_mukim') ? data.jamMulai : null,
+        jamSelesai: (data.tipeKelas === 'online' || data.tipeKelas === 'reguler_non_mukim') ? data.jamSelesai : null,
         waktuShalatDiizinkan: data.tipeKelas === 'reguler'
           ? (data.waktuShalatDiizinkan?.length ? data.waktuShalatDiizinkan : null)
           : null,

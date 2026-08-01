@@ -18,6 +18,7 @@ function PengaturanPage() {
   
   const [namaLembaga, setNamaLembaga] = useState('')
   const [slug, setSlug] = useState('')
+  const [minHariMasukSantri, setMinHariMasukSantri] = useState(2)
   const [sesiRegulerDefault, setSesiRegulerDefault] = useState<WaktuShalat[]>([])
   const [savingSesiDefault, setSavingSesiDefault] = useState(false)
 
@@ -36,6 +37,7 @@ function PengaturanPage() {
     if (res.success && res.data) {
       setNamaLembaga(res.data.namaLembaga)
       setSlug(res.data.slug)
+      setMinHariMasukSantri(res.data.minHariMasukSantri ?? 2)
     }
     const raporRes = await getRaporSettings()
     if (raporRes.success && raporRes.data) {
@@ -59,7 +61,7 @@ function PengaturanPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
-    const res = await updateTenantInfo({ data: { namaLembaga } })
+    const res = await updateTenantInfo({ data: { namaLembaga, minHariMasukSantri } })
     if (res.success) {
       alert('Berhasil memperbarui pengaturan lembaga')
     } else {
@@ -128,6 +130,25 @@ function PengaturanPage() {
               </div>
               <p className="text-xs text-slate-500">
                 Alamat URL dikunci secara permanen agar tautan (link) yang sudah Anda bagikan kepada Ustadz dan Wali Santri tidak terputus/error di kemudian hari.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                <Settings className="w-4 h-4 text-slate-400" />
+                Minimal Hari Masuk Santri (per Minggu)
+              </label>
+              <input 
+                type="number"
+                required 
+                min={1}
+                max={7}
+                value={minHariMasukSantri} 
+                onChange={e => setMinHariMasukSantri(parseInt(e.target.value) || 1)} 
+                className="w-full border border-slate-300 p-3 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all" 
+              />
+              <p className="text-xs text-slate-500">
+                Minimum hari santri harus masuk per minggu. Saat menambah/mengedit santri, admin tidak dapat memilih hari kurang dari batas ini.
               </p>
             </div>
 

@@ -1,7 +1,7 @@
 // src/db/schema/tenants.ts
 // Tabel utama untuk multi-tenancy — setiap lembaga tahfidz = 1 tenant
 
-import { pgTable, uuid, varchar, timestamp, pgEnum, text, boolean } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, varchar, timestamp, pgEnum, text, boolean, integer } from 'drizzle-orm/pg-core'
 
 export const statusEnum = pgEnum('tenant_status', ['pending', 'trial', 'aktif', 'suspend', 'rejected'])
 
@@ -17,4 +17,5 @@ export const tenants = pgTable('tenants', {
   catatan: text('catatan'),
   lastActiveAt: timestamp('last_active_at', { withTimezone: true }),
   trialWarningSent: boolean('trial_warning_sent').default(false).notNull(),
+  minHariMasukSantri: integer('min_hari_masuk_santri').notNull().default(2),
 })

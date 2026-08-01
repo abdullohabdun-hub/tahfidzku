@@ -1,6 +1,6 @@
 {
-  "id": "ff50d585-bd74-491b-a887-5ec4890ed0a2",
-  "prevId": "6076be1c-f36a-4597-9fc9-398eabed3af0",
+  "id": "ee39f5d5-2f92-4d6f-8ac6-23325dc7eef9",
+  "prevId": "10a7c621-8a67-400f-9935-ba030e713705",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -994,6 +994,14 @@
           "primaryKey": false,
           "notNull": false
         },
+        "hari_masuk": {
+          "name": "hari_masuk",
+          "type": "hari[]",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::hari[]"
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -1637,6 +1645,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": false
+        },
+        "min_hari_masuk_santri": {
+          "name": "min_hari_masuk_santri",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 2
         }
       },
       "indexes": {},
@@ -2476,7 +2491,8 @@
       "schema": "public",
       "values": [
         "reguler",
-        "online"
+        "online",
+        "reguler_non_mukim"
       ]
     },
     "public.tipe_santri": {

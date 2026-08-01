@@ -118,11 +118,10 @@ export function TiketList({ tiket, userRole, userId, baseUrl, onNewTicketClick }
         ) : (
           <div className="divide-y divide-slate-100">
             {displayedTiket.map((t) => (
-              // @ts-ignore - Dynamic routes baseUrl cannot be statically typed
               <Link 
                 key={t.id} 
-                to={`${baseUrl}/$tiketId`}
-                params={{ tiketId: t.id }}
+                to={(`${baseUrl}/$tiketId`) as any}
+                params={({ tiketId: t.id }) as any}
                 className="block p-4 hover:bg-slate-50 transition-colors"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">

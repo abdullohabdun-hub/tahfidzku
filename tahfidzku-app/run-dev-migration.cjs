@@ -1,4 +1,4 @@
-require('dotenv').config({ path: '.env.production' });
+require('dotenv').config({ path: '.env' });
 const fs = require('fs');
 const path = require('path');
 const { Client } = require('pg');

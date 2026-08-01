@@ -1,0 +1,1 @@
+ALTER TYPE "public"."tipe_kelas" ADD VALUE 'reguler_non_mukim';

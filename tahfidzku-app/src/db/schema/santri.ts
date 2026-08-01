@@ -2,8 +2,9 @@
 // Tabel santri — data peserta didik, terkait tenant dan kelas
 
 import { pgTable, uuid, varchar, integer, timestamp, pgEnum, jsonb, date, text } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
 import { tenants } from './tenants'
-import { kelas } from './kelas'
+import { kelas, hariEnum } from './kelas'
 import { users } from './users'
 
 export const tipeSantriEnum = pgEnum('tipe_santri', ['reguler', 'dewasa'])
@@ -15,6 +16,7 @@ export const santri = pgTable('santri', {
     .notNull()
     .references(() => tenants.id, { onDelete: 'cascade' }),
   nama: varchar('nama', { length: 255 }).notNull(),
+  // santri.tipe, JANGAN disamakan dengan kelas.tipeKelas (di sini reguler = tipe santri, dewasa = dewasa)
   tipe: tipeSantriEnum('tipe').notNull().default('dewasa'),
   tahapSantri: tahapSantriEnum('tahap_santri').notNull().default('tahfidz'),
   jilidIqraTerakhir: integer('jilid_iqra_terakhir'),
@@ -34,5 +36,11 @@ export const santri = pgTable('santri', {
   posisiTerakhir: jsonb('posisi_terakhir').$type<{surahNomor: number, ayat: number}>(), // Tracker untuk prefill setoran Ziyadah otomatis
   juzUjianPending: integer('juz_ujian_pending'), // Juz yang sedang menunggu ujian kenaikan (null = tidak ada)
   targetTanggalSelesai: date('target_tanggal_selesai'), // nullable
+  hariMasuk: hariEnum('hari_masuk').array().notNull().default(sql`'{}'::hari[]`),
+  /** 
+   * PERHATIAN: Default kosong = santri tidak punya jadwal masuk.
+   * Di UI, saat create santri baru, HARUS explicit pilih minimal hari
+   * sesuai kelasnya (atau backend auto-fill dari kelas.hariPertemuan).
+   */
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 })

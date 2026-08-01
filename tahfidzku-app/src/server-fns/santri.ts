@@ -8,7 +8,7 @@ import { success, handleError } from '../lib/response'
 import { AuthenticationError, ValidationError, ForbiddenError, NotFoundError } from '../lib/errors'
 import { bangunUrutanHafalan, bangunPosisiDariAdminInput, kalkulasiJuzProgress } from '../lib/quranMapper'
 import { inArray } from 'drizzle-orm'
-import { kelas } from '../db/schema'
+import { kelas, tenants, hariEnum } from '../db/schema'
 
 // ==========================================
 // 1. GET SANTRI LIST (ADMIN & USTADZ)
@@ -131,6 +131,7 @@ export const createSantri = createServerFn({ method: 'POST' })
       jilidIqraTerakhir: z.number().int().min(1).max(6).optional().nullable(),
       halamanIqraTerakhir: z.number().int().min(0).max(50).optional().nullable(),
       kelasId: z.string().optional(),
+      hariMasuk: z.array(z.enum(hariEnum.enumValues)).optional().default([]),
       tipe: z.enum(['reguler', 'dewasa']).default('dewasa'),
       email: z.string().optional().nullable(),
       noWa: z.string().optional().nullable(),
@@ -160,6 +161,54 @@ export const createSantri = createServerFn({ method: 'POST' })
       const email = data.email ? normalisasiEmail(data.email) : null;
       const noWa = data.noWa ? normalisasiNoWa(data.noWa) : null;
 
+      // 1. Fetch tenant minimal config
+      const [tenant] = await db.select({ 
+        namaLembaga: tenants.namaLembaga, 
+        minHariMasukSantri: tenants.minHariMasukSantri 
+      }).from(tenants).where(eq(tenants.id, tenantId));
+      
+      if (!tenant) throw new Error(`Tenant ${tenantId} not found`);
+
+      // 2. Tentukan nilai efektif (Create)
+      const effectiveKelasId = data.kelasId ?? null;
+      let effectiveHariMasuk = data.hariMasuk ?? [];
+
+      if (!effectiveKelasId) {
+        if (effectiveHariMasuk.length > 0) {
+          throw new ValidationError('Santri belum terdaftar ke Kelompok. Masukkan ke Kelompok dulu sebelum mengatur hari masuk.');
+        }
+      } else {
+        // 3. Validasi Subset Hari
+        const [kelasTarget] = await db.select({
+          nama: kelas.nama,
+          hariPertemuan: kelas.hariPertemuan
+        }).from(kelas).where(and(eq(kelas.id, effectiveKelasId), eq(kelas.tenantId, tenantId)));
+
+        if (!kelasTarget) throw new Error(`Kelas ${effectiveKelasId} not found`);
+
+        const kelasPakaiHariTertentu = kelasTarget.hariPertemuan.length > 0;
+
+        if (!kelasPakaiHariTertentu) {
+          // Kelas mukim: hariMasuk santri dipaksa jadi 7 hari, abaikan input manual
+          effectiveHariMasuk = ['senin','selasa','rabu','kamis','jumat','sabtu','minggu'] as any[];
+        } else {
+          const invalidHari = effectiveHariMasuk.filter(h => !kelasTarget.hariPertemuan.includes(h as any));
+          if (invalidHari.length > 0) {
+            throw new ValidationError(
+              `Hari [${invalidHari.join(', ')}] tidak ada dalam jadwal ${kelasTarget.nama}. ` +
+              `Jadwal kelas: [${kelasTarget.hariPertemuan.join(', ')}]`
+            );
+          }
+
+          // 4. Validasi Minimal Hari
+          if (effectiveHariMasuk.length < tenant.minHariMasukSantri) {
+            throw new ValidationError(
+              `Minimal hari masuk untuk ${tenant.namaLembaga} adalah ${tenant.minHariMasukSantri} hari`
+            );
+          }
+        }
+      }
+
       const [newSantri] = await db.insert(santri).values({
         tenantId,
         nama: data.nama,
@@ -171,7 +220,8 @@ export const createSantri = createServerFn({ method: 'POST' })
         batasHafalanJuz: data.batasHafalanJuz ?? null,
         batasHafalanSurah: data.batasHafalanSurah ?? null,
         batasHafalanAyat: data.batasHafalanAyat ?? null,
-        kelasId: data.kelasId ?? null,
+        kelasId: effectiveKelasId,
+        hariMasuk: effectiveHariMasuk,
         tipe: data.tipe,
         posisiTerakhir: data.tahapSantri === 'tahfidz' ? defaultPosisi : null,
         urutanHafalan: data.tahapSantri === 'tahfidz' ? defaultUrutan : [],
@@ -271,6 +321,7 @@ export const updateSantri = createServerFn({ method: 'POST' })
     batasHafalanSurah: z.string().optional().nullable(),
     batasHafalanAyat: z.number().optional().nullable(),
     kelasId: z.string().optional().nullable(),
+    hariMasuk: z.array(z.enum(hariEnum.enumValues)).optional(),
     tipe: z.enum(['reguler', 'dewasa']).default('dewasa'),
     email: z.string().optional().nullable(),
     noWa: z.string().optional().nullable(),
@@ -293,6 +344,54 @@ export const updateSantri = createServerFn({ method: 'POST' })
 
       // Ambil data santri saat ini untuk memeriksa apakah perlu update posisiTerakhir
       const [currentSantri] = await db.select().from(santri).where(eq(santri.id, data.id)).limit(1)
+      
+      // 1. Fetch tenant minimal config
+      const [tenant] = await db.select({ 
+        namaLembaga: tenants.namaLembaga, 
+        minHariMasukSantri: tenants.minHariMasukSantri 
+      }).from(tenants).where(eq(tenants.id, tenantId));
+      
+      if (!tenant) throw new Error(`Tenant ${tenantId} not found`);
+
+      // 2. Tentukan nilai efektif (Update)
+      const effectiveKelasId = data.kelasId !== undefined ? data.kelasId : (currentSantri?.kelasId ?? null);
+      let effectiveHariMasuk = data.hariMasuk !== undefined ? data.hariMasuk : (currentSantri?.hariMasuk ?? []);
+
+      if (!effectiveKelasId) {
+        if (effectiveHariMasuk.length > 0) {
+          throw new ValidationError('Santri belum terdaftar ke Kelompok. Masukkan ke Kelompok dulu sebelum mengatur hari masuk.');
+        }
+      } else {
+        // 3. Validasi Subset Hari
+        const [kelasTarget] = await db.select({
+          nama: kelas.nama,
+          hariPertemuan: kelas.hariPertemuan
+        }).from(kelas).where(and(eq(kelas.id, effectiveKelasId), eq(kelas.tenantId, tenantId)));
+
+        if (!kelasTarget) throw new Error(`Kelas ${effectiveKelasId} not found`);
+
+        const kelasPakaiHariTertentu = kelasTarget.hariPertemuan.length > 0;
+
+        if (!kelasPakaiHariTertentu) {
+          // Kelas mukim: hariMasuk santri dipaksa jadi 7 hari, abaikan input manual
+          effectiveHariMasuk = ['senin','selasa','rabu','kamis','jumat','sabtu','minggu'] as any[];
+        } else {
+          const invalidHari = effectiveHariMasuk.filter(h => !kelasTarget.hariPertemuan.includes(h as any));
+          if (invalidHari.length > 0) {
+            throw new ValidationError(
+              `Hari [${invalidHari.join(', ')}] tidak ada dalam jadwal ${kelasTarget.nama}. ` +
+              `Jadwal kelas: [${kelasTarget.hariPertemuan.join(', ')}]`
+            );
+          }
+
+          // 4. Validasi Minimal Hari
+          if (effectiveHariMasuk.length < tenant.minHariMasukSantri) {
+            throw new ValidationError(
+              `Minimal hari masuk untuk ${tenant.namaLembaga} adalah ${tenant.minHariMasukSantri} hari`
+            );
+          }
+        }
+      }
       
       let newPosisiTerakhir = currentSantri?.posisiTerakhir
       let newUrutanHafalan = currentSantri?.urutanHafalan || bangunUrutanHafalan(data.juzProgress)
@@ -356,7 +455,8 @@ export const updateSantri = createServerFn({ method: 'POST' })
         batasHafalanJuz: data.batasHafalanJuz ?? null,
         batasHafalanSurah: data.batasHafalanSurah ?? null,
         batasHafalanAyat: data.batasHafalanAyat ?? null,
-        kelasId: data.kelasId ?? null,
+        kelasId: effectiveKelasId,
+        hariMasuk: effectiveHariMasuk,
         tipe: data.tipe,
         posisiTerakhir: newPosisiTerakhir,
         urutanHafalan: newUrutanHafalan,
