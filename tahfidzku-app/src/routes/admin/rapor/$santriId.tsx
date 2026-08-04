@@ -72,7 +72,7 @@ function RaporPage() {
           </Link>
           <div>
             <h2 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-              <FileText className="w-5 h-5 text-emerald-600" />
+              <FileText className="w-5 h-5 text-primary" />
               Cetak Rapor Hafalan
             </h2>
             {data?.profil && (
@@ -143,7 +143,7 @@ function RaporPage() {
             <Button
               onClick={() => window.print()}
               disabled={loading || !data}
-              className="bg-emerald-600 hover:bg-emerald-700 gap-2 h-10 px-5"
+              className="gap-2 h-10 px-5"
             >
               <Printer className="w-4 h-4" />
               Cetak / Export PDF
@@ -154,7 +154,7 @@ function RaporPage() {
 
       {/* ── AREA KONTEN ── */}
       {loading && (
-        <div className="print:hidden flex items-center justify-center min-h-[400px] text-emerald-600">
+        <div className="print:hidden flex items-center justify-center min-h-[400px] text-primary">
           <Loader2 className="animate-spin w-10 h-10" />
         </div>
       )}

@@ -5,7 +5,10 @@ import { getKelasList, createKelas, deleteKelas, updateKelas } from '../../serve
 import { getUstadzList } from '../../server-fns/ustadz'
 import { getRaporSettings } from '../../server-fns/rapor'
 import { Button } from '../../components/ui/button'
+import { toast } from "../../components/ui/sonner"
+import { RowActionsMenu } from '../../components/shared/RowActionsMenu'
 import { WAKTU_SHALAT_OPTIONS, WAKTU_SHALAT_LABEL } from '../../lib/constants'
+import { PageHeader } from '../../components/shared/PageHeader'
 
 export const Route = createFileRoute('/admin/kelas')({
   component: DataKelasPage,
@@ -85,15 +88,15 @@ function DataKelasPage() {
       }
       
       if (res.success) {
-        alert(res.message || 'Berhasil menyimpan data')
+        toast.success(res.message || 'Berhasil menyimpan data')
         handleCloseForm()
         loadData()
       } else {
-        alert(res.error?.message || 'Gagal')
+        toast.error(res.error?.message || 'Gagal')
       }
     } catch (err: any) {
       console.error(err)
-      alert(err.message || 'Terjadi kesalahan sistem')
+      toast.error(err.message || 'Terjadi kesalahan sistem')
     } finally {
       setSubmitting(false)
     }
@@ -127,27 +130,27 @@ function DataKelasPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (confirm('Yakin ingin menghapus kelas ini? (Santri di dalamnya akan kehilangan relasi kelas)')) {
-      const res = await deleteKelas({ data: { id } })
-      if (res.success) {
-        loadData()
-      } else {
-        alert(res.error?.message || 'Gagal menghapus')
-      }
+    // confirm() dihapus — AlertDialog dari RowActionsMenu menangani konfirmasi sebelum handler ini dipanggil
+    const res = await deleteKelas({ data: { id } })
+    if (res.success) {
+      toast.success("Kelas berhasil dihapus")
+      loadData()
+    } else {
+      toast.error(res.error?.message || 'Gagal menghapus')
     }
   }
 
   return (
     <div className="space-y-6 max-w-5xl">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">Kelas / Halaqoh</h2>
-          <p className="text-slate-500">Kelompokkan santri dan tentukan pengajarnya.</p>
-        </div>
-        <Button onClick={() => { handleCloseForm(); setShowForm(!showForm) }} className="bg-emerald-600 hover:bg-emerald-700">
-          <Plus className="w-4 h-4 mr-2" /> Tambah Kelas
-        </Button>
-      </div>
+      <PageHeader
+        title="Kelas / Halaqoh"
+        description="Kelompokkan santri dan tentukan pengajarnya."
+        action={
+          <Button onClick={() => { handleCloseForm(); setShowForm(!showForm) }}>
+            <Plus className="w-4 h-4 mr-2" /> Tambah Kelas
+          </Button>
+        }
+      />
 
       {showForm && (
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
@@ -204,7 +207,7 @@ function DataKelasPage() {
                         onClick={() => {
                           setHariPertemuan(prev => isSelected ? prev.filter(h => h !== hari) : [...prev, hari])
                         }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors ${isSelected ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100'}`}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors ${isSelected ? 'bg-primary/10 text-primary border border-primary/20 font-semibold' : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100'}`}
                       >
                         {hari}
                       </button>
@@ -250,7 +253,7 @@ function DataKelasPage() {
             
             <div className="flex gap-2 pt-2">
               <Button type="button" variant="outline" onClick={handleCloseForm}>Batal</Button>
-              <Button type="submit" disabled={submitting || !tipeKelas} className="bg-emerald-600 hover:bg-emerald-700">
+              <Button type="submit" disabled={submitting || !tipeKelas}>
                 {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                 Simpan
               </Button>
@@ -261,7 +264,7 @@ function DataKelasPage() {
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-emerald-600" /></div>
+          <div className="p-8 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" /></div>
         ) : (
           <table className="w-full text-left text-[13px] whitespace-nowrap">
             <thead className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-semibold uppercase tracking-[0.04em] text-slate-500">
@@ -329,13 +332,26 @@ function DataKelasPage() {
                         )
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right flex justify-end gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => handleEdit(k)} className="text-blue-500 hover:text-blue-700 hover:bg-blue-50">
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleDelete(k.id)} className="text-red-500 hover:text-red-700 hover:bg-red-50">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                    <td className="px-4 py-3 text-right">
+                      {/* Edit + Hapus via RowActionsMenu (AlertDialog konfirmasi untuk Hapus) */}
+                      <div className="flex justify-end">
+                        <RowActionsMenu
+                          actions={[
+                            {
+                              label: "Edit",
+                              icon: Edit,
+                              onClick: () => handleEdit(k),
+                            },
+                            {
+                              label: "Hapus",
+                              icon: Trash2,
+                              onClick: () => handleDelete(k.id),
+                              variant: "destructive",
+                              entityName: k.nama,
+                            },
+                          ]}
+                        />
+                      </div>
                     </td>
                   </tr>
                 ))

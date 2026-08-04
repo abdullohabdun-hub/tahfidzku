@@ -1,8 +1,10 @@
 import { createFileRoute, redirect, isRedirect } from "@tanstack/react-router"
 import { useState, useEffect } from "react"
-import { Users, Contact, Activity, TrendingUp, Loader2, AlertTriangle } from "lucide-react"
+import { Users, Contact, Activity, TrendingUp, Loader2, AlertTriangle, CalendarCheck, BarChart3, UserX } from "lucide-react"
 import { Card, CardContent } from "../../components/ui/card"
-import { getAdminDashboardStats } from "../../server-fns/dashboard"
+import { StatCard } from "../../components/shared/StatCard"
+import { WeeklySetoranChart } from "../../components/admin/WeeklySetoranChart"
+import { getAdminDashboardStats, getAgregatSantriDashboard } from "../../server-fns/dashboard"
 import { getAllRubrikTenant } from "../../server-fns/rubrik"
 import { FormatPenilaian } from "../../components/FormatPenilaian"
 import { AuthErrorAlert } from "../../components/AuthErrorAlert"
@@ -12,19 +14,21 @@ export const Route = createFileRoute('/admin/')({
   loader: async () => {
     try {
       const rubrikRes = await getAllRubrikTenant()
+      const agregatRes = await getAgregatSantriDashboard()
       return {
         rubrikAktif: rubrikRes,
+        agregat: agregatRes.success ? agregatRes.data : null,
         authError: null
       }
     } catch (err: any) {
       if (isRedirect(err)) throw err
-      return { rubrikAktif: [], authError: { message: 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.', code: 'NETWORK_ERROR' } }
+      return { rubrikAktif: [], agregat: null, authError: { message: 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.', code: 'NETWORK_ERROR' } }
     }
   }
 })
 
 function Dashboard() {
-  const { rubrikAktif, authError } = Route.useLoaderData()
+  const { rubrikAktif, authError, agregat } = Route.useLoaderData()
 
   const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
   
@@ -51,7 +55,7 @@ function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-12 text-emerald-600 min-h-[50vh]">
+      <div className="flex items-center justify-center p-12 text-primary min-h-[50vh]">
         <Loader2 className="animate-spin w-8 h-8" />
       </div>
     )
@@ -61,38 +65,26 @@ function Dashboard() {
     {
       title: "Total Santri",
       value: statsData?.totalSantri || "0",
-      icon: <Users className="h-6 w-6 text-emerald-600" />,
+      icon: Users,
       description: "Santri aktif terdaftar",
-      bgColor: "bg-emerald-50",
-      borderColor: "border-emerald-100/50",
-      textColor: "text-emerald-600",
     },
     {
       title: "Total Ustadz",
       value: statsData?.totalUstadz || "0",
-      icon: <Contact className="h-6 w-6 text-blue-600" />,
+      icon: Contact,
       description: "Muhaffizh pengajar",
-      bgColor: "bg-blue-50",
-      borderColor: "border-blue-100/50",
-      textColor: "text-blue-600",
     },
     {
       title: "Setoran Hari Ini",
       value: statsData?.totalSetoranHariIni || "0",
-      icon: <Activity className="h-6 w-6 text-purple-600" />,
+      icon: Activity,
       description: "Telah menyetor hafalan",
-      bgColor: "bg-purple-50",
-      borderColor: "border-purple-100/50",
-      textColor: "text-purple-600",
     },
     {
       title: "Status Sistem",
       value: "Aktif",
-      icon: <TrendingUp className="h-6 w-6 text-amber-600" />,
+      icon: TrendingUp,
       description: "Semua sistem berjalan lancar",
-      bgColor: "bg-amber-50",
-      borderColor: "border-amber-100/50",
-      textColor: "text-amber-600",
     }
   ]
 
@@ -110,10 +102,10 @@ function Dashboard() {
   const trialEnds = statsData?.trialEndsAt ? new Date(statsData.trialEndsAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : ''
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-6 pb-24 font-sans">
       {isTrial && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-          <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+          <AlertTriangle className="h-5 w-5 text-warning mt-0.5 flex-shrink-0" />
           <div>
             <h3 className="font-semibold text-amber-900">Masa Trial (Percobaan)</h3>
             <p className="text-amber-800 text-sm mt-1">
@@ -127,38 +119,70 @@ function Dashboard() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-900">Ahlan wa Sahlan, Administrator!</h2>
-          <p className="text-slate-500 mt-1">Berikut adalah ringkasan aktivitas lembaga Anda hari ini.</p>
+          <p className="text-slate-500 text-sm mt-1">Berikut adalah ringkasan aktivitas lembaga Anda hari ini.</p>
         </div>
         <div className="bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm inline-flex w-fit">
-          <p className="text-emerald-700 font-semibold text-sm">{today}</p>
+          <p className="text-primary font-semibold text-sm">{today}</p>
         </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat, i) => (
-          <div key={i} className="bg-white rounded-2xl p-6 shadow-sm shadow-slate-200/50 border border-slate-100 hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden group">
-            <div className={`absolute top-0 right-0 w-32 h-32 ${stat.bgColor} rounded-bl-full -z-10 opacity-50 group-hover:scale-110 transition-transform duration-500`}></div>
-            <div className="flex justify-between items-start">
-              <div>
-                <p className={`text-sm font-medium ${stat.textColor} tracking-wide uppercase opacity-80`}>{stat.title}</p>
-                <h3 className={`text-3xl font-bold ${stat.textColor} mt-2 tracking-tight`}>{stat.value}</h3>
-              </div>
-              <div className={`p-3 ${stat.bgColor} rounded-xl border ${stat.borderColor}`}>
-                {stat.icon}
-              </div>
-            </div>
-            <p className="text-xs text-slate-500 mt-4">{stat.description}</p>
-          </div>
+          <StatCard
+            key={i}
+            label={stat.title}
+            value={stat.value}
+            icon={stat.icon}
+            description={stat.description}
+          />
         ))}
       </div>
+
+      {agregat && (
+        <div className="grid gap-6 md:grid-cols-3">
+          {/* TODO(product): Threshold tone (kapan warning/danger) sengaja belum ditentukan.
+          // Perlu data riil beberapa lembaga dulu untuk kalibrasi angka yang masuk akal.
+          // Lihat ticket Dashboard Revamp — keputusan Abdulloh 2026-08-03. */}
+          {agregat.totalSesiAbsensi === 0 ? (
+            <StatCard 
+              label="Rata-rata Kehadiran" 
+              value="—" 
+              icon={CalendarCheck}
+              description="Belum ada data absensi minggu ini" 
+              tone="neutral" 
+            />
+          ) : (
+            <StatCard 
+              label="Rata-rata Kehadiran (7 Hari)" 
+              value={`${agregat.rataKehadiranPersen}%`}
+              icon={CalendarCheck} 
+              description={`Total ${agregat.totalSantriAktif} santri aktif`} 
+              tone="neutral"
+            />
+          )}
+
+          <StatCard 
+            label="Trend Halaman (7 Hari)" 
+            value={agregat.trendHalaman.mingguIni}
+            icon={BarChart3}
+            tone="neutral"
+            description={agregat.trendHalaman.selisih < 0 ? "Menurun dibanding minggu lalu" : "Total setoran halaman minggu ini"} 
+          />
+
+          <StatCard 
+            label="Stagnan (Tanpa Setor 7 Hari)" 
+            value={agregat.santriTanpaSetoran} 
+            icon={UserX} 
+            tone="neutral"
+            description="Santri belum setor seminggu terakhir" 
+          />
+        </div>
+      )}
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
         <div className="col-span-4 bg-white rounded-2xl p-6 shadow-sm shadow-slate-200/50 border border-slate-100">
           <h3 className="font-bold text-lg text-slate-800 mb-6">Grafik Setoran Mingguan</h3>
-          <div className="h-64 flex flex-col items-center justify-center bg-slate-50/50 rounded-xl border border-slate-100 border-dashed">
-            <p className="text-slate-400 font-medium">Pembaruan Data Grafik Segera Hadir</p>
-            <p className="text-xs text-slate-400 mt-2 italic">*Catatan: Grafik aktivitas murojaah tercatat mulai Juli 2026.</p>
-          </div>
+          <WeeklySetoranChart data={agregat?.setoranHarian || []} isLoading={!agregat} />
         </div>
         
         <div className="col-span-3 bg-white rounded-2xl p-6 shadow-sm shadow-slate-200/50 border border-slate-100 flex flex-col h-full">

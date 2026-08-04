@@ -1,12 +1,15 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { Users, Plus, Loader2, Trash2, Edit, VenetianMask, Printer, Search } from 'lucide-react'
+import { toast } from '../../components/ui/sonner'
 import { getSantriList, createSantri, deleteSantri, updateSantri } from '../../server-fns/santri'
 import { getKelasList } from '../../server-fns/kelas'
 import { getTenantInfo } from '../../server-fns/admin-settings'
 import { impersonateUser } from '../../server-fns/impersonate'
 import { getSurahByJuz, getAyatRangeInJuz } from '../../lib/quranMapper'
 import { Button } from '../../components/ui/button'
+import { RowActionsMenu } from '../../components/shared/RowActionsMenu'
+import { PageHeader } from '../../components/shared/PageHeader'
 
 export const Route = createFileRoute('/admin/santri')({
   component: DataSantriPage,
@@ -123,7 +126,7 @@ function DataSantriPage() {
     e.preventDefault()
 
     if (kelasId && hariMasuk.length < minHariMasukSantri) {
-      alert(`Minimal hari masuk untuk lembaga ini adalah ${minHariMasukSantri} hari. Harap tambahkan hari masuk santri.`);
+      toast.warning(`Minimal hari masuk untuk lembaga ini adalah ${minHariMasukSantri} hari. Harap tambahkan hari masuk santri.`);
       return;
     }
     
@@ -174,11 +177,11 @@ function DataSantriPage() {
     }
     
     if (res.success) {
-      alert(res.message || 'Berhasil menyimpan data')
+      toast.success(res.message || 'Berhasil menyimpan data')
       handleCloseForm()
       loadData()
     } else {
-      alert(res.error?.message || 'Gagal')
+      toast.error(res.error?.message || 'Gagal')
     }
     setSubmitting(false)
   }
@@ -245,13 +248,13 @@ function DataSantriPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (confirm('Yakin ingin menghapus data santri ini? Data hafalan santri ini akan ikut terhapus!')) {
-      const res = await deleteSantri({ data: { id } })
-      if (res.success) {
-        loadData()
-      } else {
-        alert(res.error?.message || 'Gagal menghapus')
-      }
+    // confirm() dihapus — AlertDialog dari RowActionsMenu menangani konfirmasi sebelum handler ini dipanggil
+    const res = await deleteSantri({ data: { id } })
+    if (res.success) {
+      toast.success("Santri berhasil dihapus")
+      loadData()
+    } else {
+      toast.error(res.error?.message || 'Gagal menghapus')
     }
   }
 
@@ -260,25 +263,25 @@ function DataSantriPage() {
     setImpersonating(true)
     const res = await impersonateUser({ data: { targetRole: 'santri', targetId: impersonateTarget.id } })
     setImpersonating(false)
-    if (res.success && res.data) {
+    if (res.success && res.data?.redirectUrl) {
       window.location.href = res.data.redirectUrl
     } else {
-      alert((res as any).error?.message || 'Gagal memulai mode menyamar')
-      setImpersonateTarget(null)
+      toast.error((res as any).error?.message || 'Gagal memulai mode menyamar')
     }
+    setImpersonateTarget(null)
   }
 
   return (
-    <div className="space-y-6 max-w-5xl">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">Data Santri</h2>
-          <p className="text-slate-500">Kelola master data peserta didik.</p>
-        </div>
-        <Button onClick={() => { handleCloseForm(); setShowForm(!showForm) }} className="bg-emerald-600 hover:bg-emerald-700">
-          <Plus className="w-4 h-4 mr-2" /> Tambah Santri
-        </Button>
-      </div>
+    <div className="space-y-6 max-w-5xl font-sans">
+      <PageHeader
+        title="Data Santri"
+        description="Kelola master data peserta didik."
+        action={
+          <Button onClick={() => { handleCloseForm(); setShowForm(!showForm) }}>
+            <Plus className="w-4 h-4 mr-2" /> Tambah Santri
+          </Button>
+        }
+      />
 
       {showForm && (
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
@@ -322,7 +325,7 @@ function DataSantriPage() {
                       }}
                       className={`h-10 w-10 rounded-lg text-sm font-bold flex items-center justify-center transition-all ${
                         juzProgress.includes(j) 
-                          ? 'bg-emerald-600 text-white shadow-sm hover:bg-emerald-700' 
+                          ? 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90' 
                           : 'bg-white border border-slate-300 text-slate-600 hover:bg-slate-100'
                       } ${editingId ? 'opacity-70 cursor-not-allowed' : ''}`}
                       disabled={!!editingId}
@@ -542,7 +545,7 @@ function DataSantriPage() {
 
             <div className="flex gap-2 pt-2">
               <Button type="button" variant="outline" onClick={handleCloseForm}>Batal</Button>
-              <Button type="submit" disabled={submitting} className="bg-emerald-600 hover:bg-emerald-700">
+              <Button type="submit" disabled={submitting}>
                 {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                 Simpan
               </Button>
@@ -560,7 +563,7 @@ function DataSantriPage() {
             </p>
             <div className="flex justify-end gap-3">
               <Button variant="outline" onClick={() => setImpersonateTarget(null)} disabled={impersonating}>Batal</Button>
-              <Button className="bg-orange-600 hover:bg-orange-700 text-white" onClick={handleImpersonate} disabled={impersonating}>
+              <Button className="bg-warning text-warning-foreground hover:bg-warning/90" onClick={handleImpersonate} disabled={impersonating}>
                 {impersonating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <VenetianMask className="w-4 h-4 mr-2" />}
                 Ya, Lanjutkan
               </Button>
@@ -648,9 +651,22 @@ function DataSantriPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-col">
-                          <span className={`text-[11px] font-medium px-2 py-0.5 rounded-md w-fit ${s.tipe === 'dewasa' ? 'bg-purple-50 text-purple-700 border border-purple-100' : 'bg-blue-50 text-blue-700 border border-blue-100'}`}>
-                            {s.tipe === 'dewasa' ? 'Dewasa / Online' : 'Reguler / Anak'}
-                          </span>
+                          <div className="flex flex-wrap gap-1">
+                            <span className={`text-[11px] font-medium px-2 py-0.5 rounded-md ${
+                              s.tipe === 'dewasa'
+                                ? 'bg-purple-50 text-purple-700 border border-purple-100'
+                                : 'bg-blue-50 text-blue-700 border border-blue-100'
+                            }`}>
+                              {s.tipe === 'dewasa' ? 'Dewasa' : 'Reguler'}
+                            </span>
+                            <span className={`text-[11px] font-medium px-2 py-0.5 rounded-md ${
+                              s.tahapSantri === 'tahfidz'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                                : 'bg-amber-50 text-amber-700 border border-amber-100'
+                            }`}>
+                              {s.tahapSantri === 'tahfidz' ? 'Tahfidz' : 'Iqra'}
+                            </span>
+                          </div>
                           {s.tipe === 'dewasa' && s.noWa && (
                             <span className="text-[10px] text-slate-500 mt-1">
                               WA: {s.noWa}
@@ -671,7 +687,7 @@ function DataSantriPage() {
                             <span className="font-semibold text-emerald-600">
                               Selesai: {s.juzProgress.length} Juz ({s.juzProgress.slice().sort((a: number, b: number)=>b-a).join(', ')})
                             </span>
-                          ) : <span className="text-slate-400 italic">Selesai: 0 Juz</span>}
+                          ) : <span className="text-slate-400 italic">Belum ada setoran</span>}
                           <span className="text-slate-500">
                             Batas: {s.batasHafalanJuz ? `Juz ${s.batasHafalanJuz}` : '-'}
                             {s.batasHafalanSurah && ` (${s.batasHafalanSurah} ayat ${s.batasHafalanAyat || '-'})`}
@@ -683,22 +699,35 @@ function DataSantriPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end items-center gap-1">
+                          {/* Menyamar: tetap ikon visible — punya custom modal konfirmasi sendiri */}
                           {s.tipe === 'dewasa' && (
-                            <Button onClick={() => setImpersonateTarget(s)} variant="ghost" size="icon" className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" title="Mode Menyamar (Akses sebagai Santri)">
+                            <Button onClick={() => setImpersonateTarget(s)} variant="ghost" size="icon-sm" className="text-amber-600 hover:text-amber-700 hover:bg-amber-50" title="Mode Menyamar (Akses sebagai Santri)">
                               <VenetianMask className="w-4 h-4" />
                             </Button>
                           )}
+                          {/* Cetak Rapor: tetap ikon visible — aksi navigasi primer */}
                           <Link to="/admin/rapor/$santriId" params={{ santriId: s.id }}>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" title="Cetak Rapor">
+                            <Button variant="ghost" size="icon-sm" className="text-slate-500 hover:text-slate-900" title="Cetak Rapor" aria-label="Cetak Rapor">
                               <Printer className="w-4 h-4" />
                             </Button>
                           </Link>
-                          <Button onClick={() => handleEdit(s)} variant="ghost" size="icon" className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50" title="Edit">
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button onClick={() => handleDelete(s.id)} variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" title="Hapus">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          {/* Edit + Hapus masuk dropdown (AlertDialog konfirmasi untuk Hapus) */}
+                          <RowActionsMenu
+                            actions={[
+                              {
+                                label: "Edit",
+                                icon: Edit,
+                                onClick: () => handleEdit(s),
+                              },
+                              {
+                                label: "Hapus",
+                                icon: Trash2,
+                                onClick: () => handleDelete(s.id),
+                                variant: "destructive",
+                                entityName: s.nama,
+                              },
+                            ]}
+                          />
                         </div>
                       </td>
                     </tr>

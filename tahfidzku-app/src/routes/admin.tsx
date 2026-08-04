@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, Link, useLocation, useRouter, redirect } from 
 import { LayoutDashboard, PieChart, GraduationCap, Contact, Users, Library, Settings, LogOut, Menu, ChevronLeft, ChevronRight, Bell, Loader2, Printer, ShieldCheck } from "lucide-react"
 import { useState, useEffect } from "react"
 import { Button } from "../components/ui/button"
+import { Toaster } from "../components/ui/sonner"
 import { checkAuth, logout } from "../server-fns/auth"
 import { getTenantInfo } from "../server-fns/admin-settings"
 import { HelpTicketButton } from "../components/tiket/HelpTicketButton"
@@ -72,6 +73,7 @@ function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-zinc-50 flex overflow-hidden font-sans text-slate-900">
+      <Toaster position="top-right" richColors />
       
       {/* Mobile Sidebar Overlay */}
       {isMobileOpen && (
@@ -96,7 +98,7 @@ function AdminLayout() {
         <div className={`p-4 flex items-center h-16 shrink-0 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
           <div className="flex items-center gap-3 overflow-hidden">
             {isCollapsed ? (
-              <h2 className="font-bold text-xl text-emerald-600">A</h2>
+              <h2 className="font-bold text-xl text-primary">A</h2>
             ) : (
               <div className="whitespace-nowrap opacity-100 transition-opacity">
                 <h2 className="font-bold text-base tracking-tight text-slate-900 truncate max-w-[140px]" title={tenantName}>{tenantName}</h2>
@@ -124,7 +126,7 @@ function AdminLayout() {
                   relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
                   hover:text-slate-900 hover:bg-slate-100 transition-all group
                   ${isCollapsed ? 'justify-center' : ''}
-                  ${isActive ? 'bg-emerald-50 text-emerald-700 before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-emerald-600 before:rounded-r-full' : ''}
+                  ${isActive ? 'bg-primary/10 text-primary font-semibold before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-primary before:rounded-r-full' : ''}
                 `}
                 title={isCollapsed ? item.name : undefined}
               >
@@ -138,7 +140,7 @@ function AdminLayout() {
         {/* User Footer */}
         <div className="p-4 mt-auto">
           <div className={`bg-slate-50 rounded-xl border border-slate-200 flex items-center ${isCollapsed ? 'p-2 justify-center' : 'p-3 gap-3'}`}>
-            <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold shrink-0">
+            <div className="w-8 h-8 rounded-full bg-primary/15 text-primary flex items-center justify-center font-bold shrink-0">
               {user?.nama ? user.nama.charAt(0).toUpperCase() : "A"}
             </div>
             {!isCollapsed && (

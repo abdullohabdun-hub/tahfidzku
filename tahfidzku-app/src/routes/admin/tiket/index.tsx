@@ -40,8 +40,8 @@ function AdminTiketIndex() {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-xl font-bold text-slate-900">Tiket Bantuan</h2>
-        <p className="text-slate-500 text-sm">Kelola pengaduan dan pertanyaan</p>
+        <h2 className="text-2xl font-bold tracking-tight text-slate-900">Tiket Bantuan</h2>
+        <p className="text-slate-500 text-sm mt-1">Kelola pengaduan dan pertanyaan</p>
       </div>
       <TiketList 
         tiket={tiket}

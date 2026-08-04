@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { ArrowLeft, Save, Loader2, Info } from 'lucide-react'
 import { createAdminFn } from '../../../server-fns/admin-management'
 import { Button } from '../../../components/ui/button'
+import { toast } from "../../../components/ui/sonner"
 
 export const Route = createFileRoute('/admin/kelola-admin/tambah')({
   component: TambahAdminPage,
@@ -26,10 +27,10 @@ function TambahAdminPage() {
     
     const res = await createAdminFn({ data: formData })
     if (res.success) {
-      alert('Berhasil menambahkan admin baru')
+      toast.success('Berhasil menambahkan admin baru')
       navigate({ to: '/admin/kelola-admin' })
     } else {
-      alert((!res.success ? res.error?.message : 'Gagal menambahkan admin'))
+      toast.error((!res.success ? res.error?.message : 'Gagal menambahkan admin') as string)
       setSaving(false)
     }
   }
@@ -142,7 +143,7 @@ function TambahAdminPage() {
                 Batal
               </Button>
             </Link>
-            <Button type="submit" disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 h-11 px-8">
+            <Button type="submit" disabled={saving} className="h-11 px-8">
               {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
               Simpan & Daftarkan
             </Button>

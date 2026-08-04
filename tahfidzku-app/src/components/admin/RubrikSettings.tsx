@@ -119,9 +119,9 @@ export function RubrikSettings() {
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mt-8">
-      <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+      <div className="p-6 border-b border-slate-100 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center">
+          <div className="w-10 h-10 bg-slate-100 text-slate-700 rounded-lg flex items-center justify-center border border-slate-200">
             <ListTodo className="w-5 h-5" />
           </div>
           <div>
@@ -130,7 +130,7 @@ export function RubrikSettings() {
           </div>
         </div>
         {!isFormOpen && (
-          <Button onClick={handleCreateNew} className="bg-indigo-600 hover:bg-indigo-700 h-9 px-4 text-sm">
+          <Button onClick={handleCreateNew} size="sm">
             <Plus className="w-4 h-4 mr-2" />
             Tambah Dimensi
           </Button>
@@ -139,10 +139,10 @@ export function RubrikSettings() {
 
       <div className="p-6">
         {isFormOpen ? (
-          <div className="border border-indigo-100 bg-indigo-50/30 rounded-xl p-5 mb-6">
+          <div className="border border-slate-200 bg-slate-50/50 rounded-xl p-5 mb-6">
             <h4 className="font-semibold text-slate-800 mb-4">{editingId ? 'Edit Dimensi Penilaian' : 'Buat Dimensi Penilaian Baru'}</h4>
             {errorMsg && (
-              <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg flex gap-2 items-start">
+              <div className="mb-4 p-3 bg-rose-50 text-rose-600 text-sm rounded-lg flex gap-2 items-start">
                 <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 <p>{errorMsg}</p>
               </div>
@@ -157,7 +157,7 @@ export function RubrikSettings() {
                     required 
                     value={formLabel} 
                     onChange={e => setFormLabel(e.target.value)} 
-                    className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm" 
+                    className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none text-sm" 
                     placeholder="Contoh: Kualitas Hafalan" 
                   />
                   <p className="text-xs text-slate-500">Akan tampil di form Ustadz.</p>
@@ -171,7 +171,7 @@ export function RubrikSettings() {
                     disabled={!!editingId} // Disabled saat edit
                     value={formKey} 
                     onChange={e => setFormKey(e.target.value)} 
-                    className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm disabled:bg-slate-100 disabled:text-slate-500" 
+                    className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none text-sm disabled:bg-slate-100 disabled:text-slate-500" 
                     placeholder="Contoh: kualitas" 
                   />
                   <p className="text-xs text-slate-500">Unik & tidak bisa diubah (a-z, _, tanpa spasi).</p>
@@ -213,19 +213,19 @@ export function RubrikSettings() {
                         />
                       </div>
                       <Button type="button" variant="outline" className="px-3" onClick={() => handleRemoveOpsi(idx)}>
-                        <Trash2 className="w-4 h-4 text-red-500" />
+                        <Trash2 className="w-4 h-4 text-rose-500" />
                       </Button>
                     </div>
                   ))}
                 </div>
-                <Button type="button" variant="outline" size="sm" className="mt-3 text-indigo-600 border-indigo-200" onClick={handleAddOpsi}>
+                <Button type="button" variant="outline" size="sm" className="mt-3 text-primary border-slate-200" onClick={handleAddOpsi}>
                   + Tambah Opsi
                 </Button>
               </div>
 
               <div className="pt-4 border-t border-slate-200 flex justify-end gap-3">
                 <Button type="button" variant="ghost" onClick={() => setIsFormOpen(false)}>Batal</Button>
-                <Button type="submit" disabled={saving} className="bg-indigo-600 hover:bg-indigo-700">
+                <Button type="submit" disabled={saving}>
                   {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
                   Simpan Dimensi
                 </Button>
@@ -253,7 +253,7 @@ export function RubrikSettings() {
                         )}
                       </div>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => handleEdit(r)} className="text-slate-400 hover:text-indigo-600">
+                    <Button variant="ghost" size="sm" onClick={() => handleEdit(r)} className="text-slate-400 hover:text-slate-700">
                       <Edit2 className="w-4 h-4" />
                     </Button>
                   </div>

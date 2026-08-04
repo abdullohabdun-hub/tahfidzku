@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Save, Loader2, ListChecks } from 'lucide-react'
 import { Button } from '../ui/button'
+import { toast } from '../ui/sonner'
 import { getRaporSettings, upsertRaporSettings } from '../../server-fns/rapor'
 
 const DEFAULT_LABELS = {
@@ -36,9 +37,9 @@ export function LabelPenilaianSettings() {
       }
     })
     if (res.success) {
-      alert('Berhasil menyimpan istilah penilaian!')
+      toast.success('Berhasil menyimpan istilah penilaian!')
     } else {
-      alert(res.error?.message || 'Gagal menyimpan pengaturan')
+      toast.error(res.error?.message || 'Gagal menyimpan pengaturan')
     }
     setSaving(false)
   }
@@ -47,8 +48,8 @@ export function LabelPenilaianSettings() {
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden my-8">
-      <div className="p-6 border-b border-slate-100 flex items-center gap-3 bg-slate-50/50">
-        <div className="w-10 h-10 bg-indigo-100 text-indigo-700 rounded-lg flex items-center justify-center">
+      <div className="p-6 border-b border-slate-100 flex items-center gap-3">
+        <div className="w-10 h-10 bg-slate-100 text-slate-700 rounded-lg flex items-center justify-center border border-slate-200">
           <ListChecks className="w-5 h-5" />
         </div>
         <div>
@@ -69,7 +70,7 @@ export function LabelPenilaianSettings() {
                   required
                   value={labels[skor] || ''}
                   onChange={e => setLabels(prev => ({ ...prev, [skor]: e.target.value }))}
-                  className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all text-sm"
+                  className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-sm"
                   placeholder={`Contoh: ${DEFAULT_LABELS[skor as keyof typeof DEFAULT_LABELS]}`}
                 />
               </div>
@@ -77,7 +78,7 @@ export function LabelPenilaianSettings() {
           </div>
           
           <div className="pt-4 border-t border-slate-100 flex justify-end">
-            <Button type="submit" disabled={saving} className="bg-indigo-600 hover:bg-indigo-700 h-10 px-6">
+            <Button type="submit" disabled={saving} className="h-10 px-6">
               {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
               Simpan Istilah Penilaian
             </Button>

@@ -3,6 +3,9 @@ import { useState, useEffect } from 'react'
 import { Users, Plus, Loader2, ShieldOff, CheckCircle2, AlertTriangle, ShieldCheck } from 'lucide-react'
 import { getAdminsFn, deactivateAdminFn } from '../../../server-fns/admin-management'
 import { Button } from '../../../components/ui/button'
+import { toast } from "../../../components/ui/sonner"
+import { RowActionsMenu } from '../../../components/shared/RowActionsMenu'
+import { PageHeader } from '../../../components/shared/PageHeader'
 
 export const Route = createFileRoute('/admin/kelola-admin/')({
   component: KelolaAdminPage,
@@ -19,7 +22,7 @@ function KelolaAdminPage() {
     if (res.success && res.data) {
       setAdmins(res.data)
     } else {
-      alert((!res.success ? res.error?.message : 'Gagal memuat daftar admin'))
+      toast.error((!res.success ? res.error?.message : 'Gagal memuat daftar admin') as string)
     }
     setLoading(false)
   }
@@ -28,23 +31,22 @@ function KelolaAdminPage() {
     loadData()
   }, [])
 
-  const handleDeactivate = async (id: string, nama: string) => {
-    if (!confirm(`Apakah Anda yakin ingin menonaktifkan admin ${nama}? Admin ini tidak akan bisa login lagi.`)) return
-
+  const handleDeactivate = async (id: string) => {
+    // confirm() dihapus — AlertDialog dari RowActionsMenu menangani konfirmasi sebelum handler ini dipanggil
     setDeactivating(id)
     const res = await deactivateAdminFn({ data: id })
     if (res.success) {
-      alert('Admin berhasil dinonaktifkan')
+      toast.success('Admin berhasil dinonaktifkan')
       loadData()
     } else {
-      alert((!res.success ? res.error?.message : 'Gagal menonaktifkan admin'))
+      toast.error((!res.success ? res.error?.message : 'Gagal menonaktifkan admin') as string)
     }
     setDeactivating(null)
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh] text-emerald-600">
+      <div className="flex items-center justify-center min-h-[50vh] text-primary">
         <Loader2 className="animate-spin w-8 h-8" />
       </div>
     )
@@ -52,18 +54,17 @@ function KelolaAdminPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">Kelola Admin</h2>
-          <p className="text-slate-500">Kelola akun administrator untuk lembaga Anda.</p>
-        </div>
-        <Link to="/admin/kelola-admin/tambah">
-          <Button className="bg-emerald-600 hover:bg-emerald-700">
-            <Plus className="w-4 h-4 mr-2" />
-            Tambah Admin Baru
-          </Button>
-        </Link>
-      </div>
+      <PageHeader
+        title="Kelola Admin"
+        description="Kelola akun administrator untuk lembaga Anda."
+        action={
+          <Link to="/admin/kelola-admin/tambah">
+            <Button>
+              <Plus className="w-4 h-4 mr-2" /> Tambah Admin Baru
+            </Button>
+          </Link>
+        }
+      />
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
@@ -106,18 +107,22 @@ function KelolaAdminPage() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     {admin.isActive ? (
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
-                        onClick={() => handleDeactivate(admin.id, admin.nama)}
-                        disabled={deactivating === admin.id}
-                      >
-                        {deactivating === admin.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldOff className="w-4 h-4 mr-1.5" />}
-                        Nonaktifkan
-                      </Button>
+                      <RowActionsMenu
+                        actions={[
+                          {
+                            label: "Nonaktifkan",
+                            icon: ShieldOff,
+                            onClick: () => handleDeactivate(admin.id),
+                            variant: "destructive",
+                            entityName: admin.nama,
+                            confirmTitle: "Konfirmasi Nonaktifkan Admin",
+                            confirmDescription: `Admin ${admin.nama} akan dinonaktifkan dan tidak dapat login lagi. Data dan riwayat akun tidak dihapus — akun dapat diaktifkan kembali oleh superadmin jika diperlukan.`,
+                            confirmActionLabel: "Nonaktifkan",
+                          },
+                        ]}
+                      />
                     ) : (
-                      <span className="text-xs text-slate-400 italic">Akun dinonaktifkan</span>
+                      <span className="text-xs text-slate-400 italic">Akun nonaktif</span>
                     )}
                   </td>
                 </tr>

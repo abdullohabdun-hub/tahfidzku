@@ -1,10 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { GraduationCap } from 'lucide-react'
+import { PageHeader } from '../../components/shared/PageHeader'
 import { getUjianList } from '../../server-fns/ujian'
 import { warnaBadgeStatus, labelStatus } from '../../lib/ujianLogic'
 import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
+import { EmptyState } from '../../components/shared/EmptyState'
+import { ClipboardList } from 'lucide-react'
 
 export const Route = createFileRoute('/admin/ujian')({
   component: AdminUjianPage,
@@ -43,20 +45,23 @@ function AdminUjianPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-          <GraduationCap className="w-6 h-6 text-emerald-600" /> Riwayat Ujian Kenaikan Juz
-        </h1>
-        <p className="text-slate-500 mt-1">Laporan semua hasil ujian kenaikan juz dari semua ustadz.</p>
-      </div>
+      <PageHeader
+        title="Riwayat Ujian Kenaikan Juz"
+        description="Laporan semua hasil ujian kenaikan juz dari semua ustadz."
+      />
 
       {loading ? (
         <div className="py-12 text-center text-slate-400">Memuat data...</div>
       ) : (
         <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
           {riwayat.length === 0 ? (
-            <div className="p-10 text-center text-slate-400">Belum ada riwayat ujian.</div>
+            <div className="py-10">
+              <EmptyState
+                icon={ClipboardList}
+                title="Belum Ada Ujian"
+                description="Belum ada riwayat ujian kenaikan juz dari santri manapun."
+              />
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">

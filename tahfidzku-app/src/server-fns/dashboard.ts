@@ -1,10 +1,10 @@
 import { createServerFn } from '@tanstack/react-start'
-import { and, eq, desc, gte, sql } from 'drizzle-orm'
+import { and, eq, desc, gte, sql, inArray } from 'drizzle-orm'
 import { db } from '../db'
 import { santri, setoran, setoranIqra, users, kelas, tenants, waliSantri } from '../db/schema'
 import { getAuthSession, requireRole } from '../middleware/auth.middleware'
 import { success, handleError } from '../lib/response'
-import { AuthenticationError } from '../lib/errors'
+import { AuthenticationError, ForbiddenError } from '../lib/errors'
 import { hitungProgresHalaman, kalkulasiJuzProgress } from '../lib/quranMapper'
 import { hitungDailyStreak, hitungWeeklyStreak } from '../lib/streak'
 import { getSantriDisplayMode } from '../lib/santri-display'
@@ -494,6 +494,176 @@ export const getWaliDashboard = createServerFn({ method: 'POST' }).handler(
       return success({
         daftarAnak
       }, "Data dashboard wali berhasil diambil")
+    } catch (err) {
+      return handleError(err)
+    }
+  }
+)
+
+export const getAgregatSantriDashboard = createServerFn({ method: 'POST' }).handler(
+  async () => {
+    try {
+      const session = await getAuthSession()
+      if (!session) throw new AuthenticationError()
+      
+      if (!['admin', 'ustadz'].includes(session.user.role)) {
+        throw new ForbiddenError('Akses ditolak: hanya Admin dan Ustadz.') 
+      }
+
+      const tenantId = session.user.tenantId
+      const isUstadz = session.user.role === 'ustadz'
+
+      const santriScope = await db.select({
+        id: santri.id,
+        kelasId: santri.kelasId,
+      }).from(santri)
+        .leftJoin(kelas, eq(santri.kelasId, kelas.id))
+        .where(and(
+          eq(santri.tenantId, tenantId),
+          isUstadz ? eq(kelas.ustadzId, session.user.id) : undefined
+        ))
+        
+      const santriIds = santriScope.map(s => s.id)
+      const totalSantriAktif = santriIds.length
+
+      if (totalSantriAktif === 0) {
+        return success({
+          totalSantriAktif: 0,
+          totalSetoran7Hari: 0,
+          santriTanpaSetoran: 0,
+          rataKehadiranPersen: 0,
+          totalSesiAbsensi: 0,
+          setoranHarian: [],
+          trendHalaman: {
+            mingguIni: 0,
+            mingguLalu: 0,
+            selisih: 0
+          }
+        }, "Tidak ada data santri.")
+      }
+
+      const today = new Date()
+      today.setHours(23, 59, 59, 999)
+      
+      const last7DaysStart = new Date(today)
+      last7DaysStart.setDate(today.getDate() - 6)
+      last7DaysStart.setHours(0,0,0,0)
+
+      const last14DaysStart = new Date(today)
+      last14DaysStart.setDate(today.getDate() - 13)
+      last14DaysStart.setHours(0,0,0,0)
+
+      const last7DaysStr = last7DaysStart.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' })
+      const last14DaysStr = last14DaysStart.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' })
+      const todayStr = today.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' })
+
+      const setoran7Hari = await db.query.setoran.findMany({
+        where: and(
+          eq(setoran.tenantId, tenantId),
+          gte(setoran.tanggalSetoran, last7DaysStr),
+          sql`${setoran.tanggalSetoran} <= ${todayStr}`,
+          isUstadz ? inArray(setoran.santriId, santriIds) : undefined
+        )
+      })
+
+      const setoranIqra7Hari = await db.query.setoranIqra.findMany({
+        where: and(
+          eq(setoranIqra.tenantId, tenantId),
+          gte(setoranIqra.tanggalSetoran, last7DaysStr),
+          sql`${setoranIqra.tanggalSetoran} <= ${todayStr}`,
+          isUstadz ? inArray(setoranIqra.santriId, santriIds) : undefined
+        )
+      })
+
+      const validSetoran7Hari = setoran7Hari.filter(s => santriIds.includes(s.santriId))
+      const validSetoranIqra7Hari = setoranIqra7Hari.filter(s => santriIds.includes(s.santriId))
+      const totalSetoran7Hari = validSetoran7Hari.length + validSetoranIqra7Hari.length
+
+      const santriYangSetor = new Set([
+        ...validSetoran7Hari.map(s => s.santriId),
+        ...validSetoranIqra7Hari.map(s => s.santriId)
+      ])
+      const santriTanpaSetoran = totalSantriAktif - santriYangSetor.size
+
+      const setoran14Hari = await db.query.setoran.findMany({
+        where: and(
+          eq(setoran.tenantId, tenantId),
+          gte(setoran.tanggalSetoran, last14DaysStr),
+          sql`${setoran.tanggalSetoran} < ${last7DaysStr}`,
+          isUstadz ? inArray(setoran.santriId, santriIds) : undefined
+        )
+      })
+      const setoranIqra14Hari = await db.query.setoranIqra.findMany({
+        where: and(
+          eq(setoranIqra.tenantId, tenantId),
+          gte(setoranIqra.tanggalSetoran, last14DaysStr),
+          sql`${setoranIqra.tanggalSetoran} < ${last7DaysStr}`,
+          isUstadz ? inArray(setoranIqra.santriId, santriIds) : undefined
+        )
+      })
+
+      const validSetoran14Hari = setoran14Hari.filter(s => santriIds.includes(s.santriId))
+      const validSetoranIqra14Hari = setoranIqra14Hari.filter(s => santriIds.includes(s.santriId))
+
+      let halamanMingguIni = 0
+      let halamanMingguLalu = 0
+
+      for (const s of validSetoran7Hari) {
+        if (s.halamanAkhir != null && s.halamanAwal != null) halamanMingguIni += Math.max(0, s.halamanAkhir - s.halamanAwal + 1)
+      }
+      for (const s of validSetoranIqra7Hari) {
+        if (s.halamanAkhir != null && s.halamanAwal != null) halamanMingguIni += Math.max(0, s.halamanAkhir - s.halamanAwal + 1)
+      }
+      for (const s of validSetoran14Hari) {
+        if (s.halamanAkhir != null && s.halamanAwal != null) halamanMingguLalu += Math.max(0, s.halamanAkhir - s.halamanAwal + 1)
+      }
+      for (const s of validSetoranIqra14Hari) {
+        if (s.halamanAkhir != null && s.halamanAwal != null) halamanMingguLalu += Math.max(0, s.halamanAkhir - s.halamanAwal + 1)
+      }
+
+      const setoranHarian = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(last7DaysStart)
+        d.setDate(d.getDate() + i)
+        const tanggal = d.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' })
+        const nama = d.toLocaleDateString('id-ID', { weekday: 'short' })
+        const jumlah = [
+          ...validSetoran7Hari.filter(s => s.tanggalSetoran === tanggal),
+          ...validSetoranIqra7Hari.filter(s => s.tanggalSetoran === tanggal),
+        ].length
+        return { tanggal, nama, jumlah }
+      })
+
+      const absensiQuery = sql`
+        SELECT COUNT(*) as total,
+               SUM(CASE WHEN a.status IN ('hadir', 'terlambat', 'hadir_tanpa_setoran') THEN 1 ELSE 0 END) as hadir
+        FROM absensi a
+        JOIN sesi_kelas sk ON a.sesi_kelas_id = sk.id
+        JOIN santri s ON a.santri_id = s.id
+        LEFT JOIN kelas k ON s.kelas_id = k.id
+        WHERE a.tenant_id = ${tenantId}
+          AND sk.tanggal >= ${last7DaysStr}
+          AND sk.tanggal <= ${todayStr}
+          ${isUstadz ? sql`AND k.ustadz_id = ${session.user.id}` : sql``}
+      `
+      const { rows: absensiRows } = await db.execute(absensiQuery)
+      
+      const totalSesi = parseInt(absensiRows[0]?.total as string || '0')
+      const totalHadir = parseInt(absensiRows[0]?.hadir as string || '0')
+      const rataKehadiranPersen = totalSesi > 0 ? Math.round((totalHadir / totalSesi) * 100) : 0
+
+      return success({
+        totalSantriAktif,
+        totalSetoran7Hari,
+        santriTanpaSetoran,
+        rataKehadiranPersen,
+        totalSesiAbsensi: totalSesi,
+        setoranHarian,
+        trendHalaman: {
+          mingguIni: halamanMingguIni,
+          mingguLalu: halamanMingguLalu,
+          selisih: halamanMingguIni - halamanMingguLalu
+        }
+      }, "Berhasil mengambil agregat dashboard")
     } catch (err) {
       return handleError(err)
     }

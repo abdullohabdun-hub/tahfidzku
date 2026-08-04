@@ -4,13 +4,13 @@ import { SKOR_LIST, SKOR_DEFAULT_LABELS, SKOR_WARNA_SOLID } from '../lib/penilai
 import type { SkorKualitas, StatusHafalan } from '../lib/penilaian'
 
 const ACCENT = {
-  text: "text-purple-700",
-  solidBg: "bg-purple-600",
-  solidBgHover: "hover:bg-purple-700",
-  softBg: "bg-purple-50",
-  border: "border-purple-200",
-  ring: "focus:ring-purple-500 focus:border-purple-500",
-  dot: "bg-purple-500",
+  text: "text-primary",
+  solidBg: "bg-primary",
+  solidBgHover: "hover:bg-primary/90",
+  softBg: "bg-primary/10",
+  border: "border-primary/20",
+  ring: "focus:ring-primary focus:border-primary",
+  dot: "bg-primary",
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {

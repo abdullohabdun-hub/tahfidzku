@@ -4,6 +4,7 @@ import { Printer, Loader2, Search, Users, Settings } from 'lucide-react'
 import { getSantriList } from '../../../server-fns/santri'
 import { Button } from '../../../components/ui/button'
 import { RaporSettingsModal } from '../../../components/Rapor/RaporSettingsModal'
+import { PageHeader } from '../../../components/shared/PageHeader'
 
 export const Route = createFileRoute('/admin/rapor/')({
   component: RaporIndexPage,
@@ -33,24 +34,20 @@ function RaporIndexPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-            <Printer className="w-6 h-6 text-emerald-600" />
-            Cetak Rapor Hafalan
-          </h2>
-          <p className="text-slate-500 mt-1">Pilih santri untuk melihat dan mencetak rapor bulanannya.</p>
-        </div>
-        
-        <Button 
-          variant="outline" 
-          onClick={() => setIsSettingsOpen(true)}
-          className="gap-2 shrink-0 border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-200 hover:bg-emerald-50"
-        >
-          <Settings className="w-4 h-4" />
-          Pengaturan Rapor
-        </Button>
-      </div>
+      <PageHeader
+        title="Cetak Rapor Hafalan"
+        description="Pilih santri untuk melihat dan mencetak rapor bulanannya."
+        action={
+          <Button
+            variant="outline"
+            onClick={() => setIsSettingsOpen(true)}
+            className="gap-2 shrink-0 border-slate-200 text-slate-600"
+          >
+            <Settings className="w-4 h-4" />
+            Pengaturan Rapor
+          </Button>
+        }
+      />
 
       <RaporSettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
 
@@ -73,7 +70,7 @@ function RaporIndexPage() {
         <div className="p-6 bg-slate-50/30">
           {loading ? (
             <div className="flex justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

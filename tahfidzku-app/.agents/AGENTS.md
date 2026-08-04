@@ -145,3 +145,11 @@ tanstackIntent:
     for: "Programmatic route tree building as an alternative to filesystem conventions: rootRoute, index, route, layout, physical, defineVirtualSubtreeConfig. Use with TanStack Router plugin's virtualRouteConfig option."
 <!-- intent-skills:end -->
 
+
+## Security Restrictions
+**DILARANG membaca file .env, dilarang melakukan query ke kolom kredensial/password di database, dan dilarang mencoba login ke akun manapun � dalam kondisi apapun, tanpa instruksi tertulis eksplisit dari user saat itu juga.** Improvisasi untuk mencari kredensial demi 'verifikasi UI' atau 'screenshot' dilarang keras.
+
+## Bukti Mentah — Aturan Wajib
+- `git diff` pada file yang BELUM di-track (file baru) akan selalu kosong — ini BUKAN berarti "tidak ada perubahan untuk dilaporkan". Untuk file baru, gunakan `cat`/`view` untuk membaca ISI FILE SAAT INI dari disk, lalu laporkan itu sebagai bukti.
+- DILARANG KERAS merekonstruksi/menulis ulang isi kode dari ingatan lalu menyajikannya seolah hasil pembacaan file/diff asli. Kalau ragu isi file yang sebenarnya, BACA ULANG filenya — jangan pernah menebak dan melaporkan tebakan sebagai fakta.
+- Kalau sebuah tool/command tidak menghasilkan output yang diharapkan (mis. diff kosong untuk file yang seharusnya berubah), laporkan keanehan itu apa adanya dan cari cara lain untuk verifikasi — jangan isi kekosongan itu dengan konten buatan.

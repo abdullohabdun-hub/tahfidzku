@@ -7,9 +7,9 @@ import { getMonthlyReport } from '../../server-fns/setoran'
 import { getMonthlyReportIqra } from '../../server-fns/setoran-iqra'
 import { getAllRubrikTenant } from '../../server-fns/rubrik'
 
-
 import { FormatPenilaian } from '../../components/FormatPenilaian'
 import { Button } from '../../components/ui/button'
+import { PageHeader } from '../../components/shared/PageHeader'
 
 export const Route = createFileRoute('/admin/laporan')({
   component: AdminLaporanBulanan,
@@ -236,14 +236,13 @@ function AdminLaporanBulanan() {
 
   return (
     <div className="space-y-6 max-w-6xl">
-      {/* HEADER: Akan disembunyikan saat di-print (lihat index.css media query) */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">Laporan Bulanan</h2>
-          <p className="text-slate-500">Rekapitulasi seluruh setoran hafalan santri di lembaga Anda.</p>
-        </div>
-        
-        <div className="flex items-center gap-3">
+      <PageHeader
+        title="Laporan Bulanan"
+        description="Rekapitulasi seluruh setoran hafalan santri di lembaga Anda."
+      />
+      
+      {/* TOOLBAR: Akan disembunyikan saat di-print (lihat index.css media query) */}
+      <div className="flex flex-wrap items-center gap-3 print:hidden">
           {/* Program Toggle */}
           <div className="flex bg-slate-100 rounded-lg p-1 border border-slate-200">
             <button
@@ -285,7 +284,6 @@ function AdminLaporanBulanan() {
             <Printer className="w-4 h-4 mr-2" /> Cetak
           </Button>
         </div>
-      </div>
 
       {/* PRINT HEADER: Hanya muncul saat di-print */}
       <div className="hidden print:block mb-8 text-center border-b-2 border-slate-800 pb-4">
@@ -297,7 +295,7 @@ function AdminLaporanBulanan() {
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm print:border-none print:shadow-none print:rounded-none overflow-hidden mt-6">
         
         {loading ? (
-          <div className="flex items-center justify-center py-20 text-emerald-600">
+          <div className="flex items-center justify-center py-20 text-primary">
             <Loader2 className="animate-spin w-8 h-8" />
           </div>
         ) : currentData.length === 0 ? (

@@ -1,23 +1,26 @@
 import { createFileRoute, Link, redirect, isRedirect } from "@tanstack/react-router"
 import { Card, CardContent } from "../../components/ui/card"
 import { Edit } from "lucide-react"
-import { getUstadzDashboard } from "../../server-fns/dashboard"
+import { getUstadzDashboard, getAgregatSantriDashboard } from "../../server-fns/dashboard"
 import { getAllRubrikTenant } from "../../server-fns/rubrik"
 import { FormatPenilaian } from "../../components/FormatPenilaian"
 import { AuthErrorAlert } from "../../components/AuthErrorAlert"
+import { Activity, Users, TrendingUp, TrendingDown } from "lucide-react"
 
 export const Route = createFileRoute('/ustadz/')({
   component: UstadzDashboard,
   loader: async () => {
     try {
       const res = await getUstadzDashboard()
+      const agregatRes = await getAgregatSantriDashboard()
       if (!res.success) {
         if (res.error?.code === 'UNAUTHENTICATED') throw redirect({ to: '/login' })
-        return { data: null, rubrikAktif: null, authError: { message: res.error?.message, code: res.error?.code } }
+        return { data: null, agregat: null, rubrikAktif: null, authError: { message: res.error?.message, code: res.error?.code } }
       }
       const rubrikRes = await getAllRubrikTenant()
       return {
         data: res.data!,
+        agregat: agregatRes.success ? agregatRes.data : null,
         rubrikAktif: rubrikRes,
         authError: null
       }
@@ -29,7 +32,7 @@ export const Route = createFileRoute('/ustadz/')({
 })
 
 function UstadzDashboard() {
-  const { data, authError } = Route.useLoaderData()
+  const { data, agregat, authError } = Route.useLoaderData()
   
   if (authError) return <AuthErrorAlert error={authError} />
   if (!data) return null
@@ -46,9 +49,9 @@ function UstadzDashboard() {
         <h2 className="text-2xl font-bold mb-1">Ahlan, Ustadz {data.namaUstadz}!</h2>
         <p className="text-emerald-50 text-sm mb-6 italic">"Sebaik-baik kalian adalah yang mempelajari Al-Qur'an dan mengajarkannya." (HR. Bukhari)</p>
         
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4 mb-4">
           <div className="bg-white/20 rounded-xl p-3 backdrop-blur-sm">
-            <p className="text-emerald-50 text-xs font-medium">Santri Setor</p>
+            <p className="text-emerald-50 text-xs font-medium">Santri Setor Hari Ini</p>
             <p className="text-2xl font-bold mt-1">{data.totalSetoran}<span className="text-sm font-normal text-emerald-100">/{data.totalSantri}</span></p>
           </div>
           <div className="bg-white/20 rounded-xl p-3 backdrop-blur-sm">
@@ -56,6 +59,31 @@ function UstadzDashboard() {
             <p className="text-2xl font-bold mt-1">{persentase}%</p>
           </div>
         </div>
+
+        {agregat && (
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white/10 rounded-xl p-3 backdrop-blur-sm">
+              <p className="text-emerald-50 text-xs font-medium flex items-center gap-1"><Activity className="w-3 h-3"/> Kehadiran 7 Hari</p>
+              <p className="text-xl font-bold mt-1">{agregat.rataKehadiranPersen}%</p>
+            </div>
+            <div className="bg-white/10 rounded-xl p-3 backdrop-blur-sm">
+              <p className="text-emerald-50 text-xs font-medium flex items-center gap-1"><Users className="w-3 h-3"/> Tanpa Setor (7 Hari)</p>
+              <p className="text-xl font-bold mt-1">{agregat.santriTanpaSetoran} <span className="text-sm font-normal text-emerald-100">santri</span></p>
+            </div>
+            <div className="bg-white/10 rounded-xl p-3 backdrop-blur-sm col-span-2 flex justify-between items-center">
+              <div>
+                <p className="text-emerald-50 text-xs font-medium">Trend Halaman (7 Hari)</p>
+                <p className="text-xl font-bold mt-1">{agregat.trendHalaman.mingguIni} <span className="text-sm font-normal text-emerald-100">hal</span></p>
+              </div>
+              {agregat.trendHalaman.selisih !== 0 && (
+                <div className={`flex items-center gap-1 text-sm font-bold px-2 py-1 rounded ${agregat.trendHalaman.selisih > 0 ? 'bg-emerald-500/30 text-emerald-100' : 'bg-red-500/30 text-red-100'}`}>
+                  {agregat.trendHalaman.selisih > 0 ? <TrendingUp className="w-4 h-4"/> : <TrendingDown className="w-4 h-4"/>}
+                  {Math.abs(agregat.trendHalaman.selisih)}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Belum Setor */}

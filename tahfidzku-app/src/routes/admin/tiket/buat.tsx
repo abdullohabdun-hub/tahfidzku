@@ -19,8 +19,8 @@ function AdminTiketBuat() {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div>
-          <h2 className="text-xl font-bold text-slate-900">Buat Tiket Baru</h2>
-          <p className="text-slate-500 text-sm">Sampaikan pertanyaan atau kendala Anda</p>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900">Buat Tiket Baru</h2>
+          <p className="text-slate-500 text-sm mt-1">Sampaikan pertanyaan atau kendala Anda</p>
         </div>
       </div>
       

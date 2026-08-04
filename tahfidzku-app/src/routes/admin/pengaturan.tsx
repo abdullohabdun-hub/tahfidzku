@@ -4,6 +4,7 @@ import { Settings, Save, Loader2, Building, Link as LinkIcon } from 'lucide-reac
 import { getTenantInfo, updateTenantInfo, runDbMigration } from '../../server-fns/admin-settings'
 import { getRaporSettings, updateSesiRegulerDefault } from '../../server-fns/rapor'
 import { Button } from '../../components/ui/button'
+import { toast } from "../../components/ui/sonner"
 import { WAKTU_SHALAT_OPTIONS, WAKTU_SHALAT_LABEL, type WaktuShalat } from '../../lib/constants'
 import { LabelPenilaianSettings } from '../../components/admin/LabelPenilaianSettings'
 import { ChangePasswordForm } from '../../components/ChangePasswordForm'
@@ -70,16 +71,16 @@ function PengaturanPage() {
     setSaving(true)
     const res = await updateTenantInfo({ data: { namaLembaga } })
     if (res.success) {
-      alert('Berhasil memperbarui pengaturan lembaga')
+      toast.success('Berhasil memperbarui pengaturan lembaga')
     } else {
-      alert(res.error?.message || 'Gagal menyimpan pengaturan')
+      toast.error(res.error?.message || 'Gagal menyimpan pengaturan')
     }
     setSaving(false)
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh] text-emerald-600">
+      <div className="flex items-center justify-center min-h-[50vh] text-primary">
         <Loader2 className="animate-spin w-8 h-8" />
       </div>
     )
@@ -150,7 +151,7 @@ function PengaturanPage() {
             </div>
 
             <div className="pt-4 border-t border-slate-100 flex justify-end">
-              <Button type="submit" disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 h-11 px-8">
+              <Button type="submit" disabled={saving} className="h-11 px-8">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
                 Simpan Perubahan
               </Button>
@@ -170,8 +171,8 @@ function PengaturanPage() {
           const res2 = await updateSesiRegulerDefault({
             data: { sesiRegulerDefault: sesiRegulerDefault.length > 0 ? sesiRegulerDefault : null }
           })
-          if(res1.success && res2.success) alert('Berhasil memperbarui pengaturan kelas dan absensi')
-          else alert((!res1.success ? res1.error?.message : (!res2.success ? res2.error?.message : 'Terjadi kesalahan')))
+          if(res1.success && res2.success) toast.success('Berhasil memperbarui pengaturan kelas dan absensi')
+          else toast.error((!res1.success ? res1.error?.message : (!res2.success ? res2.error?.message : 'Terjadi kesalahan')) as string)
           setSavingSesiDefault(false)
         }} className="space-y-8">
           
@@ -227,7 +228,7 @@ function PengaturanPage() {
             <Button 
               type="submit"
               disabled={savingSesiDefault}
-              className="bg-indigo-600 hover:bg-indigo-700 h-11 px-8"
+              className="h-11 px-8"
             >
               {savingSesiDefault ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
               Simpan Pengaturan Kelas
@@ -249,8 +250,8 @@ function PengaturanPage() {
           onClick={async () => {
             if(confirm('Jalankan migrasi database sekarang?')) {
               const res = await runDbMigration()
-              if(res.success) alert(res.data)
-              else alert(res.error?.message)
+              if(res.success) toast.success(res.data)
+              else toast.error(res.error?.message)
             }
           }}
         >

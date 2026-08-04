@@ -4,7 +4,7 @@ import { db } from '../../src/db'
 import { santri, kelas, users, setoran, notifikasiUstadz, tenants } from '../../src/db/schema'
 import { getAuthSession } from '../../src/middleware/auth.middleware'
 import { eq, inArray } from 'drizzle-orm'
-import { randomUUID } from 'crypto'
+import { randomUUID } from 'node:crypto'
 
 vi.mock('../../src/middleware/auth.middleware', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../src/middleware/auth.middleware')>()
@@ -83,13 +83,13 @@ describe('Ticket 3: Notifikasi & Feedback Ustadz', () => {
     const kNoUstadz = await db.insert(kelas).values({ id: randomUUID(), tenantId: tenantId1, nama: 'Kelas Kosong', ustadzId: null, tipeKelas: 'reguler' }).returning()
     
     // Setup Santri
-    const sA = await db.insert(santri).values({ id: randomUUID(), tenantId: tenantId1, kelasId: kA[0].id, nama: 'Santri A', nis: '111', pinCode: '111111' }).returning()
+    const sA = await db.insert(santri).values({ id: randomUUID(), tenantId: tenantId1, kelasId: kA[0].id, nama: 'Santri A', pinCode: '111111' }).returning()
     santriA_Id = sA[0].id
     
-    const sB = await db.insert(santri).values({ id: randomUUID(), tenantId: tenantId1, kelasId: kB[0].id, nama: 'Santri B', nis: '222', pinCode: '222222' }).returning()
+    const sB = await db.insert(santri).values({ id: randomUUID(), tenantId: tenantId1, kelasId: kB[0].id, nama: 'Santri B', pinCode: '222222' }).returning()
     santriB_Id = sB[0].id
     
-    const sNo = await db.insert(santri).values({ id: randomUUID(), tenantId: tenantId1, kelasId: kNoUstadz[0].id, nama: 'Santri Kosong', nis: '333', pinCode: '333333' }).returning()
+    const sNo = await db.insert(santri).values({ id: randomUUID(), tenantId: tenantId1, kelasId: kNoUstadz[0].id, nama: 'Santri Kosong', pinCode: '333333' }).returning()
     santriNoUstadz_Id = sNo[0].id
   })
 
@@ -109,9 +109,9 @@ describe('Ticket 3: Notifikasi & Feedback Ustadz', () => {
   it('1. IDOR Cross-Tenant: Ustadz Tenant 2 menolak setoran Santri Tenant 1', async () => {
     // Buat setoran santri A
     mockSession(santriA_Id, 'santri', tenantId1, santriA_Id)
-    const createRes = await createSetoran({ data: { jenis: 'murojaah', lintasJuz: false, juzMulai: 1, halamanAwal: 1, halamanAkhir: 2, kualitas: 'lancar', sumber: 'santri_self_report' } })
+    const createRes = await createSetoran({ data: { jenis: 'sabqi', lintasJuz: false, juzMulai: 1, halamanAwal: 1, halamanAkhir: 2, kualitas: 'lancar' } })
     expect(createRes.success).toBe(true)
-    const setId = createRes.data?.id!
+    const setId = (createRes as any).data?.id!
     
     // Ustadz Tenant 2 mencoba review
     mockSession(ustadzTenant2_Id, 'ustadz', tenantId2)
@@ -126,8 +126,8 @@ describe('Ticket 3: Notifikasi & Feedback Ustadz', () => {
   it('2. IDOR Lintas Halaqoh (Satu Tenant): Ustadz B mencoba review setoran Santri A (murid Ustadz A)', async () => {
     // Buat setoran santri A
     mockSession(santriA_Id, 'santri', tenantId1, santriA_Id)
-    const createRes = await createSetoran({ data: { jenis: 'murojaah', lintasJuz: false, juzMulai: 1, halamanAwal: 1, halamanAkhir: 2, kualitas: 'lancar', sumber: 'santri_self_report' } })
-    const setId = createRes.data?.id!
+    const createRes = await createSetoran({ data: { jenis: 'sabqi', lintasJuz: false, juzMulai: 1, halamanAwal: 1, halamanAkhir: 2, kualitas: 'lancar' } })
+    const setId = (createRes as any).data?.id!
     
     // Ustadz B mencoba review
     mockSession(ustadzB_Id, 'ustadz', tenantId1)
@@ -141,7 +141,7 @@ describe('Ticket 3: Notifikasi & Feedback Ustadz', () => {
 
   it('3. Ziyadah Validation: Santri mencoba setor Ziyadah mandiri', async () => {
     mockSession(santriA_Id, 'santri', tenantId1, santriA_Id)
-    const res = await createSetoran({ data: { jenis: 'ziyadah', lintasJuz: false, juzMulai: 1, halamanAwal: 1, halamanAkhir: 2, kualitas: 'lancar', sumber: 'santri_self_report' } })
+    const res = await createSetoran({ data: { jenis: 'ziyadah', lintasJuz: false, juzMulai: 1, halamanAwal: 1, halamanAkhir: 2, kualitas: 'lancar' } })
     
     // Harus gagal ValidationError 400
     expect(res.success).toBe(false)
@@ -153,9 +153,9 @@ describe('Ticket 3: Notifikasi & Feedback Ustadz', () => {
   it('4. Happy Path: Santri setor mandiri -> Ustadz pengampu review sukses', async () => {
     // Santri A setor
     mockSession(santriA_Id, 'santri', tenantId1, santriA_Id)
-    const createRes = await createSetoran({ data: { jenis: 'murojaah', lintasJuz: false, juzMulai: 1, halamanAwal: 1, halamanAkhir: 2, kualitas: 'lancar', sumber: 'santri_self_report' } })
+    const createRes = await createSetoran({ data: { jenis: 'sabqi', lintasJuz: false, juzMulai: 1, halamanAwal: 1, halamanAkhir: 2, kualitas: 'lancar' } })
     expect(createRes.success).toBe(true)
-    const setId = createRes.data?.id!
+    const setId = (createRes as any).data?.id!
     
     // Pastikan notifikasi masuk untuk Ustadz A
     const notifs = await db.select().from(notifikasiUstadz).where(eq(notifikasiUstadz.setoranId, setId))
@@ -177,11 +177,11 @@ describe('Ticket 3: Notifikasi & Feedback Ustadz', () => {
   it('5. Edge Case ustadz null: Santri tanpa ustadz setor mandiri', async () => {
     // Santri tanpa ustadz setor
     mockSession(santriNoUstadz_Id, 'santri', tenantId1, santriNoUstadz_Id)
-    const createRes = await createSetoran({ data: { jenis: 'murojaah', lintasJuz: false, juzMulai: 1, halamanAwal: 1, halamanAkhir: 2, kualitas: 'lancar', sumber: 'santri_self_report' } })
+    const createRes = await createSetoran({ data: { jenis: 'sabqi', lintasJuz: false, juzMulai: 1, halamanAwal: 1, halamanAkhir: 2, kualitas: 'lancar' } })
     
     // Harus tetap sukses 200/true
     expect(createRes.success).toBe(true)
-    const setId = createRes.data?.id!
+    const setId = (createRes as any).data?.id!
     
     // Tapi notifikasi = 0 (diskip)
     const notifs = await db.select().from(notifikasiUstadz).where(eq(notifikasiUstadz.setoranId, setId))
