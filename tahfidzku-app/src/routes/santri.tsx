@@ -3,6 +3,9 @@ import { Home, PencilLine, Award, BookOpen, LogOut, History } from "lucide-react
 import { useState, useEffect } from "react"
 import { checkAuth, logout } from "../server-fns/auth"
 import { HelpTicketButton } from "../components/tiket/HelpTicketButton"
+import { useServerFn } from "@tanstack/react-start"
+import { getUnreadCountSantri } from "../server-fns/notifikasi-santri"
+import { Bell } from "lucide-react"
 
 export const Route = createFileRoute('/santri')({
   component: SantriLayout,
@@ -26,6 +29,24 @@ function SantriLayout() {
     }
     loadProfile()
   }, [])
+
+  const [unreadCount, setUnreadCount] = useState(0)
+  const fetchUnreadCount = useServerFn(getUnreadCountSantri)
+
+  useEffect(() => {
+    if (!user || user.role !== 'santri') return
+    const checkCount = async () => {
+      try {
+        const count = await fetchUnreadCount()
+        setUnreadCount(count)
+      } catch (e) {
+        // ignore
+      }
+    }
+    checkCount()
+    const interval = setInterval(checkCount, 30000) // Poll every 30s
+    return () => clearInterval(interval)
+  }, [user, fetchUnreadCount])
 
   const handleLogout = async () => {
     try {
@@ -58,6 +79,12 @@ function SantriLayout() {
         </div>
         <div className="flex gap-2 items-center">
           <HelpTicketButton baseUrl="/santri/tiket" />
+          <Link to="/santri/notifikasi" className="relative p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-colors mr-1 md:hidden">
+            <Bell className="w-5 h-5" />
+            {unreadCount > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
+            )}
+          </Link>
           <Link to="/santri/profil" className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold border border-emerald-200 uppercase text-xs md:text-sm hover:ring-2 hover:ring-emerald-500 hover:bg-emerald-200 transition-all cursor-pointer">
             {user?.nama ? user.nama.substring(0, 2) : "SA"}
           </Link>
@@ -102,6 +129,12 @@ function SantriLayout() {
             <BookOpen className="h-5 w-5 text-white" />
           </div>
           <span className="font-bold text-xl tracking-tight text-emerald-950 truncate">TahfidzKu</span>
+          <Link to="/santri/notifikasi" className="relative ml-auto p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-colors">
+            <Bell className="w-5 h-5" />
+            {unreadCount > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
+            )}
+          </Link>
         </div>
         <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
           {navItems.map((item) => {

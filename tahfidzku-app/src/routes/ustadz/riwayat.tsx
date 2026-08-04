@@ -218,13 +218,20 @@ function UstadzRiwayatSetoran() {
                      )}
 
                      {item.ditinjauOlehUstadz && item.responUstadz && (
-                       <div className="bg-blue-50 rounded-lg p-3 text-sm text-blue-800 border border-blue-100 mt-1 flex items-start gap-2">
-                         <span className="text-base mt-0.5">{item.responUstadz.tipe === 'jempol' ? '??' : '??'}</span>
-                         <div>
-                           <p className="text-[10px] font-bold text-blue-500 uppercase mb-0.5">Telah Anda Respon</p>
-                           <p className="font-medium text-blue-900">{item.responUstadz.tipe === 'jempol' ? 'Mantap!' : item.responUstadz.teks}</p>
-                         </div>
-                       </div>
+                        item.responUstadz.tipe === 'ditinjau' ? (
+                          <div className="flex items-center gap-2 mt-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg w-fit text-blue-700 text-xs font-medium">
+                            <span className="font-bold">✓</span>
+                            Telah Anda pantau
+                          </div>
+                        ) : (
+                          <div className="bg-blue-50 rounded-lg p-3 text-sm text-blue-800 border border-blue-100 mt-1 flex items-start gap-2">
+                            <span className="text-base mt-0.5">{item.responUstadz.tipe === 'jempol' ? '👍' : '💬'}</span>
+                            <div>
+                              <p className="text-[10px] font-bold text-blue-500 uppercase mb-0.5">Telah Anda Respon</p>
+                              <p className="font-medium text-blue-900">{item.responUstadz.tipe === 'jempol' ? 'Mantap!' : (item.responUstadz.catatan || item.responUstadz.teks)}</p>
+                            </div>
+                          </div>
+                        )
                      )}
 
                      <div className="pt-2 border-t border-slate-50 flex items-center justify-between gap-2 text-sm text-slate-700">

@@ -35,6 +35,7 @@ import { Route as UstadzAbsensiRouteImport } from './routes/ustadz/absensi'
 import { Route as SantriUjianRouteImport } from './routes/santri/ujian'
 import { Route as SantriRiwayatRouteImport } from './routes/santri/riwayat'
 import { Route as SantriProfilRouteImport } from './routes/santri/profil'
+import { Route as SantriNotifikasiRouteImport } from './routes/santri/notifikasi'
 import { Route as SantriInputRouteImport } from './routes/santri/input'
 import { Route as AdminUstadzRouteImport } from './routes/admin/ustadz'
 import { Route as AdminUjianRouteImport } from './routes/admin/ujian'
@@ -193,6 +194,11 @@ const SantriRiwayatRoute = SantriRiwayatRouteImport.update({
 const SantriProfilRoute = SantriProfilRouteImport.update({
   id: '/profil',
   path: '/profil',
+  getParentRoute: () => SantriRoute,
+} as any)
+const SantriNotifikasiRoute = SantriNotifikasiRouteImport.update({
+  id: '/notifikasi',
+  path: '/notifikasi',
   getParentRoute: () => SantriRoute,
 } as any)
 const SantriInputRoute = SantriInputRouteImport.update({
@@ -358,6 +364,7 @@ export interface FileRoutesByFullPath {
   '/admin/ujian': typeof AdminUjianRoute
   '/admin/ustadz': typeof AdminUstadzRoute
   '/santri/input': typeof SantriInputRoute
+  '/santri/notifikasi': typeof SantriNotifikasiRoute
   '/santri/profil': typeof SantriProfilRoute
   '/santri/riwayat': typeof SantriRiwayatRoute
   '/santri/ujian': typeof SantriUjianRoute
@@ -410,6 +417,7 @@ export interface FileRoutesByTo {
   '/admin/ujian': typeof AdminUjianRoute
   '/admin/ustadz': typeof AdminUstadzRoute
   '/santri/input': typeof SantriInputRoute
+  '/santri/notifikasi': typeof SantriNotifikasiRoute
   '/santri/profil': typeof SantriProfilRoute
   '/santri/riwayat': typeof SantriRiwayatRoute
   '/santri/ujian': typeof SantriUjianRoute
@@ -468,6 +476,7 @@ export interface FileRoutesById {
   '/admin/ujian': typeof AdminUjianRoute
   '/admin/ustadz': typeof AdminUstadzRoute
   '/santri/input': typeof SantriInputRoute
+  '/santri/notifikasi': typeof SantriNotifikasiRoute
   '/santri/profil': typeof SantriProfilRoute
   '/santri/riwayat': typeof SantriRiwayatRoute
   '/santri/ujian': typeof SantriUjianRoute
@@ -527,6 +536,7 @@ export interface FileRouteTypes {
     | '/admin/ujian'
     | '/admin/ustadz'
     | '/santri/input'
+    | '/santri/notifikasi'
     | '/santri/profil'
     | '/santri/riwayat'
     | '/santri/ujian'
@@ -579,6 +589,7 @@ export interface FileRouteTypes {
     | '/admin/ujian'
     | '/admin/ustadz'
     | '/santri/input'
+    | '/santri/notifikasi'
     | '/santri/profil'
     | '/santri/riwayat'
     | '/santri/ujian'
@@ -636,6 +647,7 @@ export interface FileRouteTypes {
     | '/admin/ujian'
     | '/admin/ustadz'
     | '/santri/input'
+    | '/santri/notifikasi'
     | '/santri/profil'
     | '/santri/riwayat'
     | '/santri/ujian'
@@ -871,6 +883,13 @@ declare module '@tanstack/react-router' {
       path: '/profil'
       fullPath: '/santri/profil'
       preLoaderRoute: typeof SantriProfilRouteImport
+      parentRoute: typeof SantriRoute
+    }
+    '/santri/notifikasi': {
+      id: '/santri/notifikasi'
+      path: '/notifikasi'
+      fullPath: '/santri/notifikasi'
+      preLoaderRoute: typeof SantriNotifikasiRouteImport
       parentRoute: typeof SantriRoute
     }
     '/santri/input': {
@@ -1117,6 +1136,7 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface SantriRouteChildren {
   SantriInputRoute: typeof SantriInputRoute
+  SantriNotifikasiRoute: typeof SantriNotifikasiRoute
   SantriProfilRoute: typeof SantriProfilRoute
   SantriRiwayatRoute: typeof SantriRiwayatRoute
   SantriUjianRoute: typeof SantriUjianRoute
@@ -1128,6 +1148,7 @@ interface SantriRouteChildren {
 
 const SantriRouteChildren: SantriRouteChildren = {
   SantriInputRoute: SantriInputRoute,
+  SantriNotifikasiRoute: SantriNotifikasiRoute,
   SantriProfilRoute: SantriProfilRoute,
   SantriRiwayatRoute: SantriRiwayatRoute,
   SantriUjianRoute: SantriUjianRoute,

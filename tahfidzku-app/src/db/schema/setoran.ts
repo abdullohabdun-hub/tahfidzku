@@ -43,7 +43,7 @@ export const setoran = pgTable('setoran', {
   sumber: sumberSetoranEnum('sumber').notNull().default('ustadz'),
   ditinjauOlehUstadz: boolean('ditinjau_oleh_ustadz').default(false).notNull(),
   responUstadz: jsonb('respon_ustadz').$type<{
-    tipe: 'disetujui' | 'perlu_perbaikan' | 'komentar';
+    tipe: 'disetujui' | 'perlu_perbaikan' | 'komentar' | 'template' | 'ditinjau' | string;
     catatan?: string;
     diresponOlehUstadzId?: string;
     diresponPada?: string;

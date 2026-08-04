@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, isRedirect } from '@tanstack/react-router'
+import { createFileRoute, redirect, isRedirect, Link } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { db } from '../../db'
 import { setoran, santri, kelas } from '../../db/schema'
@@ -8,7 +8,7 @@ import { success, handleError } from '../../lib/response'
 import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
 import { AuthErrorAlert } from '../../components/AuthErrorAlert'
-import { BookOpen, Clock } from 'lucide-react'
+import { BookOpen, Clock, Check } from 'lucide-react'
 import { getAllRubrikTenant } from '../../server-fns/rubrik'
 import { FormatPenilaian } from '../../components/FormatPenilaian'
 
@@ -33,6 +33,7 @@ export const getPantauanMurojaah = createServerFn({ method: 'GET' })
           kualitas: setoran.kualitas,
           penilaianKustom: setoran.penilaianKustom,
           santriNama: santri.nama,
+          ditinjauOlehUstadz: setoran.ditinjauOlehUstadz,
         })
         .from(setoran)
         .innerJoin(santri, eq(setoran.santriId, santri.id))
@@ -103,13 +104,25 @@ function UstadzPantauMurojaah() {
         ) : (
           <div className="divide-y divide-slate-100">
             {riwayat.map((item: any) => (
-              <div key={item.id} className="p-5 hover:bg-slate-50/80 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <Link 
+                key={item.id} 
+                to="/ustadz/setoran/$setId" 
+                params={{ setId: item.id }}
+                className="block p-5 hover:bg-slate-50/80 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer group"
+              >
                 <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-100">
+                  <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-100 relative">
                     <BookOpen className="w-5 h-5" />
+                    {item.ditinjauOlehUstadz ? (
+                      <div className="absolute -bottom-1 -right-1 bg-green-500 text-white rounded-full p-0.5 border-2 border-white" title="Sudah dipantau">
+                        <Check className="w-3 h-3" />
+                      </div>
+                    ) : (
+                      <div className="absolute -bottom-1 -right-1 bg-orange-400 w-3 h-3 rounded-full border-2 border-white" title="Belum ditanggapi"></div>
+                    )}
                   </div>
                   <div>
-                    <h3 className="font-bold text-slate-800">{item.santriNama}</h3>
+                    <h3 className="font-bold text-slate-800 group-hover:text-emerald-700 transition-colors">{item.santriNama}</h3>
                     <div className="flex items-center gap-2 text-sm text-slate-500 mt-1">
                       <span className="font-bold text-emerald-700 uppercase text-[10px] tracking-wider bg-emerald-100/50 px-2 py-0.5 rounded-full">{item.jenis}</span>
                       <span>•</span>
@@ -129,7 +142,7 @@ function UstadzPantauMurojaah() {
                     <FormatPenilaian item={item} />
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}

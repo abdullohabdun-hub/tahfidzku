@@ -169,6 +169,27 @@
       "when": 1785595427269,
       "tag": "0023_known_satana",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1785818735553,
+      "tag": "0024_needy_nightmare",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1785830000000,
+      "tag": "0025_add_sesi_reguler_default",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1785837709050,
+      "tag": "0026_clean_lightspeed",
+      "breakpoints": true
     }
   ]
 }

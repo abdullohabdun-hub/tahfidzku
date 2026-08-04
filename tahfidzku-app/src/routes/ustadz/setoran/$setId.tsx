@@ -21,8 +21,8 @@ function SetoranDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   
-  const [feedbackType, setFeedbackType] = useState<'disetujui' | 'perlu_perbaikan' | 'komentar' | null>(null)
   const [catatan, setCatatan] = useState('')
+  const [isTemplate, setIsTemplate] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
@@ -45,14 +45,12 @@ function SetoranDetailPage() {
   }, [setId, fetchDetail])
 
   const handleSubmit = async () => {
-    if (!feedbackType) return
-    
     try {
       setSubmitting(true)
       const res = await submitFeedback({ data: {
         setoranId: setId,
-        tipe: feedbackType,
-        catatan: catatan || undefined
+        catatan: catatan || undefined,
+        isTemplate
       } })
       if (res.success) {
         alert('Tanggapan berhasil disimpan.')
@@ -157,59 +155,47 @@ function SetoranDetailPage() {
             Berikan Tanggapan
           </h3>
           
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              onClick={() => setFeedbackType('disetujui')}
-              className={`flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all ${
-                feedbackType === 'disetujui' ? 'border-emerald-600 bg-emerald-50 text-emerald-700' : 'border-slate-200 text-slate-500 hover:border-emerald-200 hover:bg-slate-50'
-              }`}
-            >
-              <Check className="w-6 h-6 mb-1" />
-              <span className="text-xs font-semibold">Disetujui</span>
-            </button>
-            <button
-              onClick={() => setFeedbackType('perlu_perbaikan')}
-              className={`flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all ${
-                feedbackType === 'perlu_perbaikan' ? 'border-red-600 bg-red-50 text-red-700' : 'border-slate-200 text-slate-500 hover:border-red-200 hover:bg-slate-50'
-              }`}
-            >
-              <X className="w-6 h-6 mb-1" />
-              <span className="text-xs font-semibold">Perbaiki</span>
-            </button>
-            <button
-              onClick={() => setFeedbackType('komentar')}
-              className={`flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all ${
-                feedbackType === 'komentar' ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-500 hover:border-blue-200 hover:bg-slate-50'
-              }`}
-            >
-              <MessageSquare className="w-6 h-6 mb-1" />
-              <span className="text-xs font-semibold">Komentar</span>
-            </button>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {['Masya Allah, semangat!', 'Baarakallahu fiikum', 'Terus istiqamah'].map(tmpl => (
+              <button
+                key={tmpl}
+                onClick={() => {
+                  setCatatan(tmpl)
+                  setIsTemplate(true)
+                }}
+                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs rounded-full border border-slate-200 transition-colors"
+              >
+                {tmpl}
+              </button>
+            ))}
           </div>
 
-          {feedbackType && (
-            <div className="pt-2 animate-in fade-in slide-in-from-top-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Catatan (Opsional)
-              </label>
-              <textarea
-                value={catatan}
-                onChange={e => setCatatan(e.target.value)}
-                placeholder="Berikan motivasi atau catatan perbaikan..."
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 min-h-[100px]"
-              />
-              
-              <button
-                onClick={handleSubmit}
-                disabled={submitting}
-                className="mt-4 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-lg flex items-center justify-center transition-colors disabled:opacity-70"
-              >
-                {submitting ? (
-                  <><Loader2 className="w-5 h-5 animate-spin mr-2" /> Menyimpan...</>
-                ) : 'Kirim Tanggapan'}
-              </button>
-            </div>
-          )}
+          <div className="animate-in fade-in slide-in-from-top-2">
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Catatan (Opsional)
+            </label>
+            <textarea
+              value={catatan}
+              onChange={e => {
+                setCatatan(e.target.value)
+                setIsTemplate(false)
+              }}
+              placeholder="Berikan motivasi atau catatan perbaikan..."
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 min-h-[100px]"
+            />
+            
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className={`mt-4 w-full text-white font-semibold py-2.5 rounded-lg flex items-center justify-center transition-colors disabled:opacity-70 ${
+                catatan.trim() ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700'
+              }`}
+            >
+              {submitting ? (
+                <><Loader2 className="w-5 h-5 animate-spin mr-2" /> Menyimpan...</>
+              ) : catatan.trim() ? 'Kirim Tanggapan' : '👍 Tandai Sudah Dipantau'}
+            </button>
+          </div>
         </div>
       ) : (
         <div className="bg-emerald-50 rounded-xl border border-emerald-100 p-5 shadow-sm space-y-2">
@@ -222,23 +208,31 @@ function SetoranDetailPage() {
           </p>
           
           {respon && (
-             <div className="mt-4 p-4 bg-white rounded-lg border border-emerald-100/50 shadow-sm">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded uppercase ${
-                    respon.tipe === 'disetujui' ? 'bg-emerald-100 text-emerald-700' :
-                    respon.tipe === 'perlu_perbaikan' ? 'bg-red-100 text-red-700' :
-                    'bg-blue-100 text-blue-700'
-                  }`}>
-                    {respon.tipe.replace('_', ' ')}
-                  </span>
-                  <span className="text-xs text-slate-400">
-                    {format(new Date(respon.diresponPada), 'dd MMM HH:mm', { locale: id })}
-                  </span>
-                </div>
-                {respon.catatan && (
-                  <p className="text-sm text-slate-700">{respon.catatan}</p>
-                )}
-             </div>
+             respon.tipe === 'ditinjau' ? (
+               <div className="mt-4 flex items-center gap-2 text-blue-700 bg-blue-50 px-3 py-2 rounded-lg border border-blue-100/50 w-fit">
+                 <Check className="w-4 h-4" />
+                 <span className="text-sm font-medium">Telah dipantau pada {format(new Date(respon.diresponPada), 'dd MMM HH:mm', { locale: id })}</span>
+               </div>
+             ) : (
+               <div className="mt-4 p-4 bg-white rounded-lg border border-emerald-100/50 shadow-sm">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded uppercase ${
+                      respon.tipe === 'disetujui' ? 'bg-emerald-100 text-emerald-700' :
+                      respon.tipe === 'perlu_perbaikan' ? 'bg-red-100 text-red-700' :
+                      respon.tipe === 'komentar' ? 'bg-blue-100 text-blue-700' :
+                      'bg-slate-100 text-slate-700'
+                    }`}>
+                      {respon.tipe.replace('_', ' ')}
+                    </span>
+                    <span className="text-xs text-slate-400">
+                      {format(new Date(respon.diresponPada), 'dd MMM HH:mm', { locale: id })}
+                    </span>
+                  </div>
+                  {respon.catatan && (
+                    <p className="text-sm text-slate-700">{respon.catatan}</p>
+                  )}
+               </div>
+             )
           )}
         </div>
       )}

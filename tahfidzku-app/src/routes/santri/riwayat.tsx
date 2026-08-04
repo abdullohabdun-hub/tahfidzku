@@ -162,25 +162,37 @@ function SantriRiwayatSetoran() {
           )}
 
           {isSelfReport && item.ditinjauOlehUstadz && item.responUstadz && (
-            <div className={`rounded-lg p-3 text-sm border ${
-              item.responUstadz.tipe === 'disetujui' ? 'bg-emerald-50 border-emerald-100 text-emerald-800' :
-              item.responUstadz.tipe === 'perlu_perbaikan' ? 'bg-red-50 border-red-100 text-red-800' :
-              'bg-blue-50 border-blue-100 text-blue-800'
-            }`}>
-              <div className="flex justify-between items-center mb-1">
-                <p className="text-[10px] font-bold uppercase opacity-70">
-                  Tanggapan Ustadz ({item.responUstadz.tipe.replace('_', ' ')})
-                </p>
+            item.responUstadz.tipe === 'ditinjau' ? (
+              <div className="flex items-center gap-2 mt-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg w-fit text-blue-700 text-xs font-medium">
+                <span className="font-bold">✓</span>
+                Sudah Dipantau Ustadz
                 {item.responUstadz.diresponPada && (
-                  <p className="text-[9px] opacity-60">
-                    {format(new Date(item.responUstadz.diresponPada), 'dd MMM HH:mm', { locale: id })}
-                  </p>
+                  <span className="opacity-60 ml-1">
+                    ({format(new Date(item.responUstadz.diresponPada), 'dd MMM HH:mm', { locale: id })})
+                  </span>
                 )}
               </div>
-              {item.responUstadz.catatan && (
-                <p className="italic font-medium">{item.responUstadz.catatan}</p>
-              )}
-            </div>
+            ) : (
+              <div className={`rounded-lg p-3 text-sm border ${
+                item.responUstadz.tipe === 'disetujui' ? 'bg-emerald-50 border-emerald-100 text-emerald-800' :
+                item.responUstadz.tipe === 'perlu_perbaikan' ? 'bg-red-50 border-red-100 text-red-800' :
+                'bg-blue-50 border-blue-100 text-blue-800'
+              }`}>
+                <div className="flex justify-between items-center mb-1">
+                  <p className="text-[10px] font-bold uppercase opacity-70">
+                    Tanggapan Ustadz ({item.responUstadz.tipe.replace('_', ' ')})
+                  </p>
+                  {item.responUstadz.diresponPada && (
+                    <p className="text-[9px] opacity-60">
+                      {format(new Date(item.responUstadz.diresponPada), 'dd MMM HH:mm', { locale: id })}
+                    </p>
+                  )}
+                </div>
+                {item.responUstadz.catatan && (
+                  <p className="italic font-medium">{item.responUstadz.catatan}</p>
+                )}
+              </div>
+            )
           )}
 
 

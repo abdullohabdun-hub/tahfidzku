@@ -15,5 +15,5 @@ export { sesiKelas, absensi, statusAbsensiEnum, rekapMingguanSantri } from './ab
 export { waliSantri } from './wali-santri'
 export { raporSettings } from './rapor-settings'
 export { tiket, tiketBalasan, tiketStatusEnum, tiketKategoriEnum, authorRoleEnum } from './tiket'
-export { notifikasiUstadz } from './notifikasi'
+export { notifikasiUstadz, notifikasiSantri, notifikasiGagalLog } from './notifikasi'
 export * from './relations'

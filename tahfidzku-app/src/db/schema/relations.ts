@@ -13,7 +13,7 @@ import { absensi, sesiKelas } from './absensi'
 import { waliSantri } from './wali-santri'
 import { raporSettings } from './rapor-settings'
 import { tiket, tiketBalasan } from './tiket'
-import { notifikasiUstadz } from './notifikasi'
+import { notifikasiUstadz, notifikasiSantri } from './notifikasi'
 export const tenantsRelations = relations(tenants, ({ one, many }) => ({
   users: many(users),
   kelas: many(kelas),
@@ -30,6 +30,7 @@ export const tenantsRelations = relations(tenants, ({ one, many }) => ({
   }),
   tiket: many(tiket),
   notifikasiUstadz: many(notifikasiUstadz),
+  notifikasiSantri: many(notifikasiSantri),
 }))
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -82,6 +83,7 @@ export const santriRelations = relations(santri, ({ one, many }) => ({
   ujianIqra: many(ujianIqra),
   akun: many(users), // Akun wali / santri yang terhubung ke santri ini
   daftarWali: many(waliSantri), // Relasi ke wali (many-to-many)
+  notifikasiSantri: many(notifikasiSantri),
 }))
 
 export const setoranRelations = relations(setoran, ({ one, many }) => ({
@@ -98,6 +100,7 @@ export const setoranRelations = relations(setoran, ({ one, many }) => ({
     references: [users.id],
   }),
   notifikasiUstadz: many(notifikasiUstadz),
+  notifikasiSantri: many(notifikasiSantri),
 }))
 
 export const ujianRelations = relations(ujian, ({ one }) => ({
@@ -274,6 +277,21 @@ export const notifikasiUstadzRelations = relations(notifikasiUstadz, ({ one }) =
   }),
   setoran: one(setoran, {
     fields: [notifikasiUstadz.setoranId],
+    references: [setoran.id],
+  }),
+}))
+
+export const notifikasiSantriRelations = relations(notifikasiSantri, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [notifikasiSantri.tenantId],
+    references: [tenants.id],
+  }),
+  santri: one(santri, {
+    fields: [notifikasiSantri.santriId],
+    references: [santri.id],
+  }),
+  setoran: one(setoran, {
+    fields: [notifikasiSantri.setoranId],
     references: [setoran.id],
   }),
 }))

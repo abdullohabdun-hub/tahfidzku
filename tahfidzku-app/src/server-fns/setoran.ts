@@ -499,6 +499,17 @@ export const inputMurojaah = createServerFn({ method: 'POST' })
           })
         } catch (e) {
           console.error(`Gagal membuat notifikasi untuk ustadz (santriId: ${santriId}, setoranId: ${newSetoran.id})`, e)
+          try {
+            const { notifikasiGagalLog } = await import('../db/schema/notifikasi')
+            await db.insert(notifikasiGagalLog).values({
+              tenantId: session.user.tenantId,
+              konteks: 'insert_notifikasi_ustadz',
+              referensiId: newSetoran.id,
+              errorMessage: e instanceof Error ? e.message : String(e),
+            })
+          } catch (logError) {
+            console.error('Gagal mencatat log kegagalan notifikasi juga:', logError)
+          }
         }
       } else {
         console.warn(`[NOTIFIKASI_SKIPPED] Kelas santri tidak memiliki ustadz pengampu. santriId: ${santriId}, kelasId: ${santriKelas[0]?.kelasId || 'unknown'}, setoranId: ${newSetoran.id}`)
@@ -754,8 +765,8 @@ export const submitFeedbackSetoran = createServerFn({ method: 'POST' })
   .validator((data: unknown) => {
     const schema = z.object({
       setoranId: z.string().uuid(),
-      tipe: z.enum(['disetujui', 'perlu_perbaikan', 'komentar']),
-      catatan: z.string().optional()
+      catatan: z.string().optional(),
+      isTemplate: z.boolean().optional().default(false)
     })
     return schema.parse(data)
   })
@@ -766,11 +777,13 @@ export const submitFeedbackSetoran = createServerFn({ method: 'POST' })
       requireRole(session, 'ustadz')
 
       // Verifikasi IDOR: ustadz hanya boleh memberi feedback pada setoran 
-      // yang dibuat oleh santri di kelasnya (ustadzId = session.user.id)
+      // yang dibuat oleh santri di kelasnya (kelasUstadzId) ATAU ustadz pengampu setoran (setoranUstadzId)
       const targetSetoran = await db.select({ 
           id: setoran.id, 
-          tenantId: setoran.tenantId, 
-          kelasUstadzId: kelas.ustadzId 
+          tenantId: setoran.tenantId,
+          santriId: setoran.santriId,
+          kelasUstadzId: kelas.ustadzId,
+          setoranUstadzId: setoran.ustadzId 
         })
         .from(setoran)
         .leftJoin(santri, eq(setoran.santriId, santri.id))
@@ -784,30 +797,49 @@ export const submitFeedbackSetoran = createServerFn({ method: 'POST' })
 
       const s = targetSetoran[0]
 
-      if (s.tenantId !== session.user.tenantId || s.kelasUstadzId !== session.user.id) {
-        throw new ForbiddenError('Anda tidak diizinkan merespons setoran dari santri di kelas lain.')
+      if (s.tenantId !== session.user.tenantId || (s.kelasUstadzId !== session.user.id && s.setoranUstadzId !== session.user.id)) {
+        throw new ForbiddenError('Anda tidak diizinkan merespons setoran ini.')
       }
 
-      await db.update(setoran).set({
-        ditinjauOlehUstadz: true,
-        responUstadz: {
-          tipe: data.tipe,
-          catatan: data.catatan,
-          diresponOlehUstadzId: session.user.id,
-          diresponPada: new Date().toISOString()
-        }
-      }).where(eq(setoran.id, data.setoranId))
+      const { notifikasiUstadz, notifikasiSantri } = await import('../db/schema/notifikasi')
 
-      // Tandai notifikasi terkait dibaca
-      const { notifikasiUstadz } = await import('../db/schema/notifikasi')
-      await db.update(notifikasiUstadz)
-        .set({ dibacaPada: new Date() })
-        .where(
-          and(
-             eq(notifikasiUstadz.setoranId, data.setoranId),
-             eq(notifikasiUstadz.ustadzId, session.user.id)
+      await db.transaction(async (tx) => {
+        let finalTipe = 'ditinjau'
+        if (data.catatan && data.catatan.trim() !== '') {
+          finalTipe = data.isTemplate ? 'template' : 'komentar'
+        }
+
+        await tx.update(setoran).set({
+          ditinjauOlehUstadz: true,
+          responUstadz: {
+            tipe: finalTipe,
+            catatan: data.catatan,
+            diresponOlehUstadzId: session.user.id,
+            diresponPada: new Date().toISOString()
+          }
+        }).where(eq(setoran.id, data.setoranId))
+
+        // Buat notifikasi untuk santri
+        if (s.santriId) {
+          await tx.insert(notifikasiSantri).values({
+            tenantId: session.user.tenantId,
+            santriId: s.santriId,
+            setoranId: data.setoranId,
+            tipe: 'feedback_setoran',
+            pesan: 'Ustadz telah memberikan tanggapan pada setoran mandiri Anda.',
+          })
+        }
+
+        // Tandai notifikasi terkait dibaca
+        await tx.update(notifikasiUstadz)
+          .set({ dibacaPada: new Date() })
+          .where(
+            and(
+               eq(notifikasiUstadz.setoranId, data.setoranId),
+               eq(notifikasiUstadz.ustadzId, session.user.id)
+            )
           )
-        )
+      })
 
       return success(null, 'Feedback berhasil dikirim')
     } catch (err) {
