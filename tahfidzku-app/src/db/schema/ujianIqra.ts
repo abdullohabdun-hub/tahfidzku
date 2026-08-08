@@ -13,4 +13,5 @@ export const ujianIqra = pgTable('ujian_iqra', {
   catatan: text('catatan'),
   ujiOlehUstadzId: uuid('uji_oleh_ustadz_id').notNull().references(() => users.id),
   tanggalUjian: timestamp('tanggal_ujian', { withTimezone: true }).defaultNow().notNull(),
+  attempt: integer('attempt').notNull().default(1), // Percobaan ke berapa untuk jilid ini
 });

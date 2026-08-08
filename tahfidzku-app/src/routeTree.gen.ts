@@ -23,6 +23,7 @@ import { Route as SuperadminIndexRouteImport } from './routes/superadmin/index'
 import { Route as SantriIndexRouteImport } from './routes/santri/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as WaliUjianRouteImport } from './routes/wali/ujian'
+import { Route as WaliProgresRouteImport } from './routes/wali/progres'
 import { Route as WaliProfilRouteImport } from './routes/wali/profil'
 import { Route as WaliJadwalRouteImport } from './routes/wali/jadwal'
 import { Route as UstadzUjianRouteImport } from './routes/ustadz/ujian'
@@ -31,6 +32,7 @@ import { Route as UstadzProfilRouteImport } from './routes/ustadz/profil'
 import { Route as UstadzPantauRouteImport } from './routes/ustadz/pantau'
 import { Route as UstadzNotifikasiRouteImport } from './routes/ustadz/notifikasi'
 import { Route as UstadzInputRouteImport } from './routes/ustadz/input'
+import { Route as UstadzAnalitikRouteImport } from './routes/ustadz/analitik'
 import { Route as UstadzAbsensiRouteImport } from './routes/ustadz/absensi'
 import { Route as SantriUjianRouteImport } from './routes/santri/ujian'
 import { Route as SantriRiwayatRouteImport } from './routes/santri/riwayat'
@@ -39,7 +41,6 @@ import { Route as SantriNotifikasiRouteImport } from './routes/santri/notifikasi
 import { Route as SantriInputRouteImport } from './routes/santri/input'
 import { Route as AdminUstadzRouteImport } from './routes/admin/ustadz'
 import { Route as AdminUjianRouteImport } from './routes/admin/ujian'
-import { Route as AdminSantriRouteImport } from './routes/admin/santri'
 import { Route as AdminPengaturanRouteImport } from './routes/admin/pengaturan'
 import { Route as AdminLaporanRouteImport } from './routes/admin/laporan'
 import { Route as AdminKelasRouteImport } from './routes/admin/kelas'
@@ -49,6 +50,7 @@ import { Route as SuperadminTiketIndexRouteImport } from './routes/superadmin/ti
 import { Route as SuperadminLembagaIndexRouteImport } from './routes/superadmin/lembaga/index'
 import { Route as SantriTiketIndexRouteImport } from './routes/santri/tiket/index'
 import { Route as AdminTiketIndexRouteImport } from './routes/admin/tiket/index'
+import { Route as AdminSantriIndexRouteImport } from './routes/admin/santri/index'
 import { Route as AdminRaporIndexRouteImport } from './routes/admin/rapor/index'
 import { Route as AdminKelolaAdminIndexRouteImport } from './routes/admin/kelola-admin/index'
 import { Route as WaliTiketBuatRouteImport } from './routes/wali/tiket/buat'
@@ -63,6 +65,7 @@ import { Route as SantriTiketBuatRouteImport } from './routes/santri/tiket/buat'
 import { Route as SantriTiketTiketIdRouteImport } from './routes/santri/tiket/$tiketId'
 import { Route as AdminTiketBuatRouteImport } from './routes/admin/tiket/buat'
 import { Route as AdminTiketTiketIdRouteImport } from './routes/admin/tiket/$tiketId'
+import { Route as AdminSantriSantriIdRouteImport } from './routes/admin/santri/$santriId'
 import { Route as AdminRaporSantriIdRouteImport } from './routes/admin/rapor/$santriId'
 import { Route as AdminKelolaAdminTambahRouteImport } from './routes/admin/kelola-admin/tambah'
 
@@ -136,6 +139,11 @@ const WaliUjianRoute = WaliUjianRouteImport.update({
   path: '/ujian',
   getParentRoute: () => WaliRoute,
 } as any)
+const WaliProgresRoute = WaliProgresRouteImport.update({
+  id: '/progres',
+  path: '/progres',
+  getParentRoute: () => WaliRoute,
+} as any)
 const WaliProfilRoute = WaliProfilRouteImport.update({
   id: '/profil',
   path: '/profil',
@@ -176,6 +184,11 @@ const UstadzInputRoute = UstadzInputRouteImport.update({
   path: '/input',
   getParentRoute: () => UstadzRoute,
 } as any)
+const UstadzAnalitikRoute = UstadzAnalitikRouteImport.update({
+  id: '/analitik',
+  path: '/analitik',
+  getParentRoute: () => UstadzRoute,
+} as any)
 const UstadzAbsensiRoute = UstadzAbsensiRouteImport.update({
   id: '/absensi',
   path: '/absensi',
@@ -214,11 +227,6 @@ const AdminUstadzRoute = AdminUstadzRouteImport.update({
 const AdminUjianRoute = AdminUjianRouteImport.update({
   id: '/ujian',
   path: '/ujian',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminSantriRoute = AdminSantriRouteImport.update({
-  id: '/santri',
-  path: '/santri',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminPengaturanRoute = AdminPengaturanRouteImport.update({
@@ -264,6 +272,11 @@ const SantriTiketIndexRoute = SantriTiketIndexRouteImport.update({
 const AdminTiketIndexRoute = AdminTiketIndexRouteImport.update({
   id: '/tiket/',
   path: '/tiket/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSantriIndexRoute = AdminSantriIndexRouteImport.update({
+  id: '/santri/',
+  path: '/santri/',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminRaporIndexRoute = AdminRaporIndexRouteImport.update({
@@ -337,6 +350,11 @@ const AdminTiketTiketIdRoute = AdminTiketTiketIdRouteImport.update({
   path: '/tiket/$tiketId',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSantriSantriIdRoute = AdminSantriSantriIdRouteImport.update({
+  id: '/santri/$santriId',
+  path: '/santri/$santriId',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminRaporSantriIdRoute = AdminRaporSantriIdRouteImport.update({
   id: '/rapor/$santriId',
   path: '/rapor/$santriId',
@@ -360,7 +378,6 @@ export interface FileRoutesByFullPath {
   '/admin/kelas': typeof AdminKelasRoute
   '/admin/laporan': typeof AdminLaporanRoute
   '/admin/pengaturan': typeof AdminPengaturanRoute
-  '/admin/santri': typeof AdminSantriRoute
   '/admin/ujian': typeof AdminUjianRoute
   '/admin/ustadz': typeof AdminUstadzRoute
   '/santri/input': typeof SantriInputRoute
@@ -369,6 +386,7 @@ export interface FileRoutesByFullPath {
   '/santri/riwayat': typeof SantriRiwayatRoute
   '/santri/ujian': typeof SantriUjianRoute
   '/ustadz/absensi': typeof UstadzAbsensiRoute
+  '/ustadz/analitik': typeof UstadzAnalitikRoute
   '/ustadz/input': typeof UstadzInputRoute
   '/ustadz/notifikasi': typeof UstadzNotifikasiRoute
   '/ustadz/pantau': typeof UstadzPantauRoute
@@ -377,6 +395,7 @@ export interface FileRoutesByFullPath {
   '/ustadz/ujian': typeof UstadzUjianRoute
   '/wali/jadwal': typeof WaliJadwalRoute
   '/wali/profil': typeof WaliProfilRoute
+  '/wali/progres': typeof WaliProgresRoute
   '/wali/ujian': typeof WaliUjianRoute
   '/admin/': typeof AdminIndexRoute
   '/santri/': typeof SantriIndexRoute
@@ -385,6 +404,7 @@ export interface FileRoutesByFullPath {
   '/wali/': typeof WaliIndexRoute
   '/admin/kelola-admin/tambah': typeof AdminKelolaAdminTambahRoute
   '/admin/rapor/$santriId': typeof AdminRaporSantriIdRoute
+  '/admin/santri/$santriId': typeof AdminSantriSantriIdRoute
   '/admin/tiket/$tiketId': typeof AdminTiketTiketIdRoute
   '/admin/tiket/buat': typeof AdminTiketBuatRoute
   '/santri/tiket/$tiketId': typeof SantriTiketTiketIdRoute
@@ -399,6 +419,7 @@ export interface FileRoutesByFullPath {
   '/wali/tiket/buat': typeof WaliTiketBuatRoute
   '/admin/kelola-admin/': typeof AdminKelolaAdminIndexRoute
   '/admin/rapor/': typeof AdminRaporIndexRoute
+  '/admin/santri/': typeof AdminSantriIndexRoute
   '/admin/tiket/': typeof AdminTiketIndexRoute
   '/santri/tiket/': typeof SantriTiketIndexRoute
   '/superadmin/lembaga/': typeof SuperadminLembagaIndexRoute
@@ -413,7 +434,6 @@ export interface FileRoutesByTo {
   '/admin/kelas': typeof AdminKelasRoute
   '/admin/laporan': typeof AdminLaporanRoute
   '/admin/pengaturan': typeof AdminPengaturanRoute
-  '/admin/santri': typeof AdminSantriRoute
   '/admin/ujian': typeof AdminUjianRoute
   '/admin/ustadz': typeof AdminUstadzRoute
   '/santri/input': typeof SantriInputRoute
@@ -422,6 +442,7 @@ export interface FileRoutesByTo {
   '/santri/riwayat': typeof SantriRiwayatRoute
   '/santri/ujian': typeof SantriUjianRoute
   '/ustadz/absensi': typeof UstadzAbsensiRoute
+  '/ustadz/analitik': typeof UstadzAnalitikRoute
   '/ustadz/input': typeof UstadzInputRoute
   '/ustadz/notifikasi': typeof UstadzNotifikasiRoute
   '/ustadz/pantau': typeof UstadzPantauRoute
@@ -430,6 +451,7 @@ export interface FileRoutesByTo {
   '/ustadz/ujian': typeof UstadzUjianRoute
   '/wali/jadwal': typeof WaliJadwalRoute
   '/wali/profil': typeof WaliProfilRoute
+  '/wali/progres': typeof WaliProgresRoute
   '/wali/ujian': typeof WaliUjianRoute
   '/admin': typeof AdminIndexRoute
   '/santri': typeof SantriIndexRoute
@@ -438,6 +460,7 @@ export interface FileRoutesByTo {
   '/wali': typeof WaliIndexRoute
   '/admin/kelola-admin/tambah': typeof AdminKelolaAdminTambahRoute
   '/admin/rapor/$santriId': typeof AdminRaporSantriIdRoute
+  '/admin/santri/$santriId': typeof AdminSantriSantriIdRoute
   '/admin/tiket/$tiketId': typeof AdminTiketTiketIdRoute
   '/admin/tiket/buat': typeof AdminTiketBuatRoute
   '/santri/tiket/$tiketId': typeof SantriTiketTiketIdRoute
@@ -452,6 +475,7 @@ export interface FileRoutesByTo {
   '/wali/tiket/buat': typeof WaliTiketBuatRoute
   '/admin/kelola-admin': typeof AdminKelolaAdminIndexRoute
   '/admin/rapor': typeof AdminRaporIndexRoute
+  '/admin/santri': typeof AdminSantriIndexRoute
   '/admin/tiket': typeof AdminTiketIndexRoute
   '/santri/tiket': typeof SantriTiketIndexRoute
   '/superadmin/lembaga': typeof SuperadminLembagaIndexRoute
@@ -472,7 +496,6 @@ export interface FileRoutesById {
   '/admin/kelas': typeof AdminKelasRoute
   '/admin/laporan': typeof AdminLaporanRoute
   '/admin/pengaturan': typeof AdminPengaturanRoute
-  '/admin/santri': typeof AdminSantriRoute
   '/admin/ujian': typeof AdminUjianRoute
   '/admin/ustadz': typeof AdminUstadzRoute
   '/santri/input': typeof SantriInputRoute
@@ -481,6 +504,7 @@ export interface FileRoutesById {
   '/santri/riwayat': typeof SantriRiwayatRoute
   '/santri/ujian': typeof SantriUjianRoute
   '/ustadz/absensi': typeof UstadzAbsensiRoute
+  '/ustadz/analitik': typeof UstadzAnalitikRoute
   '/ustadz/input': typeof UstadzInputRoute
   '/ustadz/notifikasi': typeof UstadzNotifikasiRoute
   '/ustadz/pantau': typeof UstadzPantauRoute
@@ -489,6 +513,7 @@ export interface FileRoutesById {
   '/ustadz/ujian': typeof UstadzUjianRoute
   '/wali/jadwal': typeof WaliJadwalRoute
   '/wali/profil': typeof WaliProfilRoute
+  '/wali/progres': typeof WaliProgresRoute
   '/wali/ujian': typeof WaliUjianRoute
   '/admin/': typeof AdminIndexRoute
   '/santri/': typeof SantriIndexRoute
@@ -497,6 +522,7 @@ export interface FileRoutesById {
   '/wali/': typeof WaliIndexRoute
   '/admin/kelola-admin/tambah': typeof AdminKelolaAdminTambahRoute
   '/admin/rapor/$santriId': typeof AdminRaporSantriIdRoute
+  '/admin/santri/$santriId': typeof AdminSantriSantriIdRoute
   '/admin/tiket/$tiketId': typeof AdminTiketTiketIdRoute
   '/admin/tiket/buat': typeof AdminTiketBuatRoute
   '/santri/tiket/$tiketId': typeof SantriTiketTiketIdRoute
@@ -511,6 +537,7 @@ export interface FileRoutesById {
   '/wali/tiket/buat': typeof WaliTiketBuatRoute
   '/admin/kelola-admin/': typeof AdminKelolaAdminIndexRoute
   '/admin/rapor/': typeof AdminRaporIndexRoute
+  '/admin/santri/': typeof AdminSantriIndexRoute
   '/admin/tiket/': typeof AdminTiketIndexRoute
   '/santri/tiket/': typeof SantriTiketIndexRoute
   '/superadmin/lembaga/': typeof SuperadminLembagaIndexRoute
@@ -532,7 +559,6 @@ export interface FileRouteTypes {
     | '/admin/kelas'
     | '/admin/laporan'
     | '/admin/pengaturan'
-    | '/admin/santri'
     | '/admin/ujian'
     | '/admin/ustadz'
     | '/santri/input'
@@ -541,6 +567,7 @@ export interface FileRouteTypes {
     | '/santri/riwayat'
     | '/santri/ujian'
     | '/ustadz/absensi'
+    | '/ustadz/analitik'
     | '/ustadz/input'
     | '/ustadz/notifikasi'
     | '/ustadz/pantau'
@@ -549,6 +576,7 @@ export interface FileRouteTypes {
     | '/ustadz/ujian'
     | '/wali/jadwal'
     | '/wali/profil'
+    | '/wali/progres'
     | '/wali/ujian'
     | '/admin/'
     | '/santri/'
@@ -557,6 +585,7 @@ export interface FileRouteTypes {
     | '/wali/'
     | '/admin/kelola-admin/tambah'
     | '/admin/rapor/$santriId'
+    | '/admin/santri/$santriId'
     | '/admin/tiket/$tiketId'
     | '/admin/tiket/buat'
     | '/santri/tiket/$tiketId'
@@ -571,6 +600,7 @@ export interface FileRouteTypes {
     | '/wali/tiket/buat'
     | '/admin/kelola-admin/'
     | '/admin/rapor/'
+    | '/admin/santri/'
     | '/admin/tiket/'
     | '/santri/tiket/'
     | '/superadmin/lembaga/'
@@ -585,7 +615,6 @@ export interface FileRouteTypes {
     | '/admin/kelas'
     | '/admin/laporan'
     | '/admin/pengaturan'
-    | '/admin/santri'
     | '/admin/ujian'
     | '/admin/ustadz'
     | '/santri/input'
@@ -594,6 +623,7 @@ export interface FileRouteTypes {
     | '/santri/riwayat'
     | '/santri/ujian'
     | '/ustadz/absensi'
+    | '/ustadz/analitik'
     | '/ustadz/input'
     | '/ustadz/notifikasi'
     | '/ustadz/pantau'
@@ -602,6 +632,7 @@ export interface FileRouteTypes {
     | '/ustadz/ujian'
     | '/wali/jadwal'
     | '/wali/profil'
+    | '/wali/progres'
     | '/wali/ujian'
     | '/admin'
     | '/santri'
@@ -610,6 +641,7 @@ export interface FileRouteTypes {
     | '/wali'
     | '/admin/kelola-admin/tambah'
     | '/admin/rapor/$santriId'
+    | '/admin/santri/$santriId'
     | '/admin/tiket/$tiketId'
     | '/admin/tiket/buat'
     | '/santri/tiket/$tiketId'
@@ -624,6 +656,7 @@ export interface FileRouteTypes {
     | '/wali/tiket/buat'
     | '/admin/kelola-admin'
     | '/admin/rapor'
+    | '/admin/santri'
     | '/admin/tiket'
     | '/santri/tiket'
     | '/superadmin/lembaga'
@@ -643,7 +676,6 @@ export interface FileRouteTypes {
     | '/admin/kelas'
     | '/admin/laporan'
     | '/admin/pengaturan'
-    | '/admin/santri'
     | '/admin/ujian'
     | '/admin/ustadz'
     | '/santri/input'
@@ -652,6 +684,7 @@ export interface FileRouteTypes {
     | '/santri/riwayat'
     | '/santri/ujian'
     | '/ustadz/absensi'
+    | '/ustadz/analitik'
     | '/ustadz/input'
     | '/ustadz/notifikasi'
     | '/ustadz/pantau'
@@ -660,6 +693,7 @@ export interface FileRouteTypes {
     | '/ustadz/ujian'
     | '/wali/jadwal'
     | '/wali/profil'
+    | '/wali/progres'
     | '/wali/ujian'
     | '/admin/'
     | '/santri/'
@@ -668,6 +702,7 @@ export interface FileRouteTypes {
     | '/wali/'
     | '/admin/kelola-admin/tambah'
     | '/admin/rapor/$santriId'
+    | '/admin/santri/$santriId'
     | '/admin/tiket/$tiketId'
     | '/admin/tiket/buat'
     | '/santri/tiket/$tiketId'
@@ -682,6 +717,7 @@ export interface FileRouteTypes {
     | '/wali/tiket/buat'
     | '/admin/kelola-admin/'
     | '/admin/rapor/'
+    | '/admin/santri/'
     | '/admin/tiket/'
     | '/santri/tiket/'
     | '/superadmin/lembaga/'
@@ -801,6 +837,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WaliUjianRouteImport
       parentRoute: typeof WaliRoute
     }
+    '/wali/progres': {
+      id: '/wali/progres'
+      path: '/progres'
+      fullPath: '/wali/progres'
+      preLoaderRoute: typeof WaliProgresRouteImport
+      parentRoute: typeof WaliRoute
+    }
     '/wali/profil': {
       id: '/wali/profil'
       path: '/profil'
@@ -857,6 +900,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UstadzInputRouteImport
       parentRoute: typeof UstadzRoute
     }
+    '/ustadz/analitik': {
+      id: '/ustadz/analitik'
+      path: '/analitik'
+      fullPath: '/ustadz/analitik'
+      preLoaderRoute: typeof UstadzAnalitikRouteImport
+      parentRoute: typeof UstadzRoute
+    }
     '/ustadz/absensi': {
       id: '/ustadz/absensi'
       path: '/absensi'
@@ -911,13 +961,6 @@ declare module '@tanstack/react-router' {
       path: '/ujian'
       fullPath: '/admin/ujian'
       preLoaderRoute: typeof AdminUjianRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/santri': {
-      id: '/admin/santri'
-      path: '/santri'
-      fullPath: '/admin/santri'
-      preLoaderRoute: typeof AdminSantriRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/pengaturan': {
@@ -981,6 +1024,13 @@ declare module '@tanstack/react-router' {
       path: '/tiket'
       fullPath: '/admin/tiket/'
       preLoaderRoute: typeof AdminTiketIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/santri/': {
+      id: '/admin/santri/'
+      path: '/santri'
+      fullPath: '/admin/santri/'
+      preLoaderRoute: typeof AdminSantriIndexRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/rapor/': {
@@ -1081,6 +1131,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminTiketTiketIdRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/santri/$santriId': {
+      id: '/admin/santri/$santriId'
+      path: '/santri/$santriId'
+      fullPath: '/admin/santri/$santriId'
+      preLoaderRoute: typeof AdminSantriSantriIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/rapor/$santriId': {
       id: '/admin/rapor/$santriId'
       path: '/rapor/$santriId'
@@ -1102,16 +1159,17 @@ interface AdminRouteChildren {
   AdminKelasRoute: typeof AdminKelasRoute
   AdminLaporanRoute: typeof AdminLaporanRoute
   AdminPengaturanRoute: typeof AdminPengaturanRoute
-  AdminSantriRoute: typeof AdminSantriRoute
   AdminUjianRoute: typeof AdminUjianRoute
   AdminUstadzRoute: typeof AdminUstadzRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminKelolaAdminTambahRoute: typeof AdminKelolaAdminTambahRoute
   AdminRaporSantriIdRoute: typeof AdminRaporSantriIdRoute
+  AdminSantriSantriIdRoute: typeof AdminSantriSantriIdRoute
   AdminTiketTiketIdRoute: typeof AdminTiketTiketIdRoute
   AdminTiketBuatRoute: typeof AdminTiketBuatRoute
   AdminKelolaAdminIndexRoute: typeof AdminKelolaAdminIndexRoute
   AdminRaporIndexRoute: typeof AdminRaporIndexRoute
+  AdminSantriIndexRoute: typeof AdminSantriIndexRoute
   AdminTiketIndexRoute: typeof AdminTiketIndexRoute
 }
 
@@ -1119,16 +1177,17 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminKelasRoute: AdminKelasRoute,
   AdminLaporanRoute: AdminLaporanRoute,
   AdminPengaturanRoute: AdminPengaturanRoute,
-  AdminSantriRoute: AdminSantriRoute,
   AdminUjianRoute: AdminUjianRoute,
   AdminUstadzRoute: AdminUstadzRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminKelolaAdminTambahRoute: AdminKelolaAdminTambahRoute,
   AdminRaporSantriIdRoute: AdminRaporSantriIdRoute,
+  AdminSantriSantriIdRoute: AdminSantriSantriIdRoute,
   AdminTiketTiketIdRoute: AdminTiketTiketIdRoute,
   AdminTiketBuatRoute: AdminTiketBuatRoute,
   AdminKelolaAdminIndexRoute: AdminKelolaAdminIndexRoute,
   AdminRaporIndexRoute: AdminRaporIndexRoute,
+  AdminSantriIndexRoute: AdminSantriIndexRoute,
   AdminTiketIndexRoute: AdminTiketIndexRoute,
 }
 
@@ -1185,6 +1244,7 @@ const SuperadminRouteWithChildren = SuperadminRoute._addFileChildren(
 
 interface UstadzRouteChildren {
   UstadzAbsensiRoute: typeof UstadzAbsensiRoute
+  UstadzAnalitikRoute: typeof UstadzAnalitikRoute
   UstadzInputRoute: typeof UstadzInputRoute
   UstadzNotifikasiRoute: typeof UstadzNotifikasiRoute
   UstadzPantauRoute: typeof UstadzPantauRoute
@@ -1200,6 +1260,7 @@ interface UstadzRouteChildren {
 
 const UstadzRouteChildren: UstadzRouteChildren = {
   UstadzAbsensiRoute: UstadzAbsensiRoute,
+  UstadzAnalitikRoute: UstadzAnalitikRoute,
   UstadzInputRoute: UstadzInputRoute,
   UstadzNotifikasiRoute: UstadzNotifikasiRoute,
   UstadzPantauRoute: UstadzPantauRoute,
@@ -1219,6 +1280,7 @@ const UstadzRouteWithChildren =
 interface WaliRouteChildren {
   WaliJadwalRoute: typeof WaliJadwalRoute
   WaliProfilRoute: typeof WaliProfilRoute
+  WaliProgresRoute: typeof WaliProgresRoute
   WaliUjianRoute: typeof WaliUjianRoute
   WaliIndexRoute: typeof WaliIndexRoute
   WaliTiketTiketIdRoute: typeof WaliTiketTiketIdRoute
@@ -1229,6 +1291,7 @@ interface WaliRouteChildren {
 const WaliRouteChildren: WaliRouteChildren = {
   WaliJadwalRoute: WaliJadwalRoute,
   WaliProfilRoute: WaliProfilRoute,
+  WaliProgresRoute: WaliProgresRoute,
   WaliUjianRoute: WaliUjianRoute,
   WaliIndexRoute: WaliIndexRoute,
   WaliTiketTiketIdRoute: WaliTiketTiketIdRoute,

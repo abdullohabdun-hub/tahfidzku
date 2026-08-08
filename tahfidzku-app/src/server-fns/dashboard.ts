@@ -368,8 +368,14 @@ export const getWaliDashboard = createServerFn({ method: 'POST' }).handler(
 
       let santriIds: string[] = []
       
-      const anakLinks = await db.select({ santriId: waliSantri.santriId }).from(waliSantri).where(eq(waliSantri.waliUserId, session.user.id))
-      
+      const anakLinks = await db.select({ santriId: waliSantri.santriId })
+        .from(waliSantri)
+        .where(
+          and(
+            eq(waliSantri.waliUserId, session.user.id),
+            eq(waliSantri.tenantId, session.user.tenantId)
+          )
+        )
       if (anakLinks.length > 0) {
         santriIds = anakLinks.map(link => link.santriId)
       } else if (session.user.santriId) {
@@ -384,7 +390,12 @@ export const getWaliDashboard = createServerFn({ method: 'POST' }).handler(
       const duaTahunLaluStr = duaTahunLalu.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
 
       for (const santriId of santriIds) {
-        const [profil] = await db.select().from(santri).where(eq(santri.id, santriId)).limit(1)
+        const [profil] = await db.select().from(santri).where(
+          and(
+            eq(santri.id, santriId),
+            eq(santri.tenantId, session.user.tenantId)
+          )
+        ).limit(1)
         if (!profil) continue;
 
         let namaKelas = null;

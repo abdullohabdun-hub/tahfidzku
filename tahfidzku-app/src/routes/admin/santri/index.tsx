@@ -1,21 +1,22 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { Users, Plus, Loader2, Trash2, Edit, VenetianMask, Printer, Search } from 'lucide-react'
-import { toast } from '../../components/ui/sonner'
-import { getSantriList, createSantri, deleteSantri, updateSantri } from '../../server-fns/santri'
-import { getKelasList } from '../../server-fns/kelas'
-import { getTenantInfo } from '../../server-fns/admin-settings'
-import { impersonateUser } from '../../server-fns/impersonate'
-import { getSurahByJuz, getAyatRangeInJuz } from '../../lib/quranMapper'
-import { Button } from '../../components/ui/button'
-import { RowActionsMenu } from '../../components/shared/RowActionsMenu'
-import { PageHeader } from '../../components/shared/PageHeader'
+import { Users, Plus, Loader2, Trash2, Edit, VenetianMask, Printer, Search, Eye } from 'lucide-react'
+import { toast } from '../../../components/ui/sonner'
+import { getSantriList, createSantri, deleteSantri, updateSantri } from '../../../server-fns/santri'
+import { getKelasList } from '../../../server-fns/kelas'
+import { getTenantInfo } from '../../../server-fns/admin-settings'
+import { impersonateUser } from '../../../server-fns/impersonate'
+import { getSurahByJuz, getAyatRangeInJuz } from '../../../lib/quranMapper'
+import { Button } from '../../../components/ui/button'
+import { RowActionsMenu } from '../../../components/shared/RowActionsMenu'
+import { PageHeader } from '../../../components/shared/PageHeader'
 
-export const Route = createFileRoute('/admin/santri')({
+export const Route = createFileRoute('/admin/santri/')({
   component: DataSantriPage,
 })
 
 function DataSantriPage() {
+  const navigate = useNavigate()
   const [santri, setSantri] = useState<any[]>([])
   const [kelasList, setKelasList] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -125,7 +126,11 @@ function DataSantriPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (kelasId && hariMasuk.length < minHariMasukSantri) {
+    const selectedKelasForSubmit = kelasId ? kelasList.find(k => k.id === kelasId) : null;
+    const isMukimSubmit = selectedKelasForSubmit?.tipeKelas === 'reguler';
+    const isOnlineSubmit = selectedKelasForSubmit?.tipeKelas === 'online';
+
+    if (kelasId && !isMukimSubmit && !isOnlineSubmit && hariMasuk.length < minHariMasukSantri) {
       toast.warning(`Minimal hari masuk untuk lembaga ini adalah ${minHariMasukSantri} hari. Harap tambahkan hari masuk santri.`);
       return;
     }
@@ -261,7 +266,8 @@ function DataSantriPage() {
   const handleImpersonate = async () => {
     if (!impersonateTarget) return
     setImpersonating(true)
-    const res = await impersonateUser({ data: { targetRole: 'santri', targetId: impersonateTarget.id } })
+    const targetRole = impersonateTarget.tipe === 'dewasa' ? 'santri' : 'wali'
+    const res = await impersonateUser({ data: { targetRole, targetId: impersonateTarget.id } })
     setImpersonating(false)
     if (res.success && res.data?.redirectUrl) {
       window.location.href = res.data.redirectUrl
@@ -427,13 +433,14 @@ function DataSantriPage() {
 
             {(() => {
               const selectedKelas = kelasList.find(k => k.id === kelasId);
-              const isMukim = selectedKelas && (!selectedKelas.hariPertemuan || selectedKelas.hariPertemuan.length === 0);
+              const isMukim = selectedKelas?.tipeKelas === 'reguler';
+              const isOnline = selectedKelas?.tipeKelas === 'online';
 
               return (
                 <div className="border border-slate-200 rounded-lg p-4 bg-slate-50 space-y-4">
                   <label className="block text-sm font-medium mb-1 flex justify-between items-center">
                     <span>Hari Masuk (Jadwal Kehadiran Santri)</span>
-                    {kelasId && !isMukim && <span className="text-xs text-slate-500 font-normal">Minimal {minHariMasukSantri} Hari</span>}
+                    {kelasId && !isMukim && !isOnline && <span className="text-xs text-slate-500 font-normal">Minimal {minHariMasukSantri} Hari</span>}
                   </label>
                   
                   {!kelasId ? (
@@ -443,6 +450,10 @@ function DataSantriPage() {
                   ) : isMukim ? (
                     <div className="text-sm font-medium text-indigo-700 bg-indigo-50 p-3 rounded-lg border border-indigo-200">
                       ℹ️ Kelas ini bersifat mukim — santri dianggap hadir setiap hari (7 hari penuh).
+                    </div>
+                  ) : isOnline ? (
+                    <div className="text-sm font-medium text-blue-700 bg-blue-50 p-3 rounded-lg border border-blue-200">
+                      ℹ️ Kelas Online — tidak memiliki kewajiban absensi / jadwal hari masuk.
                     </div>
                   ) : (
                     <>
@@ -559,7 +570,7 @@ function DataSantriPage() {
           <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6">
             <h3 className="text-lg font-bold text-slate-900 mb-2">Konfirmasi Mode Menyamar</h3>
             <p className="text-slate-600 mb-6">
-              Anda akan masuk ke dashboard sebagai <strong>{impersonateTarget.nama}</strong> (Santri). Anda dapat kembali ke mode Admin kapan saja melalui banner di atas layar. Lanjutkan?
+              Anda akan masuk ke dashboard sebagai <strong>{impersonateTarget.tipe === 'dewasa' ? impersonateTarget.nama : impersonateTarget.waliNama || 'Wali'}</strong> ({impersonateTarget.tipe === 'dewasa' ? 'Santri' : 'Wali'}). Anda dapat kembali ke mode Admin kapan saja melalui banner di atas layar. Lanjutkan?
             </p>
             <div className="flex justify-end gap-3">
               <Button variant="outline" onClick={() => setImpersonateTarget(null)} disabled={impersonating}>Batal</Button>
@@ -644,9 +655,9 @@ function DataSantriPage() {
                           <div className="w-8 h-8 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
                             <Users className="w-4 h-4" />
                           </div>
-                          <div className="font-semibold text-slate-800">
+                          <Link to="/admin/santri/$santriId" params={{ santriId: s.id }} className="font-semibold text-slate-800 hover:text-emerald-600 hover:underline">
                             {s.nama}
-                          </div>
+                          </Link>
                         </div>
                       </td>
                       <td className="px-4 py-3">
@@ -699,9 +710,9 @@ function DataSantriPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end items-center gap-1">
-                          {/* Menyamar: tetap ikon visible — punya custom modal konfirmasi sendiri */}
-                          {s.tipe === 'dewasa' && (
-                            <Button onClick={() => setImpersonateTarget(s)} variant="ghost" size="icon-sm" className="text-amber-600 hover:text-amber-700 hover:bg-amber-50" title="Mode Menyamar (Akses sebagai Santri)">
+                          {/* Menyamar: Untuk dewasa (Santri) atau reguler yang punya Wali */}
+                          {(s.tipe === 'dewasa' || (s.tipe === 'reguler' && s.waliNama)) && (
+                            <Button onClick={() => setImpersonateTarget(s)} variant="ghost" size="icon-sm" className="text-amber-600 hover:text-amber-700 hover:bg-amber-50" title={s.tipe === 'dewasa' ? "Mode Menyamar (Akses sebagai Santri)" : "Mode Menyamar (Akses sebagai Wali)"}>
                               <VenetianMask className="w-4 h-4" />
                             </Button>
                           )}
@@ -714,6 +725,11 @@ function DataSantriPage() {
                           {/* Edit + Hapus masuk dropdown (AlertDialog konfirmasi untuk Hapus) */}
                           <RowActionsMenu
                             actions={[
+                              {
+                                label: "Lihat Detail",
+                                icon: Eye,
+                                onClick: () => navigate({ to: '/admin/santri/$santriId', params: { santriId: s.id } }),
+                              },
                               {
                                 label: "Edit",
                                 icon: Edit,

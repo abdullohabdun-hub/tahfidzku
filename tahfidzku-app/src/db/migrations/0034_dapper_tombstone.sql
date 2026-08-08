@@ -1,0 +1,1 @@
+ALTER TABLE "audit_logs" ALTER COLUMN "details" SET DATA TYPE jsonb USING details::jsonb;

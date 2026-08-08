@@ -30,16 +30,16 @@ const ACCENTS = {
     chipBg: "bg-emerald-100",
     chipText: "text-emerald-800",
   },
-  amber: {
-    text: "text-amber-700",
-    solidBg: "bg-amber-500",
-    solidBgHover: "hover:bg-amber-600",
-    softBg: "bg-amber-50",
-    border: "border-amber-200",
-    ring: "focus:ring-amber-500 focus:border-amber-500",
-    dot: "bg-amber-500",
-    chipBg: "bg-amber-100",
-    chipText: "text-amber-800",
+  cyan: {
+    text: "text-cyan-700",
+    solidBg: "bg-cyan-500",
+    solidBgHover: "hover:bg-cyan-600",
+    softBg: "bg-cyan-50",
+    border: "border-cyan-200",
+    ring: "focus:ring-cyan-500 focus:border-cyan-500",
+    dot: "bg-cyan-500",
+    chipBg: "bg-cyan-100",
+    chipText: "text-cyan-800",
   },
   indigo: {
     text: "text-primary",
@@ -56,7 +56,7 @@ const ACCENTS = {
 
 const JENIS_TABS = [
   { id: 'ziyadah', label: 'Ziyadah', desc: 'Hafalan Baru', accent: 'emerald' },
-  { id: 'sabqi', label: 'Sabqi', desc: 'Ulang Hafalan Baru', accent: 'amber' },
+  { id: 'sabqi', label: 'Sabqi', desc: 'Ulang Hafalan Baru', accent: 'cyan' },
   { id: 'manzil', label: 'Manzil', desc: 'Ulang Hafalan Lama', accent: 'indigo' }
 ]
 
@@ -153,6 +153,7 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
 
   // Penilaian Baru (Standar)
   const [skorKualitas, setSkorKualitas] = useState<SkorKualitas | null>(null)
+  const [skorKualitasBacaan, setSkorKualitasBacaan] = useState<SkorKualitas | null>(null)
   const [statusHafalan, setStatusHafalan] = useState<StatusHafalan | null>(null)
   const [catatan, setCatatan] = useState('')
   const [tanggalSetoran, setTanggalSetoran] = useState<string>('')
@@ -173,6 +174,9 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
         setSkorKualitas(initialData.skorKualitas as SkorKualitas)
       } else if (initialData.kualitas && LEGACY_TO_SKOR[initialData.kualitas]) {
         setSkorKualitas(LEGACY_TO_SKOR[initialData.kualitas])
+      }
+      if (initialData.skorKualitasBacaan) {
+        setSkorKualitasBacaan(initialData.skorKualitasBacaan as SkorKualitas)
       }
       // Set status hafalan
       if (initialData.statusHafalan) setStatusHafalan(initialData.statusHafalan as StatusHafalan)
@@ -336,6 +340,7 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
 
     if (mode === 'create' && !santri && isUstadz) return setErrorMsg('Pilih santri terlebih dahulu')
     if (!skorKualitas) return setErrorMsg('Pilih skor kualitas hafalan (1-5)')
+    if (!skorKualitasBacaan) return setErrorMsg('Pilih skor kualitas bacaan (1-5)')
     if (!statusHafalan) return setErrorMsg('Pilih status hafalan (Lanjut atau Mengulang)')
 
     setSubmitting(true)
@@ -344,6 +349,7 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
       let payload: any = {
         jenis: jenisSetoran,
         skorKualitas,
+        skorKualitasBacaan,
         statusHafalan,
         catatan,
       }
@@ -403,6 +409,7 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
         if (mode === 'create') {
             setCatatan('')
             setSkorKualitas(null)
+            setSkorKualitasBacaan(null)
             setStatusHafalan(null)
             if (jenisSetoran === 'ziyadah') {
                 setSurahSelesaiNomor(0)
@@ -736,7 +743,7 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm mb-4">
           
           {/* Skor Kualitas 1-5 */}
-          <SectionLabel accent={activeAccent}>Skor Kualitas Hafalan</SectionLabel>
+          <SectionLabel accent={activeAccent}>Kualitas Kelancaran Hafalan</SectionLabel>
           <div className="grid grid-cols-5 gap-2 mb-5">
             {SKOR_LIST.map((skor) => {
               const isSelected = skorKualitas === skor
@@ -746,6 +753,32 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
                   key={skor}
                   type="button"
                   onClick={() => setSkorKualitas(skor)}
+                  className={`py-3 px-1 rounded-xl text-center transition-all duration-200 border-2 flex flex-col items-center gap-0.5
+                    ${isSelected
+                      ? `${warnaSolid} shadow-md scale-105`
+                      : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50 hover:scale-102'
+                    }
+                  `}
+                >
+                  <span className={`text-lg font-black leading-none ${isSelected ? 'text-white' : 'text-slate-700'}`}>{skor}</span>
+                  <span className={`text-[9px] font-bold uppercase tracking-wide leading-tight text-center ${isSelected ? 'text-white/90' : 'text-slate-400'}`}>
+                    {SKOR_DEFAULT_LABELS[skor]}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+
+          <SectionLabel accent={activeAccent}>Kualitas Tajwid & Makhroj (Bacaan)</SectionLabel>
+          <div className="grid grid-cols-5 gap-2 mb-5">
+            {SKOR_LIST.map((skor) => {
+              const isSelected = skorKualitasBacaan === skor
+              const warnaSolid = isSelected ? SKOR_WARNA_SOLID[skor] : ''
+              return (
+                <button
+                  key={`bacaan-${skor}`}
+                  type="button"
+                  onClick={() => setSkorKualitasBacaan(skor)}
                   className={`py-3 px-1 rounded-xl text-center transition-all duration-200 border-2 flex flex-col items-center gap-0.5
                     ${isSelected
                       ? `${warnaSolid} shadow-md scale-105`

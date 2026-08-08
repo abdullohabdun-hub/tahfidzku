@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, Link, useLocation, useRouter } from "@tanstack/react-router"
-import { Home, PlusCircle, History, Award, Clock, LogOut, BookOpen, Calendar } from "lucide-react"
+import { Home, PlusCircle, History, Award, Clock, LogOut, BookOpen, Calendar, BarChart3 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { Button } from "../components/ui/button"
 import { checkAuth, logout } from "../server-fns/auth"
@@ -8,6 +8,7 @@ import { HelpTicketButton } from "../components/tiket/HelpTicketButton"
 import { useServerFn } from "@tanstack/react-start"
 import { getUnreadCount } from "../server-fns/notifikasi-ustadz"
 import { Bell } from "lucide-react"
+import { RoleSwitcher } from "../components/shared/RoleSwitcher"
 
 export const Route = createFileRoute('/ustadz')({
   component: UstadzLayout,
@@ -74,6 +75,7 @@ function UstadzLayout() {
     { name: "Pantau", path: "/ustadz/pantau", icon: <Clock className="w-5 h-5" /> },
     { name: "Ujian", path: "/ustadz/ujian", icon: <Award className="w-5 h-5" /> },
     { name: "Riwayat", path: "/ustadz/riwayat", icon: <History className="w-5 h-5" /> },
+    { name: "Analitik", path: "/ustadz/analitik", icon: <BarChart3 className="w-5 h-5" /> },
   ]
 
   return (
@@ -85,7 +87,8 @@ function UstadzLayout() {
           <div className="bg-emerald-600 p-1.5 rounded-md">
             <BookOpen className="h-4 w-4 text-white" />
           </div>
-          <span className="font-bold text-base text-emerald-950 tracking-tight">{tenantName} Ustadz</span>
+          <span className="font-bold text-base text-emerald-950 tracking-tight">{tenantName}</span>
+          <RoleSwitcher user={user} currentRole="ustadz" />
         </div>
         <div className="flex gap-2 items-center">
           <HelpTicketButton baseUrl="/ustadz/tiket" />

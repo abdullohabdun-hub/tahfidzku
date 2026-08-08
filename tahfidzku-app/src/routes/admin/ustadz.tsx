@@ -23,6 +23,7 @@ function AdminUstadzPage() {
   const [email, setEmail] = useState("")
   const [noWa, setNoWa] = useState("")
   const [password, setPassword] = useState("")
+  const [isAdmin, setIsAdmin] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   
   const [impersonateTarget, setImpersonateTarget] = useState<any>(null)
@@ -52,6 +53,7 @@ function AdminUstadzPage() {
     setEmail("")
     setNoWa("")
     setPassword("")
+    setIsAdmin(false)
   }
 
   const handleEdit = (u: any) => {
@@ -61,6 +63,7 @@ function AdminUstadzPage() {
     setEmail(u.email || "")
     setNoWa(u.noWa || "")
     setPassword("")
+    setIsAdmin(u.roles?.includes('admin') || false)
     setShowForm(true)
   }
 
@@ -70,7 +73,7 @@ function AdminUstadzPage() {
     try {
       if (editingId) {
         const res = await updateUstadz({
-          data: { id: editingId, nama, username, email: email || null, noWa: noWa || null, password: password || undefined }
+          data: { id: editingId, nama, username, email: email || null, noWa: noWa || null, password: password || undefined, roles: isAdmin ? ['ustadz', 'admin'] : ['ustadz'] }
         })
         if (res.success) {
           toast.success("Berhasil mengedit data ustadz")
@@ -81,7 +84,7 @@ function AdminUstadzPage() {
         }
       } else {
         const res = await createUstadz({
-          data: { nama, username, email: email || null, noWa: noWa || null, password }
+          data: { nama, username, email: email || null, noWa: noWa || null, password, roles: isAdmin ? ['ustadz', 'admin'] : ['ustadz'] }
         })
         if (res.success) {
           toast.success("Berhasil menambah ustadz baru")
@@ -163,6 +166,13 @@ function AdminUstadzPage() {
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">PIN / Password Login</label>
               <input required={!editingId} type="text" value={password} onChange={e => setPassword(e.target.value)} className="w-full border border-slate-300 p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder={editingId ? "(Kosongkan jika tidak ingin ganti PIN)" : "Minimal 4 karakter"} />
+            </div>
+            <div className="pt-2 border-t border-slate-100">
+              <label className="flex items-center gap-2 cursor-pointer group">
+                <input type="checkbox" checked={isAdmin} onChange={e => setIsAdmin(e.target.checked)} className="w-4 h-4 rounded text-primary focus:ring-primary border-slate-300 transition-colors" />
+                <span className="text-sm font-medium text-slate-700 group-hover:text-slate-900">Beri Akses Admin</span>
+              </label>
+              <p className="text-xs text-slate-500 mt-1 pl-6">Jika dicentang, akun ini akan dapat berpindah role ke halaman Admin.</p>
             </div>
             <div className="flex gap-2 pt-2">
               <Button type="button" variant="outline" onClick={handleCloseForm}>Batal</Button>

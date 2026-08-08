@@ -71,7 +71,6 @@ export const login = createServerFn({ method: 'POST' })
         }
       }
 
-      // ── Buat Session JWT ──
       await createSession({
         id: user.id,
         tenantId: user.tenantId,
@@ -80,6 +79,7 @@ export const login = createServerFn({ method: 'POST' })
         username: user.username,
         noWa: user.noWa,
         role: user.role,
+        roles: user.roles as ('admin' | 'ustadz' | 'santri' | 'wali')[],
         santriId: user.santriId,
         forcePasswordChange: user.forcePasswordChange,
       })

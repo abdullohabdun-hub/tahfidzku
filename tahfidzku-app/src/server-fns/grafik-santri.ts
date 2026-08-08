@@ -7,6 +7,7 @@ import { AuthenticationError, NotFoundError } from '../lib/errors'
 import { success, handleError } from '../lib/response'
 import { verifyAksesSantri } from '../lib/authz'
 import { getLegacyMingguMulaiKey } from '../lib/dateUtils'
+import { getSantriDisplayMode } from '../lib/santri-display'
 
 export const getGrafikDanSummarySantri = createServerFn({ method: 'POST' })
   .validator(z.object({ santriId: z.string().uuid() }))
@@ -31,7 +32,92 @@ export const getGrafikDanSummarySantri = createServerFn({ method: 'POST' })
       const isoDateString = getLegacyMingguMulaiKey() // Match Ticket 1 bug for bug
 
 
-      // 4. JALANKAN 3 QUERY SEKALIGUS
+      const displayMode = getSantriDisplayMode(profil)
+
+      if (displayMode === 'iqra') {
+        const [grafikHarianResult, kualitasResult, smartSummaryResult] = await Promise.all([
+          db.execute(sql`
+            SELECT 
+              DATE(created_at AT TIME ZONE 'Asia/Jakarta') as tanggal,
+              'iqra' as jenis,
+              SUM(COALESCE(halaman_akhir - halaman_awal + 1, 0)) as total_halaman,
+              COUNT(id) as total_setoran
+            FROM setoran_iqra
+            WHERE santri_id = ${profil.id} AND tenant_id = ${tenantId}
+              AND (created_at AT TIME ZONE 'Asia/Jakarta') >= (NOW() AT TIME ZONE 'Asia/Jakarta') - INTERVAL '14 days'
+            GROUP BY DATE(created_at AT TIME ZONE 'Asia/Jakarta')
+            ORDER BY DATE(created_at AT TIME ZONE 'Asia/Jakarta') ASC
+          `),
+          db.execute(sql`
+            SELECT 
+              skor_kualitas,
+              COUNT(id) as total_setoran
+            FROM setoran_iqra
+            WHERE santri_id = ${profil.id} AND tenant_id = ${tenantId}
+              AND (created_at AT TIME ZONE 'Asia/Jakarta') >= (NOW() AT TIME ZONE 'Asia/Jakarta') - INTERVAL '8 weeks'
+            GROUP BY skor_kualitas
+          `),
+          db.execute(sql`
+            WITH setoran_minggu_ini AS (
+              SELECT 
+                santri_id,
+                COUNT(id) as total_setoran,
+                SUM(COALESCE(halaman_akhir - halaman_awal + 1, 0)) as total_halaman
+              FROM setoran_iqra
+              WHERE santri_id = ${profil.id} AND tenant_id = ${tenantId}
+                AND DATE_TRUNC('week', created_at AT TIME ZONE 'Asia/Jakarta') = DATE_TRUNC('week', NOW() AT TIME ZONE 'Asia/Jakarta')
+              GROUP BY santri_id
+            )
+            SELECT 
+              s.total_setoran,
+              s.total_halaman,
+              r.total_hadir,
+              r.total_izin,
+              r.total_sakit,
+              r.total_alpa,
+              r.total_hadir_tanpa_setoran
+            FROM setoran_minggu_ini s
+            LEFT JOIN rekap_mingguan_santri r 
+              ON r.santri_id = s.santri_id 
+              AND r.minggu_mulai = ${isoDateString}::date
+          `)
+        ])
+
+        const grafikHarian = (grafikHarianResult.rows || (grafikHarianResult as any)).map((row: any) => ({
+          tanggal: row.tanggal,
+          jenis: row.jenis,
+          totalHalaman: Number(row.total_halaman),
+          totalSetoran: Number(row.total_setoran)
+        }))
+
+        const kualitasDistribusi = (kualitasResult.rows || (kualitasResult as any)).map((row: any) => ({
+          skorKualitas: Number(row.skor_kualitas),
+          totalSetoran: Number(row.total_setoran)
+        }))
+
+        const summaryRow = (smartSummaryResult.rows || (smartSummaryResult as any))[0]
+        const smartSummary = {
+          totalSetoran: summaryRow ? Number(summaryRow.total_setoran) : 0,
+          totalHalaman: summaryRow ? Number(summaryRow.total_halaman) : 0,
+          kehadiran: {
+            hadir: summaryRow && summaryRow.total_hadir !== null ? Number(summaryRow.total_hadir) : 0,
+            izin: summaryRow && summaryRow.total_izin !== null ? Number(summaryRow.total_izin) : 0,
+            sakit: summaryRow && summaryRow.total_sakit !== null ? Number(summaryRow.total_sakit) : 0,
+            alpa: summaryRow && summaryRow.total_alpa !== null ? Number(summaryRow.total_alpa) : 0,
+            hadirTanpaSetoran: summaryRow && summaryRow.total_hadir_tanpa_setoran !== null ? Number(summaryRow.total_hadir_tanpa_setoran) : 0
+          }
+        }
+
+        return success({
+          displayMode,
+          tipeSantri: profil.tipe,
+          grafikHarian,
+          kualitasDistribusi,
+          smartSummary
+        }, "Data grafik dan summary Iqra berhasil dimuat")
+      }
+
+      // 4. JALANKAN 3 QUERY SEKALIGUS UNTUK TAHFIDZ
       const [grafikHarianResult, rasioMingguanResult, smartSummaryResult] = await Promise.all([
         // Query 1: Grafik 3-Series (Agregasi Harian 14 Hari di zona waktu WIB)
         db.execute(sql`
@@ -121,6 +207,7 @@ export const getGrafikDanSummarySantri = createServerFn({ method: 'POST' })
       }
 
       return success({
+        displayMode,
         tipeSantri: profil.tipe,
         grafikHarian,
         rasioMingguan,

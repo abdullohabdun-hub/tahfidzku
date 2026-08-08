@@ -1,5 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
-import { eq, and, desc, or } from 'drizzle-orm'
+import { eq, and, desc, or, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '../db'
 import { users, kelas } from '../db/schema'
@@ -20,7 +20,7 @@ export const getUstadzList = createServerFn({ method: 'POST' }).handler(
       requireRole(session, 'admin')
 
       const ustadzList = await db.query.users.findMany({
-        where: and(eq(users.tenantId, session.user.tenantId), eq(users.role, 'ustadz')),
+        where: and(eq(users.tenantId, session.user.tenantId), sql`${users.roles} @> ARRAY['ustadz']::user_role[]`),
         orderBy: [desc(users.createdAt)],
         columns: {
           id: true,
@@ -45,7 +45,8 @@ export const createUstadz = createServerFn({ method: 'POST' })
     username: z.string().min(1, 'Username wajib diisi'),
     email: z.string().optional().nullable(),
     noWa: z.string().optional().nullable(),
-    password: z.string().min(4, 'PIN/Password minimal 4 karakter')
+    password: z.string().min(4, 'PIN/Password minimal 4 karakter'),
+    roles: z.array(z.enum(['ustadz', 'admin'])).min(1, 'Pilih minimal satu role').default(['ustadz'])
   }).parse(data))
   .handler(async ({ data }) => {
     try {
@@ -77,7 +78,8 @@ export const createUstadz = createServerFn({ method: 'POST' })
         email,
         noWa,
         passwordHash,
-        role: 'ustadz'
+        role: data.roles.includes('admin') && data.roles[0] === 'admin' ? 'admin' : 'ustadz', // default active role
+        roles: data.roles
       }).returning({ id: users.id, nama: users.nama })
 
       return success(newUser[0], 'Berhasil menambahkan Ustadz')
@@ -108,7 +110,8 @@ export const updateUstadz = createServerFn({ method: 'POST' })
     username: z.string().min(1, 'Username wajib diisi'),
     email: z.string().optional().nullable(),
     noWa: z.string().optional().nullable(),
-    password: z.string().optional()
+    password: z.string().optional(),
+    roles: z.array(z.enum(['ustadz', 'admin'])).min(1, 'Pilih minimal satu role').default(['ustadz'])
   }).parse(data))
   .handler(async ({ data }) => {
     try {
@@ -131,7 +134,7 @@ export const updateUstadz = createServerFn({ method: 'POST' })
       
       if (existing && existing.id !== data.id) throw new ValidationError('Username / Email / No WA sudah terdaftar oleh pengguna lain.')
 
-      const updateData: any = { nama: data.nama, username, email, noWa }
+      const updateData: any = { nama: data.nama, username, email, noWa, roles: data.roles }
       if (data.password) updateData.passwordHash = data.password
 
       await db.update(users).set(updateData).where(and(eq(users.id, data.id), eq(users.tenantId, session.user.tenantId)))

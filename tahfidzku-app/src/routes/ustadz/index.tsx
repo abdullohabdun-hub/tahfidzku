@@ -46,7 +46,7 @@ function UstadzDashboard() {
       {/* Welcome Card & Date */}
       <div className="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-2xl p-6 text-white shadow-md">
         <p className="text-emerald-100 text-xs font-semibold mb-2">{today}</p>
-        <h2 className="text-2xl font-bold mb-1">Ahlan, Ustadz {data.namaUstadz}!</h2>
+        <h2 className="text-2xl font-bold mb-1">Ahlan, {data.namaUstadz}!</h2>
         <p className="text-emerald-50 text-sm mb-6 italic">"Sebaik-baik kalian adalah yang mempelajari Al-Qur'an dan mengajarkannya." (HR. Bukhari)</p>
         
         <div className="grid grid-cols-2 gap-4 mb-4">
@@ -66,9 +66,9 @@ function UstadzDashboard() {
               <p className="text-emerald-50 text-xs font-medium flex items-center gap-1"><Activity className="w-3 h-3"/> Kehadiran 7 Hari</p>
               <p className="text-xl font-bold mt-1">{agregat.rataKehadiranPersen}%</p>
             </div>
-            <div className="bg-white/10 rounded-xl p-3 backdrop-blur-sm">
-              <p className="text-emerald-50 text-xs font-medium flex items-center gap-1"><Users className="w-3 h-3"/> Tanpa Setor (7 Hari)</p>
-              <p className="text-xl font-bold mt-1">{agregat.santriTanpaSetoran} <span className="text-sm font-normal text-emerald-100">santri</span></p>
+            <div className={`rounded-xl p-3 backdrop-blur-sm ${agregat.santriTanpaSetoran > 0 ? 'bg-amber-500/20 border border-amber-500/30' : 'bg-white/10'}`}>
+              <p className={`text-xs font-medium flex items-center gap-1 ${agregat.santriTanpaSetoran > 0 ? 'text-amber-100' : 'text-emerald-50'}`}><Users className="w-3 h-3"/> Tanpa Setor (7 Hari)</p>
+              <p className={`text-xl font-bold mt-1 ${agregat.santriTanpaSetoran > 0 ? 'text-amber-100' : 'text-white'}`}>{agregat.santriTanpaSetoran} <span className={`text-sm font-normal ${agregat.santriTanpaSetoran > 0 ? 'text-amber-200/80' : 'text-emerald-100'}`}>santri</span></p>
             </div>
             <div className="bg-white/10 rounded-xl p-3 backdrop-blur-sm col-span-2 flex justify-between items-center">
               <div>
@@ -84,6 +84,13 @@ function UstadzDashboard() {
             </div>
           </div>
         )}
+
+        <div className="mt-4 pt-4 border-t border-emerald-500/30">
+          <Link to="/ustadz/analitik" className="flex items-center justify-between group">
+            <span className="text-emerald-50 text-sm font-medium group-hover:text-white transition-colors">Lihat Analitik Agregat</span>
+            <Activity className="w-4 h-4 text-emerald-200 group-hover:text-white transition-colors" />
+          </Link>
+        </div>
       </div>
 
       {/* Belum Setor */}

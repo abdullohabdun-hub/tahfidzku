@@ -6,6 +6,7 @@ import { Toaster } from "../components/ui/sonner"
 import { checkAuth, logout } from "../server-fns/auth"
 import { getTenantInfo } from "../server-fns/admin-settings"
 import { HelpTicketButton } from "../components/tiket/HelpTicketButton"
+import { RoleSwitcher } from "../components/shared/RoleSwitcher"
 
 export const Route = createFileRoute('/admin')({
   beforeLoad: async ({ location }) => {
@@ -187,6 +188,8 @@ function AdminLayout() {
                 {navItems.find(item => item.path === location.pathname)?.name || "Dashboard"}
               </h1>
             </div>
+            
+            <RoleSwitcher user={user} currentRole="admin" />
           </div>
 
           <div className="flex items-center gap-4">

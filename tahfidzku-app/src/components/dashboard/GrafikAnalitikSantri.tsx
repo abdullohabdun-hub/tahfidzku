@@ -13,24 +13,31 @@ import {
   Scatter,
   PieChart,
   Pie,
-  Cell
+  Cell,
+  Line
 } from 'recharts'
 import { format, parseISO } from 'date-fns'
 import { id } from 'date-fns/locale'
+import { KATEGORI_COLORS } from '../../constants/kategori-colors'
 
 interface GrafikAnalitikSantriProps {
   data?: {
+    displayMode?: 'tahfidz' | 'iqra'
     tipeSantri: 'reguler' | 'dewasa'
     grafikHarian: {
       tanggal: string
-      jenis: 'ziyadah' | 'sabqi' | 'manzil'
+      jenis: 'ziyadah' | 'sabqi' | 'manzil' | 'iqra'
       totalHalaman: number
       totalSetoran: number
     }[]
-    rasioMingguan: {
+    rasioMingguan?: {
       minggu: string
       ziyadahHalaman: number
       murojaahHalaman: number
+    }[]
+    kualitasDistribusi?: {
+      skorKualitas: number
+      totalSetoran: number
     }[]
     smartSummary: {
       totalSetoran: number
@@ -46,20 +53,23 @@ interface GrafikAnalitikSantriProps {
   }
   isLoading?: boolean
   error?: { message: string, code?: string } | null
+  hideRapor?: boolean
+  hideDonut?: boolean
 }
 
 const COLORS = {
-  ziyadah: '#3b82f6', // blue-500
-  sabqi: '#10b981',   // emerald-500
-  manzil: '#f59e0b',  // amber-500
-  murojaahTotal: '#10b981' // emerald-500 (gabungan di donut)
+  ziyadah: KATEGORI_COLORS.ziyadah.hex,
+  sabqi: KATEGORI_COLORS.sabqi.hex,
+  manzil: KATEGORI_COLORS.manzil.hex,
+  setoranDewasa: '#d946ef', // fuchsia-500
+  murojaahTotal: '#0ea5e9' // sky-500
 }
 
-export function GrafikAnalitikSantri({ data, isLoading, error }: GrafikAnalitikSantriProps) {
+export function GrafikAnalitikSantri({ data, isLoading, error, hideRapor, hideDonut }: GrafikAnalitikSantriProps) {
   // 1. PIVOT GRAFIK HARIAN
   const harianData = useMemo(() => {
     if (!data?.grafikHarian) return []
-    const map = new Map<string, { tanggalRaw: string, tanggal: string, ziyadah: number, sabqi: number, manzil: number, scatterDewasa?: number }>()
+    const map = new Map<string, { tanggalRaw: string, tanggal: string, ziyadah: number, sabqi: number, manzil: number, iqra: number, scatterDewasa?: number }>()
     
     data.grafikHarian.forEach(item => {
       if (!map.has(item.tanggal)) {
@@ -69,11 +79,17 @@ export function GrafikAnalitikSantri({ data, isLoading, error }: GrafikAnalitikS
           tanggal: format(parseISO(item.tanggal), 'd MMM', { locale: id }),
           ziyadah: 0,
           sabqi: 0,
-          manzil: 0
+          manzil: 0,
+          iqra: 0
         })
       }
       const entry = map.get(item.tanggal)!
-      entry[item.jenis] += item.totalHalaman
+      
+      if (item.jenis === 'iqra') {
+        entry.iqra += item.totalHalaman
+      } else {
+        entry[item.jenis as 'ziyadah' | 'sabqi' | 'manzil'] += item.totalHalaman
+      }
       
       // Marker titik ziyadah khusus untuk santri dewasa
       if (data.tipeSantri === 'dewasa' && item.jenis === 'ziyadah' && item.totalHalaman > 0) {
@@ -85,21 +101,47 @@ export function GrafikAnalitikSantri({ data, isLoading, error }: GrafikAnalitikS
   }, [data?.grafikHarian, data?.tipeSantri])
 
   // 2. AGREGASI RASIO MINGGUAN UNTUK DONUT
-  const { totalZiyadah, totalMurojaah, donutData } = useMemo(() => {
-    if (!data?.rasioMingguan) return { totalZiyadah: 0, totalMurojaah: 0, donutData: [] }
+  const { totalZiyadah, totalMurojaah, donutData, donutIqraData, totalIqraDonut } = useMemo(() => {
+    let tZiyadah = 0
+    let tMurojaah = 0
+    let dData: any[] = []
     
-    const ziyadah = data.rasioMingguan.reduce((sum, r) => sum + r.ziyadahHalaman, 0)
-    const murojaah = data.rasioMingguan.reduce((sum, r) => sum + r.murojaahHalaman, 0)
+    let tIqraDonut = 0
+    let dIqraData: any[] = []
+
+    if (data?.displayMode === 'iqra') {
+      if (data.kualitasDistribusi) {
+        const SKOR_LABELS = ['-', 'Sangat Kurang', 'Kurang Lancar', 'Lancar', 'Sangat Lancar', 'Mumtaz']
+        const SKOR_COLORS = ['#e2e8f0', '#ef4444', '#f59e0b', '#8b5cf6', '#7c3aed', '#6d28d9'] // Violet palette
+        
+        data.kualitasDistribusi.forEach(item => {
+          tIqraDonut += item.totalSetoran
+          dIqraData.push({
+            name: SKOR_LABELS[item.skorKualitas] || 'Unknown',
+            value: item.totalSetoran,
+            fill: SKOR_COLORS[item.skorKualitas] || SKOR_COLORS[0]
+          })
+        })
+      }
+    } else {
+      if (data?.rasioMingguan) {
+        tZiyadah = data.rasioMingguan.reduce((sum, r) => sum + r.ziyadahHalaman, 0)
+        tMurojaah = data.rasioMingguan.reduce((sum, r) => sum + r.murojaahHalaman, 0)
+        dData = [
+          { name: 'Ziyadah', value: tZiyadah, fill: COLORS.ziyadah },
+          { name: 'Murojaah (Sabqi & Manzil)', value: tMurojaah, fill: COLORS.murojaahTotal }
+        ]
+      }
+    }
     
     return {
-      totalZiyadah: ziyadah,
-      totalMurojaah: murojaah,
-      donutData: [
-        { name: 'Ziyadah', value: ziyadah, fill: COLORS.ziyadah },
-        { name: 'Murojaah (Sabqi & Manzil)', value: murojaah, fill: COLORS.murojaahTotal }
-      ]
+      totalZiyadah: tZiyadah,
+      totalMurojaah: tMurojaah,
+      donutData: dData,
+      donutIqraData: dIqraData,
+      totalIqraDonut: tIqraDonut
     }
-  }, [data?.rasioMingguan])
+  }, [data?.rasioMingguan, data?.displayMode, data?.kualitasDistribusi])
 
   if (isLoading) {
     return (
@@ -132,16 +174,19 @@ export function GrafikAnalitikSantri({ data, isLoading, error }: GrafikAnalitikS
   if (!data) return null
 
   const isHarianEmpty = harianData.length === 0
-  const isDonutEmpty = totalZiyadah + totalMurojaah === 0
+  const isDonutEmpty = data.displayMode === 'iqra' ? (totalIqraDonut === 0) : (totalZiyadah + totalMurojaah === 0)
+  const isZiyadahExtreme = data.displayMode !== 'iqra' && totalZiyadah > 0 && totalMurojaah === 0
+  const isMurojaahExtreme = data.displayMode !== 'iqra' && totalMurojaah > 0 && totalZiyadah === 0
+  const isExtremeRatio = isZiyadahExtreme || isMurojaahExtreme
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* 1. Grafik Harian */}
+    <div className="space-y-4">
+      {/* 1. Grafik Aktivitas Harian */}
       <Card className="w-full overflow-hidden">
-        <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+        <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-slate-700 flex items-center gap-2">
             <Activity className="h-4 w-4" />
-            Aktivitas Harian (14 Hari Terakhir)
+            {data.displayMode === 'iqra' ? 'Tren Halaman (14 Hari)' : 'Aktivitas Harian (14 Hari)'}
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-4">
@@ -154,34 +199,17 @@ export function GrafikAnalitikSantri({ data, isLoading, error }: GrafikAnalitikS
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={harianData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                  <XAxis 
-                    dataKey="tanggal" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fontSize: 12, fill: '#64748b' }}
-                    dy={10}
-                  />
-                  <YAxis 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fontSize: 12, fill: '#64748b' }} 
-                  />
-                  <Tooltip 
-                    cursor={{ fill: '#f1f5f9' }}
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                  />
-                  <Legend 
-                    verticalAlign="bottom" 
-                    height={36} 
-                    iconType="circle"
-                    wrapperStyle={{ fontSize: '12px', paddingTop: '20px' }}
-                  />
-                  <Bar dataKey="ziyadah" name="Ziyadah" stackId="a" fill={COLORS.ziyadah} radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="sabqi" name="Sabqi" stackId="a" fill={COLORS.sabqi} radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="manzil" name="Manzil" stackId="a" fill={COLORS.manzil} radius={[4, 4, 0, 0]} />
-                  
-                  {data.tipeSantri === 'dewasa' && (
-                    <Scatter dataKey="scatterDewasa" name="Setoran Dewasa" fill="#1e40af" />
+                  <XAxis dataKey="tanggal" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10}/>
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
+                  <Tooltip cursor={{ fill: '#f1f5f9' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                  {data.displayMode === 'iqra' ? (
+                    <Line type="monotone" dataKey="iqra" name="Halaman" stroke={KATEGORI_COLORS.iqraViolet.hex} strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                  ) : (
+                    <>
+                      <Bar dataKey="ziyadah" name="Ziyadah" stackId="a" fill={COLORS.ziyadah} />
+                      <Bar dataKey="sabqi" name="Sabqi" stackId="a" fill={COLORS.sabqi} />
+                      <Bar dataKey="manzil" name="Manzil" stackId="a" fill={COLORS.manzil} />
+                    </>
                   )}
                 </ComposedChart>
               </ResponsiveContainer>
@@ -190,20 +218,24 @@ export function GrafikAnalitikSantri({ data, isLoading, error }: GrafikAnalitikS
         </CardContent>
       </Card>
 
-      {/* 2. Donut & Smart Summary Grid (Mobile = Stack, sm+ = Grid 2 Kolom) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className={`grid grid-cols-1 ${(!hideDonut && !hideRapor) ? 'sm:grid-cols-2' : ''} gap-4`}>
         {/* Donut Chart */}
+        {!hideDonut && (
         <Card className="w-full">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-slate-700 flex items-center gap-2">
               <PieChartIcon className="h-4 w-4" />
-              Keseimbangan (8 Minggu)
+              {data.displayMode === 'iqra' ? 'Distribusi Kualitas Bacaan' : 'Keseimbangan (8 Minggu)'}
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-4 flex flex-col items-center justify-center">
+          <CardContent className="pt-4 flex flex-col justify-center h-full min-h-[220px]">
             {isDonutEmpty ? (
-              <div className="h-[180px] flex items-center justify-center text-slate-400 text-sm italic">
-                Belum ada aktivitas tercatat
+              <div className="flex-1 flex items-center justify-center text-slate-400 text-sm italic">Belum ada aktivitas tercatat</div>
+            ) : isExtremeRatio ? (
+              <div className="flex-1 w-full flex items-center justify-center">
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 w-full text-left">
+                  <p className="text-xs text-amber-700">Fokus hafalan terlalu ekstrem. Seimbangkan Ziyadah dan Murojaah.</p>
+                </div>
               </div>
             ) : (
               <>
@@ -211,7 +243,7 @@ export function GrafikAnalitikSantri({ data, isLoading, error }: GrafikAnalitikS
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={donutData}
+                        data={data.displayMode === 'iqra' ? donutIqraData : donutData}
                         cx="50%"
                         cy="50%"
                         innerRadius={50}
@@ -220,34 +252,34 @@ export function GrafikAnalitikSantri({ data, isLoading, error }: GrafikAnalitikS
                         dataKey="value"
                         stroke="none"
                       >
-                        {donutData.map((entry, index) => (
+                        {(data.displayMode === 'iqra' ? donutIqraData : donutData).map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.fill} />
                         ))}
                       </Pie>
                       <Tooltip 
                         contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                        formatter={(value: any) => [`${value} halaman`, '']}
+                        formatter={(value: any) => [data.displayMode === 'iqra' ? `${value} setoran` : `${value} halaman`, '']}
                       />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
-                {/* Legend Kustom Donut */}
-                <div className="flex justify-center gap-4 text-xs font-medium text-slate-600 w-full mt-2">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                    Ziyadah ({(totalZiyadah / (totalZiyadah + totalMurojaah) * 100).toFixed(0)}%)
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
-                    Murojaah ({(totalMurojaah / (totalZiyadah + totalMurojaah) * 100).toFixed(0)}%)
-                  </div>
+                <div className="flex flex-col gap-2 mt-2 w-full px-4">
+                  {(data.displayMode === 'iqra' ? donutIqraData : donutData).map((entry, idx) => (
+                    <div key={idx} className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                      <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: entry.fill }}></div>
+                      <span className="flex-1 truncate">{entry.name}</span>
+                      <span className="font-bold">{entry.value} {data.displayMode === 'iqra' ? 'setoran' : 'hal'}</span>
+                    </div>
+                  ))}
                 </div>
               </>
             )}
           </CardContent>
         </Card>
+        )}
 
         {/* Smart Summary */}
+        {!hideRapor && (
         <Card className="w-full">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-slate-700">
@@ -298,6 +330,7 @@ export function GrafikAnalitikSantri({ data, isLoading, error }: GrafikAnalitikS
             </div>
           </CardContent>
         </Card>
+        )}
       </div>
     </div>
   )

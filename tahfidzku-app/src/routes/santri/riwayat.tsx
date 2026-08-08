@@ -12,6 +12,15 @@ import { EditSetoranModal } from '../../components/EditSetoranModal'
 import { AuthErrorAlert } from '../../components/AuthErrorAlert'
 import { getSantriDisplayMode } from '../../lib/santri-display'
 import { parseDateString } from '../../lib/dateUtils'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../components/ui/tabs'
+
+import { getGrafikDanSummarySantri } from '../../server-fns/grafik-santri'
+import { getPetaKualitasJuz } from '../../server-fns/peta-juz'
+import { getSantriAnalitik } from '../../server-fns/analitik'
+import { EstimasiKhatam } from '../../components/dashboard/EstimasiKhatam'
+import { PetaKualitasJuz } from '../../components/dashboard/PetaKualitasJuz'
+import { GrafikAnalitikSantri } from '../../components/dashboard/GrafikAnalitikSantri'
+import { KATEGORI_COLORS } from '../../constants/kategori-colors'
 
 export const Route = createFileRoute('/santri/riwayat')({
   component: SantriRiwayatSetoran,
@@ -24,9 +33,9 @@ const KUALITAS_MAP = {
 }
 
 const JENIS_MAP = {
-  ziyadah: { label: 'Ziyadah', color: 'bg-emerald-100 text-emerald-800' },
-  sabqi: { label: 'Sabqi', color: 'bg-amber-100 text-amber-800' },
-  manzil: { label: 'Manzil', color: 'bg-indigo-100 text-indigo-800' },
+  ziyadah: { label: 'Ziyadah', color: `${KATEGORI_COLORS.ziyadah.bg} ${KATEGORI_COLORS.ziyadah.text}` },
+  sabqi: { label: 'Sabqi', color: `${KATEGORI_COLORS.sabqi.bg} ${KATEGORI_COLORS.sabqi.text}` },
+  manzil: { label: 'Manzil', color: `${KATEGORI_COLORS.manzil.bg} ${KATEGORI_COLORS.manzil.text}` },
 }
 
 function SantriRiwayatSetoran() {
@@ -37,6 +46,7 @@ function SantriRiwayatSetoran() {
   const [dataTahfidz, setDataTahfidz] = useState<any[]>([])
   const [dataIqra, setDataIqra] = useState<any[]>([])
   const [displayMode, setDisplayMode] = useState<'iqra' | 'tahfidz'>('tahfidz')
+  const [santriId, setSantriId] = useState<string | null>(null)
   
   const [loading, setLoading] = useState(true)
   const [showArsip, setShowArsip] = useState(false)
@@ -60,6 +70,7 @@ function SantriRiwayatSetoran() {
       
       if (profileRes.data) {
         setDisplayMode(getSantriDisplayMode(profileRes.data))
+        setSantriId(profileRes.data.id)
       }
 
       const resTahfidz = await getRiwayatSetoranSantri()
@@ -319,9 +330,16 @@ function SantriRiwayatSetoran() {
         </div>
       </div>
 
-      <div className="px-4 space-y-4">
-        {/* Utama */}
-        <div className="space-y-3">
+      <div className="px-4">
+        <Tabs defaultValue="timeline" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6 bg-slate-100/50">
+            <TabsTrigger value="timeline" className="data-[state=active]:bg-white data-[state=active]:text-emerald-700 data-[state=active]:shadow-sm">Timeline Setoran</TabsTrigger>
+            <TabsTrigger value="analitik" className="data-[state=active]:bg-white data-[state=active]:text-emerald-700 data-[state=active]:shadow-sm">Statistik & Analitik</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="timeline" className="space-y-4">
+            {/* Utama */}
+            <div className="space-y-3">
           <div className="flex items-center gap-2 mb-2">
             <Activity className="w-4 h-4 text-emerald-600" />
             <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
@@ -352,7 +370,19 @@ function SantriRiwayatSetoran() {
             )}
           </div>
         )}
+          </TabsContent>
 
+          <TabsContent value="analitik">
+            {santriId ? (
+              <DashboardAnalitikContainer santriId={santriId} displayMode={displayMode} />
+            ) : (
+              <div className="text-center py-12 bg-white rounded-xl border border-slate-100">
+                <Activity className="w-8 h-8 text-slate-300 mx-auto mb-3" />
+                <p className="text-slate-500 font-medium">Data santri tidak ditemukan.</p>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
 
       <EditSetoranModal 
@@ -365,6 +395,55 @@ function SantriRiwayatSetoran() {
         onSave={handleSave}
         isUstadz={false}
       />
+    </div>
+  )
+}
+
+function DashboardAnalitikContainer({ santriId, displayMode }: { santriId: string, displayMode: 'tahfidz' | 'iqra' }) {
+  const [data, setData] = useState<{grafik?: any, peta?: any, estimasi?: any} | null>(null)
+  const [errors, setErrors] = useState<{grafik?: any, peta?: any, estimasi?: any}>({})
+  const [isLoading, setIsLoading] = useState(true)
+  const [globalError, setGlobalError] = useState<{ message: string, code?: string } | null>(null)
+
+  useEffect(() => {
+    async function fetchAnalitik() {
+      try {
+        const payload = { data: { santriId } }
+        const [resGrafik, resPeta, resAnalitik] = await Promise.allSettled([
+          getGrafikDanSummarySantri(payload),
+          getPetaKualitasJuz(payload),
+          getSantriAnalitik(payload)
+        ])
+        
+        setData({
+          grafik: resGrafik.status === 'fulfilled' && resGrafik.value.success ? resGrafik.value.data : null,
+          peta: resPeta.status === 'fulfilled' && resPeta.value.success ? resPeta.value.data?.peta : null,
+          estimasi: resAnalitik.status === 'fulfilled' && resAnalitik.value.success ? resAnalitik.value.data?.estimasiKhatam : null
+        })
+        
+        setErrors({
+          grafik: resGrafik.status === 'rejected' ? { message: 'Koneksi terputus', code: 'NETWORK_ERROR' } : (!resGrafik.value.success ? resGrafik.value.error : null),
+          peta: resPeta.status === 'rejected' ? { message: 'Koneksi terputus', code: 'NETWORK_ERROR' } : (!resPeta.value.success ? resPeta.value.error : null),
+          estimasi: resAnalitik.status === 'rejected' ? { message: 'Koneksi terputus', code: 'NETWORK_ERROR' } : (!resAnalitik.value.success ? resAnalitik.value.error : null)
+        })
+      } catch (err: any) {
+        setGlobalError({ message: 'Tidak dapat terhubung ke server', code: 'NETWORK_ERROR' })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchAnalitik()
+  }, [santriId])
+
+  return (
+    <div className="space-y-6">
+      {displayMode === 'tahfidz' && (
+        <>
+          <EstimasiKhatam data={data?.estimasi} isLoading={isLoading} error={globalError || errors.estimasi} />
+          <PetaKualitasJuz data={data?.peta} isLoading={isLoading} error={globalError || errors.peta} />
+        </>
+      )}
+      <GrafikAnalitikSantri data={data?.grafik} isLoading={isLoading} error={globalError || errors.grafik} />
     </div>
   )
 }

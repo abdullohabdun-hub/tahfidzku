@@ -35,6 +35,7 @@ export const santri = pgTable('santri', {
   urutanHafalan: integer('urutan_hafalan').array().default([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]).notNull(), // Urutan hafalan santri
   posisiTerakhir: jsonb('posisi_terakhir').$type<{surahNomor: number, ayat: number}>(), // Tracker untuk prefill setoran Ziyadah otomatis
   juzUjianPending: integer('juz_ujian_pending'), // Juz yang sedang menunggu ujian kenaikan (null = tidak ada)
+  jilidIqraUjianPending: integer('jilid_iqra_ujian_pending'), // Jilid Iqra yang sedang menunggu ujian kenaikan (null = tidak ada)
   targetTanggalSelesai: date('target_tanggal_selesai'), // nullable
   hariMasuk: hariEnum('hari_masuk').array().notNull().default(sql`'{}'::hari[]`),
   /** 

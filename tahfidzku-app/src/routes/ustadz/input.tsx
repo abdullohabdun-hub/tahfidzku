@@ -1,12 +1,11 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect, useMemo } from 'react'
-import { ChevronDown, Loader2, AlertTriangle } from 'lucide-react'
+import { ChevronDown, Loader2, AlertTriangle, Info } from 'lucide-react'
 import { getSantriList, setupSantriInitialHafalan } from '../../server-fns/santri'
 import { createSetoran } from '../../server-fns/setoran'
 import { SetoranForm } from '../../components/SetoranForm'
 import { SetoranIqraForm } from '../../components/SetoranIqraForm'
-import { UjianIqraForm } from '../../components/UjianIqraForm'
-import { createSetoranIqra, createUjianIqra } from '../../server-fns/setoran-iqra'
+import { createSetoranIqra } from '../../server-fns/setoran-iqra'
 import { getSurahByJuz, getAyatRangeInJuz, bangunPosisiDariAdminInput } from '../../lib/quranMapper'
 import { AuthErrorAlert } from '../../components/AuthErrorAlert'
 
@@ -177,22 +176,6 @@ function InputSetoranPage() {
     return res
   }
 
-  const handleCreateUjianIqra = async (payload: any) => {
-    const res = await createUjianIqra({ data: payload })
-    if (res.success) {
-      if (payload.lulus && payload.jilidDiuji === 6) {
-        await fetchSantriList()
-      } else if (payload.lulus) {
-        setSantriList(prev => prev.map(s => {
-          if (s.id === santriId) {
-            return { ...s, jilidIqraTerakhir: payload.jilidDiuji + 1, halamanIqraTerakhir: 0 }
-          }
-          return s
-        }))
-      }
-    }
-    return res
-  }
 
   if (authError) {
     return <AuthErrorAlert error={authError} />
@@ -276,6 +259,27 @@ function InputSetoranPage() {
             <Link
               to="/ustadz/ujian"
               className="inline-flex items-center text-xs font-bold bg-white text-rose-700 px-4 py-2 rounded-lg shadow-sm border border-rose-100 hover:bg-rose-100 transition-colors"
+            >
+              Buka Ujian →
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* UJIAN PENDING BANNER (Khusus Iqra) */}
+      {selectedSantri?.tahapSantri === 'iqra' && selectedSantri?.jilidIqraUjianPending && (
+        <div className="bg-purple-50 border border-purple-200/60 rounded-xl p-4 flex items-start gap-3 shadow-sm">
+          <Info className="w-5 h-5 text-purple-500 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-bold text-purple-800 tracking-tight">
+              Setoran Iqra Diblokir
+            </p>
+            <p className="text-xs text-purple-600/90 mt-0.5 mb-3 font-medium">
+              Santri ini menunggu Ujian Kenaikan Jilid {selectedSantri.jilidIqraUjianPending}. Selesaikan ujian terlebih dahulu.
+            </p>
+            <Link
+              to="/ustadz/ujian"
+              className="inline-flex items-center text-xs font-bold bg-white text-purple-700 px-4 py-2 rounded-lg shadow-sm border border-purple-100 hover:bg-purple-100 transition-colors"
             >
               Buka Ujian →
             </Link>
@@ -407,17 +411,10 @@ function InputSetoranPage() {
 
       {/* Form Setoran */}
       {selectedSantri?.tahapSantri === 'iqra' ? (
-        <div className="space-y-6">
-          <SetoranIqraForm
-            santri={selectedSantri}
-            onSubmit={handleCreateSetoranIqra}
-          />
-          <hr className="border-slate-200" />
-          <UjianIqraForm
-            santri={selectedSantri}
-            onSubmit={handleCreateUjianIqra}
-          />
-        </div>
+        <SetoranIqraForm
+          santri={selectedSantri}
+          onSubmit={handleCreateSetoranIqra}
+        />
       ) : (
         <SetoranForm
           mode="create"

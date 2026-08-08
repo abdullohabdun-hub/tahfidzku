@@ -33,6 +33,7 @@ function SantriRiwayatUjian() {
   
   const [data, setData] = useState<any[]>([])
   const [juzPending, setJuzPending] = useState<number | null>(null)
+  const [tahapSantri, setTahapSantri] = useState<string>('tahfidz')
   const [loading, setLoading] = useState(true)
 
   const loadData = async () => {
@@ -49,6 +50,9 @@ function SantriRiwayatUjian() {
       }
       setData(res.data.riwayat)
       setJuzPending(res.data.juzUjianPending)
+      if (res.data.tahapSantri) {
+        setTahapSantri(res.data.tahapSantri)
+      }
     } catch (err: any) {
       setAuthError({ message: 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.', code: 'NETWORK_ERROR' })
     } finally {
@@ -59,6 +63,8 @@ function SantriRiwayatUjian() {
   useEffect(() => {
     loadData()
   }, [])
+
+  const isIqra = tahapSantri === 'iqra'
 
   if (authError) {
     return <AuthErrorAlert error={authError} />
@@ -79,8 +85,12 @@ function SantriRiwayatUjian() {
           <GraduationCap className="w-5 h-5 text-blue-600" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-slate-800 tracking-tight">Ujian Kenaikan Juz</h1>
-          <p className="text-xs text-slate-500">Hasil evaluasi bacaan dan kelancaran hafalan</p>
+          <h1 className="text-xl font-bold text-slate-800 tracking-tight">
+            {isIqra ? 'Ujian Kenaikan Jilid' : 'Ujian Kenaikan Juz'}
+          </h1>
+          <p className="text-xs text-slate-500">
+            {isIqra ? 'Hasil evaluasi dan kelancaran bacaan' : 'Hasil evaluasi bacaan dan kelancaran hafalan'}
+          </p>
         </div>
       </div>
 
@@ -93,10 +103,12 @@ function SantriRiwayatUjian() {
             </div>
             <div>
               <h3 className="text-sm font-bold text-amber-800 mb-1">
-                Ujian Kenaikan Juz {juzPending} Menunggu
+                {isIqra ? `Ujian Kenaikan Jilid ${juzPending} Menunggu` : `Ujian Kenaikan Juz ${juzPending} Menunggu`}
               </h3>
               <p className="text-xs text-amber-700 leading-relaxed">
-                Anda telah menyelesaikan hafalan Juz {juzPending}. Ujian sedang menunggu jadwal dari Ustadz Anda. Terus murojaah agar lancar saat diuji.
+                {isIqra 
+                  ? `Anda telah menyelesaikan bacaan Jilid ${juzPending}. Ujian sedang menunggu jadwal dari Ustadz Anda. Terus mengulang bacaan agar lancar saat diuji.` 
+                  : `Anda telah menyelesaikan hafalan Juz ${juzPending}. Ujian sedang menunggu jadwal dari Ustadz Anda. Terus murojaah agar lancar saat diuji.`}
               </p>
             </div>
           </div>

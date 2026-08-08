@@ -1,0 +1,1 @@
+import 'dotenv/config'; import { db } from './src/db/index'; import { tenants } from './src/db/schema/tenants'; import { eq } from 'drizzle-orm'; async function run() { await db.update(tenants).set({ status: 'aktif' }); console.log('All tenants activated'); process.exit(0); } run();

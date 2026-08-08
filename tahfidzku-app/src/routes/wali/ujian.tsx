@@ -12,7 +12,7 @@ function UjianPage() {
         <Award className="w-8 h-8 text-slate-400" />
       </div>
       <h2 className="text-lg font-bold text-slate-700 mb-2">Ujian Kenaikan</h2>
-      <p className="text-sm">Fitur riwayat ujian kenaikan Juz sedang dalam tahap pengembangan.</p>
+      <p className="text-sm">Fitur riwayat ujian kenaikan tingkat sedang dalam tahap pengembangan.</p>
     </div>
   )
 }

@@ -64,8 +64,8 @@ function SantriDashboard() {
       
       {/* Header Welcome */}
       <div>
-        <h1 className="text-xl font-bold text-slate-800">Ahlan, {profil?.nama}! ??</h1>
-        <p className="text-sm text-slate-500 mt-0.5">Semoga istiqomah menjaga hafalan hari ini.</p>
+        <h1 className="text-xl font-bold text-slate-800">Ahlan, {profil?.nama}! 👋</h1>
+        <p className="text-sm text-slate-500 mt-0.5">Semoga istiqomah {isIqra ? 'belajar mengaji' : 'menjaga hafalan'} hari ini.</p>
       </div>
 
       {/* Streak Card */}

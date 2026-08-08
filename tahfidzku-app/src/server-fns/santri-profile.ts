@@ -24,6 +24,7 @@ export const getSantriProfileDetail = createServerFn({ method: 'POST' })
       const [profile] = await db.select({
         santri: santri,
         kelasNama: kelas.nama,
+        tipeKelas: kelas.tipeKelas,
       }).from(santri)
         .leftJoin(kelas, eq(santri.kelasId, kelas.id))
         .where(and(
@@ -71,6 +72,7 @@ export const getSantriProfileDetail = createServerFn({ method: 'POST' })
       return success({
         profil: profile.santri,
         kelasNama: profile.kelasNama,
+        tipeKelas: profile.tipeKelas,
         distribusiSetoran,
         trendNilai
       }, "Berhasil mengambil profil santri")

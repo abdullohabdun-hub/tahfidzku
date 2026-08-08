@@ -22,15 +22,16 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 interface UjianIqraFormProps {
   santri: any;
+  jilidDiujiLocked?: number;
   onSubmit: (payload: any) => Promise<{ success: boolean; error?: any }>;
 }
 
-export function UjianIqraForm({ santri, onSubmit }: UjianIqraFormProps) {
+export function UjianIqraForm({ santri, jilidDiujiLocked, onSubmit }: UjianIqraFormProps) {
   const [submitting, setSubmitting] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
 
-  const [jilidDiuji, setJilidDiuji] = useState<number>(santri?.jilidIqraTerakhir || 1)
+  const [jilidDiuji, setJilidDiuji] = useState<number>(jilidDiujiLocked || santri?.jilidIqraTerakhir || 1)
   const [skor, setSkor] = useState<number | ''>('')
   const [lulus, setLulus] = useState<boolean>(true)
   const [catatan, setCatatan] = useState('')
@@ -48,7 +49,7 @@ export function UjianIqraForm({ santri, onSubmit }: UjianIqraFormProps) {
 
     try {
       const payload = {
-        santriId: santri.id,
+        santriId: santri.id || santri.santriId,
         jilidDiuji,
         skor: skor !== '' ? Number(skor) : null,
         lulus,
@@ -98,7 +99,8 @@ export function UjianIqraForm({ santri, onSubmit }: UjianIqraFormProps) {
               <select
                 value={jilidDiuji}
                 onChange={(e) => setJilidDiuji(Number(e.target.value))}
-                className={`w-full appearance-none bg-white border ${ACCENT.border} text-slate-900 text-sm rounded-lg px-3 py-2.5`}
+                disabled={!!jilidDiujiLocked}
+                className={`w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-semibold text-slate-800 ${ACCENT.ring} transition-shadow disabled:opacity-70`}
               >
                 {[1, 2, 3, 4, 5, 6].map((j) => (
                   <option key={j} value={j}>Jilid {j}</option>

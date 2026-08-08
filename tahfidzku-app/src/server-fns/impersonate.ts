@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { db } from '../db'
 import { users, santri } from '../db/schema'
 import { impersonationLogs } from '../db/schema/impersonation'
+import { waliSantri } from '../db/schema/wali-santri'
 import { getAuthSession } from '../middleware/auth.middleware'
 import { createSession, clearSession } from '../lib/session'
 import { success, handleError } from '../lib/response'
@@ -69,6 +70,22 @@ export const impersonateUser = createServerFn({ method: 'POST' })
           noWa: null,
           role: 'santri',
           santriId: targetSantri.id,
+        }
+      } else if (data.targetRole === 'wali') {
+        const [link] = await db.select({ waliUserId: waliSantri.waliUserId }).from(waliSantri).where(eq(waliSantri.santriId, data.targetId)).limit(1)
+        if (!link) throw new Error('Data Wali tidak ditemukan untuk Santri ini')
+        
+        const [targetWali] = await db.select().from(users).where(eq(users.id, link.waliUserId)).limit(1)
+        if (!targetWali) throw new Error('Data Akun Wali tidak ditemukan')
+        
+        newSessionUser = {
+          id: targetWali.id,
+          tenantId: targetWali.tenantId,
+          nama: targetWali.nama,
+          email: targetWali.email,
+          username: targetWali.username,
+          noWa: targetWali.noWa,
+          role: 'wali',
         }
       } else {
         throw new Error('Role target tidak valid')

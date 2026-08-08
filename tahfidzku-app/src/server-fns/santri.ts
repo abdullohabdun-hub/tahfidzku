@@ -101,6 +101,7 @@ export const getSantriList = createServerFn({ method: 'POST' }).handler(
           tahapSantri: s.tahapSantri,
           jilidIqraTerakhir: s.jilidIqraTerakhir,
           halamanIqraTerakhir: s.halamanIqraTerakhir,
+          jilidIqraUjianPending: s.jilidIqraUjianPending,
           posisiTerakhirUpdatedAt: s.posisiTerakhirUpdatedAt,
           posisiTerakhirUpdateNote: s.posisiTerakhirUpdateNote,
         }
@@ -181,17 +182,22 @@ export const createSantri = createServerFn({ method: 'POST' })
         // 3. Validasi Subset Hari
         const [kelasTarget] = await db.select({
           nama: kelas.nama,
+          tipeKelas: kelas.tipeKelas,
           hariPertemuan: kelas.hariPertemuan
         }).from(kelas).where(and(eq(kelas.id, effectiveKelasId), eq(kelas.tenantId, tenantId)));
 
         if (!kelasTarget) throw new Error(`Kelas ${effectiveKelasId} not found`);
 
-        const kelasPakaiHariTertentu = kelasTarget.hariPertemuan.length > 0;
-
-        if (!kelasPakaiHariTertentu) {
+        if (kelasTarget.tipeKelas === 'reguler') {
           // Kelas mukim: hariMasuk santri dipaksa jadi 7 hari, abaikan input manual
           effectiveHariMasuk = ['senin','selasa','rabu','kamis','jumat','sabtu','minggu'] as any[];
+        } else if (kelasTarget.tipeKelas === 'online') {
+          // Kelas online: tidak punya jadwal wajib, set jadi empty array
+          effectiveHariMasuk = [];
         } else {
+          if (kelasTarget.hariPertemuan.length === 0) {
+            throw new ValidationError(`Kelas ${kelasTarget.nama} belum memiliki jadwal hari pertemuan. Silakan edit kelas ini terlebih dahulu.`);
+          }
           const invalidHari = effectiveHariMasuk.filter(h => !kelasTarget.hariPertemuan.includes(h as any));
           if (invalidHari.length > 0) {
             throw new ValidationError(
@@ -365,17 +371,22 @@ export const updateSantri = createServerFn({ method: 'POST' })
         // 3. Validasi Subset Hari
         const [kelasTarget] = await db.select({
           nama: kelas.nama,
+          tipeKelas: kelas.tipeKelas,
           hariPertemuan: kelas.hariPertemuan
         }).from(kelas).where(and(eq(kelas.id, effectiveKelasId), eq(kelas.tenantId, tenantId)));
 
         if (!kelasTarget) throw new Error(`Kelas ${effectiveKelasId} not found`);
 
-        const kelasPakaiHariTertentu = kelasTarget.hariPertemuan.length > 0;
-
-        if (!kelasPakaiHariTertentu) {
+        if (kelasTarget.tipeKelas === 'reguler') {
           // Kelas mukim: hariMasuk santri dipaksa jadi 7 hari, abaikan input manual
           effectiveHariMasuk = ['senin','selasa','rabu','kamis','jumat','sabtu','minggu'] as any[];
+        } else if (kelasTarget.tipeKelas === 'online') {
+          // Kelas online: tidak punya jadwal wajib, set jadi empty array
+          effectiveHariMasuk = [];
         } else {
+          if (kelasTarget.hariPertemuan.length === 0) {
+            throw new ValidationError(`Kelas ${kelasTarget.nama} belum memiliki jadwal hari pertemuan. Silakan edit kelas ini terlebih dahulu.`);
+          }
           const invalidHari = effectiveHariMasuk.filter(h => !kelasTarget.hariPertemuan.includes(h as any));
           if (invalidHari.length > 0) {
             throw new ValidationError(

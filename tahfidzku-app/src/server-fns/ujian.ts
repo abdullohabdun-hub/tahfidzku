@@ -5,7 +5,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { eq, and, desc } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '../db'
-import { ujian, santri, kelas, users } from '../db/schema'
+import { ujian, ujianIqra, santri, kelas, users } from '../db/schema'
 import { getAuthSession, requireRole } from '../middleware/auth.middleware'
 import { success, handleError } from '../lib/response'
 import { AuthenticationError, ForbiddenError, ValidationError } from '../lib/errors'
@@ -179,7 +179,38 @@ export const getUjianPending = createServerFn({ method: 'POST' }).handler(async 
       return { ...s, gagalCount, warningGagal: gagalCount >= 3 }
     }))
 
-    return success(withAttempts, 'Data ujian pending berhasil diambil')
+    // Query Iqra pending: santri yang punya jilidIqraUjianPending di kelas ustadz ini
+    const pendingIqraRaw = await db
+      .select({
+        santriId:              santri.id,
+        santriNama:            santri.nama,
+        jilidIqraUjianPending: santri.jilidIqraUjianPending,
+        kelasId:               santri.kelasId,
+      })
+      .from(santri)
+      .where(and(
+        eq(santri.tenantId, tenantId),
+        inArray(santri.kelasId, kelasIds),
+        isNotNull(santri.jilidIqraUjianPending)
+      ))
+
+    const pendingIqra = await Promise.all(pendingIqraRaw.map(async (s) => {
+      const attempts = await db
+        .select({ id: ujianIqra.id, lulus: ujianIqra.lulus })
+        .from(ujianIqra)
+        .where(and(
+          eq(ujianIqra.santriId, s.santriId),
+          eq(ujianIqra.jilidDiuji, s.jilidIqraUjianPending!),
+          eq(ujianIqra.tenantId, tenantId)
+        ))
+      const gagalCount = attempts.filter(a => !a.lulus).length
+      return { ...s, gagalCount, warningGagal: gagalCount >= 3 }
+    }))
+
+    return success(
+      { pendingTahfidz: withAttempts, pendingIqra },
+      'Data ujian pending berhasil diambil'
+    )
   } catch (err) {
     return handleError(err)
   }
@@ -283,7 +314,7 @@ export const getRiwayatUjianSantri = createServerFn({ method: 'POST' })
 
       if (!santriId) throw new AuthenticationError('Akses ditolak: Bukan akun santri yang valid.')
 
-      const [santriData] = await db.select({ juzUjianPending: santri.juzUjianPending }).from(santri).where(eq(santri.id, santriId)).limit(1)
+      const [santriData] = await db.select({ juzUjianPending: santri.juzUjianPending, tahapSantri: santri.tahapSantri, tipe: santri.tipe }).from(santri).where(eq(santri.id, santriId)).limit(1)
 
       const results = await db.query.ujian.findMany({
         where: and(
@@ -304,7 +335,9 @@ export const getRiwayatUjianSantri = createServerFn({ method: 'POST' })
 
       return success({
         riwayat: mappedResults,
-        juzUjianPending: santriData?.juzUjianPending || null
+        juzUjianPending: santriData?.juzUjianPending || null,
+        tahapSantri: santriData?.tahapSantri || 'tahfidz',
+        tipe: santriData?.tipe || 'reguler'
       }, 'Riwayat ujian berhasil dimuat')
     } catch (err) {
       return handleError(err)

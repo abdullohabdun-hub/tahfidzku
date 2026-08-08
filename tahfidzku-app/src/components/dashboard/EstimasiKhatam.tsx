@@ -12,6 +12,7 @@ interface EstimasiKhatamProps {
   }
   isLoading?: boolean
   error?: { message: string, code?: string } | null
+  displayMode?: 'tahfidz' | 'iqra'
 }
 
 function formatEstimasiRentang(hari: number) {
@@ -36,7 +37,7 @@ function formatEstimasiRentang(hari: number) {
   }
 }
 
-export function EstimasiKhatam({ data, isLoading, error }: EstimasiKhatamProps) {
+export function EstimasiKhatam({ data, isLoading, error, displayMode }: EstimasiKhatamProps) {
   if (isLoading) {
     return (
       <Card className="w-full h-full animate-pulse">
@@ -105,7 +106,7 @@ export function EstimasiKhatam({ data, isLoading, error }: EstimasiKhatamProps) 
           <div className="flex items-start gap-3 p-3 bg-slate-100 rounded-md border border-slate-200">
             <Info className="h-5 w-5 text-slate-500 mt-0.5 shrink-0" />
             <div className="text-sm text-slate-600 leading-relaxed">
-              Estimasi kecepatan hafalan akan tersedia setelah santri menyetorkan ziyadah secara konsisten (minimal 3 sesi).
+              Estimasi kecepatan {displayMode === 'iqra' ? 'bacaan' : 'hafalan'} akan tersedia setelah santri menyetorkan {displayMode === 'iqra' ? 'halaman baru' : 'ziyadah'} secara konsisten (minimal 3 sesi).
             </div>
           </div>
         </CardContent>
@@ -161,7 +162,9 @@ export function EstimasiKhatam({ data, isLoading, error }: EstimasiKhatamProps) 
               </p>
             </div>
             <div>
-              <p className="text-xs font-medium text-muted-foreground mb-1 uppercase tracking-wider">Sisa Hafalan</p>
+              <p className="text-xs font-medium text-muted-foreground mb-1 uppercase tracking-wider">
+                {displayMode === 'iqra' ? 'Sisa Halaman' : 'Sisa Hafalan'}
+              </p>
               <p className="text-sm font-semibold text-slate-700">
                 {data.sisaHalaman} halaman
               </p>

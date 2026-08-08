@@ -10,6 +10,7 @@ export type SessionUser = {
   username: string | null
   noWa: string | null
   role: Role
+  roles?: Role[]
   santriId?: string | null
   originalAdminId?: string
   impersonationLogId?: string

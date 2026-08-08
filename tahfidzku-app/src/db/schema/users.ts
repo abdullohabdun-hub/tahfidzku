@@ -2,6 +2,7 @@
 // Tabel users — mencakup semua role (admin, ustadz, santri, wali)
 
 import { pgTable, uuid, varchar, timestamp, pgEnum, integer, boolean, index, text } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
 import { tenants } from './tenants'
 
 export const roleEnum = pgEnum('user_role', ['admin', 'ustadz', 'santri', 'wali'])
@@ -17,6 +18,7 @@ export const users = pgTable('users', {
   noWa: varchar('no_wa', { length: 50 }).unique(),
   passwordHash: text('password_hash').notNull(),
   role: roleEnum('role').notNull(),
+  roles: roleEnum('roles').array().notNull().default(sql`'{}'`),
   // Untuk role 'santri' dan 'wali', merujuk ke data santri terkait
   santriId: uuid('santri_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

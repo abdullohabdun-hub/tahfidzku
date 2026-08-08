@@ -14,6 +14,8 @@ import { waliSantri } from './wali-santri'
 import { raporSettings } from './rapor-settings'
 import { tiket, tiketBalasan } from './tiket'
 import { notifikasiUstadz, notifikasiSantri } from './notifikasi'
+import { pengumuman } from './pengumuman'
+import { auditLogs } from './audit-logs'
 export const tenantsRelations = relations(tenants, ({ one, many }) => ({
   users: many(users),
   kelas: many(kelas),
@@ -31,6 +33,8 @@ export const tenantsRelations = relations(tenants, ({ one, many }) => ({
   tiket: many(tiket),
   notifikasiUstadz: many(notifikasiUstadz),
   notifikasiSantri: many(notifikasiSantri),
+  pengumuman: many(pengumuman),
+  auditLogs: many(auditLogs),
 }))
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -54,6 +58,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     references: [users.id],
   }),
   notifikasiUstadz: many(notifikasiUstadz),
+  auditLogs: many(auditLogs),
 }))
 
 export const kelasRelations = relations(kelas, ({ one, many }) => ({
@@ -293,5 +298,27 @@ export const notifikasiSantriRelations = relations(notifikasiSantri, ({ one }) =
   setoran: one(setoran, {
     fields: [notifikasiSantri.setoranId],
     references: [setoran.id],
+  }),
+}))
+
+export const pengumumanRelations = relations(pengumuman, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [pengumuman.tenantId],
+    references: [tenants.id],
+  }),
+  kelas: one(kelas, {
+    fields: [pengumuman.kelasId],
+    references: [kelas.id],
+  }),
+}))
+
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [auditLogs.tenantId],
+    references: [tenants.id],
+  }),
+  user: one(users, {
+    fields: [auditLogs.userId],
+    references: [users.id],
   }),
 }))

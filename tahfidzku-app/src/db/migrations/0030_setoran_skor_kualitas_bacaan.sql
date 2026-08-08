@@ -1,0 +1,1 @@
+ALTER TABLE "setoran" ADD COLUMN "skor_kualitas_bacaan" integer;

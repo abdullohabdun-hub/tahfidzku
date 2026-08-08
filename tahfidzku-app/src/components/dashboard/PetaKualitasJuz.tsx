@@ -61,6 +61,8 @@ export function PetaKualitasJuz({ data, isLoading, error }: PetaKualitasJuzProps
 
   if (!data) return null
 
+  const isEmpty = data.length === 0
+
   // Buat map cepat untuk akses O(1) berdasarkan juzNum
   const dataMap = new Map(data.map(d => [d.juzNum, d]))
 
@@ -74,7 +76,15 @@ export function PetaKualitasJuz({ data, isLoading, error }: PetaKualitasJuzProps
       </CardHeader>
       
       <CardContent>
-        <div className="grid grid-cols-5 sm:grid-cols-10 gap-2 pt-2">
+        {isEmpty ? (
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-6 text-center mt-3 h-[250px] flex flex-col justify-center items-center">
+            <span className="text-slate-400 text-3xl block mb-2">📊</span>
+            <p className="text-sm font-bold text-slate-700">Belum Ada Data Ujian</p>
+            <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">Peta akan muncul setelah Anda menyelesaikan ujian kenaikan juz minimal satu kali.</p>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-5 sm:grid-cols-10 gap-2 pt-2">
           {Array.from({ length: TOTAL_JUZ }).map((_, i) => {
             const juzNum = i + 1
             const juzData = dataMap.get(juzNum)
@@ -129,6 +139,8 @@ export function PetaKualitasJuz({ data, isLoading, error }: PetaKualitasJuzProps
             <Clock className="w-3.5 h-3.5 text-rose-500" /> &gt; 21 Hari
           </div>
         </div>
+        </>
+        )}
       </CardContent>
     </Card>
   )

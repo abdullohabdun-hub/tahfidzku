@@ -11,6 +11,7 @@ import { AuthErrorAlert } from '../../components/AuthErrorAlert'
 import { BookOpen, Clock, Check } from 'lucide-react'
 import { getAllRubrikTenant } from '../../server-fns/rubrik'
 import { FormatPenilaian } from '../../components/FormatPenilaian'
+import { KATEGORI_COLORS } from '../../constants/kategori-colors'
 
 // Backend Function
 export const getPantauanMurojaah = createServerFn({ method: 'GET' })
@@ -124,7 +125,7 @@ function UstadzPantauMurojaah() {
                   <div>
                     <h3 className="font-bold text-slate-800 group-hover:text-emerald-700 transition-colors">{item.santriNama}</h3>
                     <div className="flex items-center gap-2 text-sm text-slate-500 mt-1">
-                      <span className="font-bold text-emerald-700 uppercase text-[10px] tracking-wider bg-emerald-100/50 px-2 py-0.5 rounded-full">{item.jenis}</span>
+                      <span className={`font-bold uppercase text-[10px] tracking-wider px-2 py-0.5 rounded-full ${KATEGORI_COLORS[item.jenis as keyof typeof KATEGORI_COLORS]?.bg} ${KATEGORI_COLORS[item.jenis as keyof typeof KATEGORI_COLORS]?.text}`}>{item.jenis}</span>
                       <span>•</span>
                       {item.surat ? (
                         <span>Surat {item.surat} (Juz {item.juz})</span>

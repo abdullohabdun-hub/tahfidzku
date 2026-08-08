@@ -153,3 +153,15 @@ tanstackIntent:
 - `git diff` pada file yang BELUM di-track (file baru) akan selalu kosong — ini BUKAN berarti "tidak ada perubahan untuk dilaporkan". Untuk file baru, gunakan `cat`/`view` untuk membaca ISI FILE SAAT INI dari disk, lalu laporkan itu sebagai bukti.
 - DILARANG KERAS merekonstruksi/menulis ulang isi kode dari ingatan lalu menyajikannya seolah hasil pembacaan file/diff asli. Kalau ragu isi file yang sebenarnya, BACA ULANG filenya — jangan pernah menebak dan melaporkan tebakan sebagai fakta.
 - Kalau sebuah tool/command tidak menghasilkan output yang diharapkan (mis. diff kosong untuk file yang seharusnya berubah), laporkan keanehan itu apa adanya dan cari cara lain untuk verifikasi — jangan isi kekosongan itu dengan konten buatan.
+
+## Drizzle Kit & PostgreSQL Enums
+**Waspada saat mengubah ENUM di Drizzle!**
+Jika Anda menambahkan VALUE baru ke dalam PostgreSQL ENUM (misalnya dengan pgEnum), Drizzle Kit (
+px drizzle-kit generate) sering kali **GAGAL** mendeteksi perubahan tersebut dan **TIDAK** menghasilkan file migrasi .sql untuk ALTER TYPE.
+Akibatnya, jika Anda menggunakan drizzle-kit push di lokal (yang berhasil) tapi mengandalkan file migrasi di Production, database Production akan *crash* saat memproses nilai enum baru tersebut.
+**Solusi Wajib:**
+Setiap kali ada perubahan isi ENUM di skema Drizzle, Anda WAJIB membuat script migrasi manual (seperti scripts/migrate-add-enum.ts atau file migrasi SQL khusus) yang menjalankan perintah ALTER TYPE nama_enum ADD VALUE 'opsi_baru' dan mengeksekusinya di lingkungan Production!
+
+## Aturan Eksekusi Implementation Plan
+**Wajib menunggu konfirmasi eksplisit sebelum eksekusi:**
+Agen tidak boleh mulai mengeksekusi langkah-langkah dalam Implementation Plan hanya karena status dokumen berubah menjadi "Approved". Agen harus menunggu pesan konfirmasi eksplisit dari USER di chat (terutama jika ada bagian `User Review Required` atau `Open Questions` yang belum dijawab). Jika terdapat dua sinyal yang bertentangan (misal UI menampilkan Approved tetapi belum ada jawaban untuk pertanyaan terbuka), agen harus berhenti dan bertanya, bukan melanjutkan eksekusi.

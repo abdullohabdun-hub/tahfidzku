@@ -76,6 +76,7 @@ export const createSetoran = createServerFn({ method: 'POST' })
             surahMeta: data.surahMeta ?? null,
             kualitas: data.kualitas ?? null, // DEPRECATED
             skorKualitas: (data as any).skorKualitas ?? null,
+            skorKualitasBacaan: (data as any).skorKualitasBacaan ?? null,
             statusHafalan: (data as any).statusHafalan ?? null,
             penilaianKustom: data.penilaianKustom ?? null,
             catatan: data.catatan ?? null,
@@ -212,6 +213,7 @@ export const updateSetoran = createServerFn({ method: 'POST' })
             "surah_meta" = ${data.surahMeta ? JSON.stringify(data.surahMeta) : null}::jsonb,
             "kualitas" = ${data.kualitas ?? null},
             "skor_kualitas" = ${(data as any).skorKualitas ?? null},
+            "skor_kualitas_bacaan" = ${(data as any).skorKualitasBacaan ?? null},
             "status_hafalan" = ${(data as any).statusHafalan ?? null},
             "penilaian_kustom" = ${data.penilaianKustom ? JSON.stringify(data.penilaianKustom) : null}::jsonb,
             "catatan" = ${data.catatan || null},
@@ -273,6 +275,7 @@ export const updateSetoran = createServerFn({ method: 'POST' })
             halamanAkhir: data.halamanAkhir,
             kualitas: data.kualitas ?? null,
             skorKualitas: (data as any).skorKualitas ?? null,
+            skorKualitasBacaan: (data as any).skorKualitasBacaan ?? null,
             statusHafalan: (data as any).statusHafalan ?? null,
             penilaianKustom: data.penilaianKustom ?? null,
             catatan: data.catatan || null,

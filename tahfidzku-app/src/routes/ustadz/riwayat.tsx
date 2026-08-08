@@ -10,15 +10,16 @@ import { getKelasYangDiampu, getRiwayatAbsensiKelas } from '../../server-fns/abs
 import { FormatPenilaian } from '../../components/FormatPenilaian'
 import { AuthErrorAlert } from '../../components/AuthErrorAlert'
 import { parseDateString } from '../../lib/dateUtils'
+import { KATEGORI_COLORS } from '../../constants/kategori-colors'
 
 export const Route = createFileRoute('/ustadz/riwayat')({
   component: UstadzRiwayatSetoran,
 })
 
 const JENIS_MAP = {
-  ziyadah: { label: 'Ziyadah', color: 'bg-emerald-100 text-emerald-800' },
-  sabqi: { label: 'Sabqi', color: 'bg-amber-100 text-amber-800' },
-  manzil: { label: 'Manzil', color: 'bg-indigo-100 text-indigo-800' },
+  ziyadah: { label: 'Ziyadah', color: `${KATEGORI_COLORS.ziyadah.bg} ${KATEGORI_COLORS.ziyadah.text}` },
+  sabqi: { label: 'Sabqi', color: `${KATEGORI_COLORS.sabqi.bg} ${KATEGORI_COLORS.sabqi.text}` },
+  manzil: { label: 'Manzil', color: `${KATEGORI_COLORS.manzil.bg} ${KATEGORI_COLORS.manzil.text}` },
 }
 
 function UstadzRiwayatSetoran() {

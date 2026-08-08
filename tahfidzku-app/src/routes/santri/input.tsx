@@ -71,7 +71,7 @@ function SantriInputMurojaah() {
         </button>
         <div>
           <h1 className="text-lg font-bold text-slate-800">Lapor Murojaah</h1>
-          <p className="text-[11px] text-slate-500 font-medium">Input mandiri hafalan lama</p>
+          <p className="text-[11px] text-slate-500 font-medium">{displayMode === 'iqra' ? 'Input mandiri bacaan lama' : 'Input mandiri hafalan lama'}</p>
         </div>
       </div>
 

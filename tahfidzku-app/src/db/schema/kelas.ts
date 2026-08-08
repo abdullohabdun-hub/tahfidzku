@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, pgEnum, time, jsonb } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, varchar, timestamp, pgEnum, time, jsonb, integer } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import { tenants } from './tenants'
 import { users } from './users'
@@ -23,4 +23,6 @@ export const kelas = pgTable('kelas', {
   hariPertemuan: hariEnum('hari_pertemuan').array().notNull().default(sql`'{}'::hari[]`),
   jamMulai: time('jam_mulai'),
   jamSelesai: time('jam_selesai'),
+  targetHariSetoranBulanan: integer('target_hari_setoran_bulanan'),
+  targetSelfReportBulanan: integer('target_self_report_bulanan'), // nullable, no default — admin wajib isi manual
 })

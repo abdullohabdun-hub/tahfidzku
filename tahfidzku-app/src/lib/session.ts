@@ -77,6 +77,7 @@ export async function getSession(): Promise<{ user: SessionUser } | null> {
         username: (payload.username as string) || null,
         noWa: (payload.noWa as string) || null,
         role: payload.role as SessionUser['role'],
+        roles: (payload.roles as SessionUser['roles']) || undefined,
         santriId: (payload.santriId as string) || null,
         originalAdminId: (payload.originalAdminId as string) || undefined,
         impersonationLogId: (payload.impersonationLogId as string) || undefined,

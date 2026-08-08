@@ -70,7 +70,9 @@ function AbsensiUstadzPage() {
   const getJadwalStatus = () => {
     if (!selectedKelasId || !tanggal) return 'sesuai'
     const k = kelasList.find(x => x.id === selectedKelasId)
-    if (!k || !k.hariPertemuan || k.hariPertemuan.length === 0 || (k.hariPertemuan.length === 1 && !k.hariPertemuan[0])) return 'belum_diatur'
+    if (!k) return 'belum_diatur'
+    if (k.tipeKelas === 'reguler') return 'sesuai'
+    if (!k.hariPertemuan || k.hariPertemuan.length === 0 || (k.hariPertemuan.length === 1 && !k.hariPertemuan[0])) return 'belum_diatur'
     
     const dayIndex = new Date(tanggal).getDay()
     const hari = HARI_MAP[dayIndex]
