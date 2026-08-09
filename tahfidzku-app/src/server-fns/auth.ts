@@ -19,18 +19,26 @@ export const login = createServerFn({ method: 'POST' })
   .validator(loginSchema)
   .handler(async ({ data }) => {
     try {
-      const identifier = data.identifier
-      
+      const identifier = data.identifier.trim()
+      const isEmail = identifier.includes('@')
+
+      const searchConditions = []
+      if (isEmail) {
+        searchConditions.push(eq(users.email, normalisasiEmail(identifier)))
+        searchConditions.push(eq(users.username, normalisasiUsername(identifier)))
+      } else {
+        const waNorm = normalisasiNoWa(identifier)
+        if (waNorm && waNorm.length >= 4) {
+          searchConditions.push(eq(users.noWa, waNorm))
+        }
+        searchConditions.push(eq(users.username, normalisasiUsername(identifier)))
+        searchConditions.push(eq(users.email, normalisasiEmail(identifier)))
+      }
+
       const [user] = await db
         .select()
         .from(users)
-        .where(
-          or(
-            eq(users.email, normalisasiEmail(identifier)),
-            eq(users.noWa, normalisasiNoWa(identifier)),
-            eq(users.username, normalisasiUsername(identifier))
-          )
-        )
+        .where(or(...searchConditions))
         .limit(1)
 
       // Jika user tidak ditemukan atau tidak aktif
