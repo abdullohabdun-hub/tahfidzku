@@ -165,3 +165,7 @@ Setiap kali ada perubahan isi ENUM di skema Drizzle, Anda WAJIB membuat script m
 ## Aturan Eksekusi Implementation Plan
 **Wajib menunggu konfirmasi eksplisit sebelum eksekusi:**
 Agen tidak boleh mulai mengeksekusi langkah-langkah dalam Implementation Plan hanya karena status dokumen berubah menjadi "Approved". Agen harus menunggu pesan konfirmasi eksplisit dari USER di chat (terutama jika ada bagian `User Review Required` atau `Open Questions` yang belum dijawab). Jika terdapat dua sinyal yang bertentangan (misal UI menampilkan Approved tetapi belum ada jawaban untuk pertanyaan terbuka), agen harus berhenti dan bertanya, bukan melanjutkan eksekusi.
+
+## Validasi URL Database Sebelum Modifikasi
+**Wajib dijalankan sebelum eksekusi script DB:**
+Sebelum menjalankan migrate.ts atau perintah apapun yang menyentuh database, WAJIB tampilkan dan minta konfirmasi eksplisit hostname/branch database yang akan dikenai, sebelum eksekusi — bukan sesudah.

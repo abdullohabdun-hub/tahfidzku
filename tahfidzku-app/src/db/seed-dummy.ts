@@ -20,6 +20,7 @@ async function seedDummy() {
       username: `ustadz${i + 1}`,
       passwordHash: '123456',
       role: 'ustadz' as const,
+      roles: ['ustadz'] as any,
     }))
     const insertedUstadz = await db.insert(users).values(ustadzToInsert).returning()
     console.log(`✅ ${insertedUstadz.length} Ustadz berhasil dibuat.`)
@@ -59,6 +60,7 @@ async function seedDummy() {
       username: `santri${i + 1}`,
       passwordHash: '123456',
       role: 'santri' as const,
+      roles: ['santri'] as any,
       santriId: s.id,
     }))
     await db.insert(users).values(santriUsersToInsert)

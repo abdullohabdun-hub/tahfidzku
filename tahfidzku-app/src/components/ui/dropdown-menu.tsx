@@ -10,10 +10,22 @@ function DropdownMenuTrigger({ ...props }: React.ComponentProps<typeof MenuPrimi
   return <MenuPrimitive.Trigger {...props} />
 }
 
-function DropdownMenuContent({ className, ...props }: React.ComponentProps<typeof MenuPrimitive.Popup>) {
+function DropdownMenuContent({
+  className,
+  align = "start",
+  side = "bottom",
+  sideOffset = 4,
+  alignOffset = 0,
+  ...props
+}: React.ComponentProps<typeof MenuPrimitive.Popup> & {
+  align?: React.ComponentProps<typeof MenuPrimitive.Positioner>["align"]
+  side?: React.ComponentProps<typeof MenuPrimitive.Positioner>["side"]
+  sideOffset?: number
+  alignOffset?: number
+}) {
   return (
     <MenuPrimitive.Portal>
-      <MenuPrimitive.Positioner sideOffset={4} className="z-[100]">
+      <MenuPrimitive.Positioner side={side} align={align} sideOffset={sideOffset} alignOffset={alignOffset} className="z-[100]">
         <MenuPrimitive.Popup
           className={cn(
             "min-w-[8rem] overflow-hidden rounded-xl border border-slate-200 bg-white p-1 text-slate-900 shadow-md animate-in fade-in-80",

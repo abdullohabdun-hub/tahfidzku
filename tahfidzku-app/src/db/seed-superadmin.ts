@@ -21,6 +21,7 @@ async function seed() {
       username: 'superadmin',
       passwordHash: '123456',
       role: 'admin',
+      roles: ['admin'] as any,
     }).returning()
     console.log('✅ Akun Admin berhasil dibuat. Username:', admin.username)
 
