@@ -28,6 +28,7 @@ export const getUstadzList = createServerFn({ method: 'POST' }).handler(
           username: true,
           email: true,
           noWa: true,
+          roles: true,
           createdAt: true,
         }
       })
