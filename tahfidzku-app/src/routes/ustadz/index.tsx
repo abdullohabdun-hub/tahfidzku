@@ -30,14 +30,14 @@ export const Route = createFileRoute('/ustadz/')({
   }
 })
 
-// Pool Kutipan Motivasi dengan TEMPORARY PLACEHOLDER teks sampai verifikasi independen pengguna selesai
+// Pool Kutipan Motivasi dengan 100% TEMPORARY PLACEHOLDER (Teks & Sitasi) sampai verifikasi independen selesai
 const MOTIVASI_POOL = [
-  { text: "Kutipan Motivasi Islami #1 (Placeholder)", ref: "HR. Bukhari no. 5027" },
-  { text: "Kutipan Motivasi Islami #2 (Placeholder)", ref: "HR. Muslim no. 804" },
-  { text: "Kutipan Motivasi Islami #3 (Placeholder)", ref: "QS. Al-Qamar: 17" },
-  { text: "Kutipan Motivasi Islami #4 (Placeholder)", ref: "HR. Bukhari no. 4937" },
-  { text: "Kutipan Motivasi Islami #5 (Placeholder)", ref: "HR. Muslim no. 817" },
-  { text: "Kutipan Motivasi Islami #6 (Placeholder)", ref: "HR. Ahmad & Ibnu Majah" }
+  { text: "Kutipan Motivasi Islami #1 (Placeholder)", ref: "Sumber Rujukan #1 (Placeholder)" },
+  { text: "Kutipan Motivasi Islami #2 (Placeholder)", ref: "Sumber Rujukan #2 (Placeholder)" },
+  { text: "Kutipan Motivasi Islami #3 (Placeholder)", ref: "Sumber Rujukan #3 (Placeholder)" },
+  { text: "Kutipan Motivasi Islami #4 (Placeholder)", ref: "Sumber Rujukan #4 (Placeholder)" },
+  { text: "Kutipan Motivasi Islami #5 (Placeholder)", ref: "Sumber Rujukan #5 (Placeholder)" },
+  { text: "Kutipan Motivasi Islami #6 (Placeholder)", ref: "Sumber Rujukan #6 (Placeholder)" }
 ]
 
 function UstadzDashboard() {
@@ -61,7 +61,7 @@ function UstadzDashboard() {
   const activeMotivasi = MOTIVASI_POOL[currentSlide]
 
   return (
-    <div className="p-4 space-y-5 max-w-lg mx-auto pb-8 font-sans">
+    <div className="p-4 space-y-5 max-w-lg mx-auto pb-32 font-sans">
       
       {/* 1. BAGIAN A: Kartu Sapaan & Tanggal (Ringkas) */}
       <div className="bg-white border border-slate-200/80 rounded-2xl p-4.5 shadow-sm flex items-center justify-between">
