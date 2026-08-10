@@ -9,6 +9,7 @@ import { useServerFn } from "@tanstack/react-start"
 import { getUnreadCount } from "../server-fns/notifikasi-ustadz"
 import { Bell } from "lucide-react"
 import { RoleSwitcher } from "../components/shared/RoleSwitcher"
+import { formatDateWithHijri } from "../lib/hijri-date"
 
 export const Route = createFileRoute('/ustadz')({
   component: UstadzLayout,
@@ -68,6 +69,20 @@ function UstadzLayout() {
     }
   }
 
+  const [today, setToday] = useState('')
+
+  useEffect(() => {
+    setToday(formatDateWithHijri(new Date(), { includeWeekday: true }))
+  }, [])
+
+  const getWaktuGreeting = () => {
+    const hour = new Date().getHours()
+    if (hour >= 3 && hour < 11) return "Selamat pagi"
+    if (hour >= 11 && hour < 15) return "Selamat siang"
+    if (hour >= 15 && hour < 18) return "Selamat sore"
+    return "Selamat malam"
+  }
+
   const navItems = [
     { name: "Beranda", path: "/ustadz", icon: <Home className="w-5 h-5" /> },
     { name: "Input", path: "/ustadz/input", icon: <PlusCircle className="w-5 h-5" /> },
@@ -79,32 +94,44 @@ function UstadzLayout() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 pb-20 md:pb-0">
       
-      {/* Top Header (Ringkas) */}
-      <header className="bg-white border-b border-slate-200 px-4 py-3 sticky top-0 z-50 flex justify-between items-center shadow-sm">
-        <div className="flex items-center gap-2">
-          {user?.roles && user.roles.length > 1 ? (
-            <RoleSwitcher user={user} currentRole="ustadz" />
-          ) : (
-            <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200/60 text-xs font-bold px-2.5 py-1 rounded-full">
-              <BookOpen className="w-3.5 h-3.5 text-emerald-600" />
-              <span>TahfidzKu</span>
-            </div>
-          )}
-        </div>
-        <div className="flex gap-2 items-center">
-          <HelpTicketButton baseUrl="/ustadz/tiket" />
-          <Link to="/ustadz/notifikasi" className="relative p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-colors mr-1">
-            <Bell className="w-5 h-5" />
-            {unreadCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
+      {/* Top Header (Disederhanakan: RoleSwitcher + Action Icons + Sapaan & Tanggal) */}
+      <header className="bg-white border-b border-slate-200 px-4 py-2.5 sticky top-0 z-50 shadow-xs">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            {user?.roles && user.roles.length > 1 ? (
+              <RoleSwitcher user={user} currentRole="ustadz" />
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                Ustadz
+              </span>
             )}
-          </Link>
-          <Link to="/ustadz/profil" className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold border border-emerald-200 uppercase text-xs md:text-sm hover:ring-2 hover:ring-emerald-500 hover:bg-emerald-200 transition-all cursor-pointer">
-            {user?.nama ? user.nama.substring(0, 2) : "US"}
-          </Link>
-          <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors md:hidden">
-            <LogOut className="w-4 h-4" />
-          </button>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <HelpTicketButton baseUrl="/ustadz/tiket" />
+            <Link to="/ustadz/notifikasi" className="relative p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-slate-100 rounded-full transition-colors">
+              <Bell className="w-4 h-4" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 border border-white rounded-full"></span>
+              )}
+            </Link>
+            <Link to="/ustadz/profil" className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs border border-emerald-200 uppercase hover:ring-2 hover:ring-emerald-500 transition-all">
+              {user?.nama ? user.nama.substring(0, 2) : "US"}
+            </Link>
+            <button onClick={handleLogout} className="p-1.5 text-slate-300 hover:text-slate-500 hover:bg-slate-100 rounded-full transition-colors md:hidden" title="Keluar">
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Line 2: Sapaan Waktu + Nama & Tanggal */}
+        <div className="flex flex-col pt-1.5 border-t border-slate-100 mt-2">
+          <h1 className="text-sm font-bold text-slate-800 leading-tight">
+            {getWaktuGreeting()}, <span className="text-emerald-700">{user?.nama || "Ustadz"}</span>
+          </h1>
+          <p className="text-[11px] text-slate-500 font-medium leading-normal mt-0.5">
+            {today}
+          </p>
         </div>
       </header>
 

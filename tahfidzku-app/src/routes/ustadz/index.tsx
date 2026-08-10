@@ -1,11 +1,11 @@
 import { createFileRoute, Link, redirect, isRedirect } from "@tanstack/react-router"
 import { useState } from "react"
-import { Edit, Clock, Award, PlusCircle, BarChart3, ChevronLeft, ChevronRight, Activity, Users, TrendingUp, TrendingDown, BookOpen, Quote } from "lucide-react"
+import { Edit, Clock, Award, PlusCircle, BarChart3, ChevronLeft, ChevronRight, Activity, Users, BookOpen, Quote, CalendarCheck, UserX } from "lucide-react"
 import { getUstadzDashboard, getAgregatSantriDashboard } from "../../server-fns/dashboard"
 import { getAllRubrikTenant } from "../../server-fns/rubrik"
 import { FormatPenilaian } from "../../components/FormatPenilaian"
 import { AuthErrorAlert } from "../../components/AuthErrorAlert"
-import { formatDateWithHijri } from "../../lib/hijri-date"
+import { StatCard } from "../../components/shared/StatCard"
 
 export const Route = createFileRoute('/ustadz/')({
   component: UstadzDashboard,
@@ -47,7 +47,6 @@ function UstadzDashboard() {
   if (authError) return <AuthErrorAlert error={authError} />
   if (!data) return null
 
-  const today = formatDateWithHijri(new Date(), { includeWeekday: true })
   const persentase = data.totalSantri > 0 ? Math.round((data.totalSetoran / data.totalSantri) * 100) : 0
 
   const nextSlide = () => {
@@ -61,23 +60,49 @@ function UstadzDashboard() {
   const activeMotivasi = MOTIVASI_POOL[currentSlide]
 
   return (
-    <div className="p-4 space-y-5 max-w-lg mx-auto pb-32 font-sans">
+    <div className="p-4 space-y-6 max-w-lg mx-auto pb-32 font-sans">
       
-      {/* 1. BAGIAN A: Kartu Sapaan & Tanggal (Ringkas) */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-4.5 shadow-sm flex items-center justify-between">
-        <div className="space-y-1">
-          <p className="text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full inline-block border border-emerald-100/60">
-            📅 {today}
-          </p>
-          <h2 className="text-xl font-bold text-slate-800 tracking-tight">Ahlan, {data.namaUstadz}! 👋</h2>
+      {/* 1. SEKSI 1: RINGKASAN HARI INI (Memakai Komponen Shared StatCard) */}
+      <section className="space-y-2.5">
+        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">Ringkasan Hari Ini</h3>
+        <div className="grid grid-cols-2 gap-3">
+          <StatCard
+            label="Santri Setor Hari Ini"
+            value={`${data.totalSetoran}/${data.totalSantri}`}
+            icon={Users}
+            tone="neutral"
+            className="p-4"
+          />
+          <StatCard
+            label="Target Selesai"
+            value={`${persentase}%`}
+            icon={Activity}
+            tone="neutral"
+            className="p-4"
+          />
+          {agregat && (
+            <>
+              <StatCard
+                label="Kehadiran 7 Hari"
+                value={`${agregat.rataKehadiranPersen}%`}
+                icon={CalendarCheck}
+                tone="neutral"
+                className="p-4"
+              />
+              <StatCard
+                label="Tanpa Setor (7 Hari)"
+                value={`${agregat.santriTanpaSetoran} santri`}
+                icon={UserX}
+                tone={agregat.santriTanpaSetoran > 0 ? "warning" : "neutral"}
+                className="p-4"
+              />
+            </>
+          )}
         </div>
-        <div className="w-10 h-10 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center text-sm shadow-sm">
-          {data.namaUstadz?.charAt(0) || 'U'}
-        </div>
-      </div>
+      </section>
 
-      {/* 2. BAGIAN B: Kartu Motivasi Islami (Carousel Slide) */}
-      <div className="relative bg-gradient-to-br from-emerald-800 via-teal-900 to-slate-900 rounded-2xl p-5 text-white shadow-md overflow-hidden">
+      {/* 2. SEKSI 2: KARTU MOTIVASI ISLAMI (Carousel Banner) */}
+      <section className="relative bg-gradient-to-br from-emerald-800 via-teal-900 to-slate-900 rounded-2xl p-5 text-white shadow-md overflow-hidden">
         <div className="absolute right-2 top-2 opacity-10 pointer-events-none">
           <Quote className="w-24 h-24 text-white" />
         </div>
@@ -126,9 +151,9 @@ function UstadzDashboard() {
             />
           ))}
         </div>
-      </div>
+      </section>
 
-      {/* 3. MENU CEPAT (Quick Menu Grid) */}
+      {/* 3. SEKSI 3: MENU CEPAT (Quick Menu Grid) */}
       <section className="space-y-2">
         <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">Menu Cepat</h3>
         <div className="grid grid-cols-4 gap-2.5">
@@ -174,47 +199,7 @@ function UstadzDashboard() {
         </div>
       </section>
 
-      {/* 4. BAGIAN C: Ringkasan Analitik Hari Ini (Stat Cards 2x2 Grid) */}
-      <section className="space-y-2">
-        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">Ringkasan Hari Ini</h3>
-        <div className="grid grid-cols-2 gap-3">
-          
-          <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs">
-            <p className="text-slate-500 text-xs font-medium">Santri Setor Hari Ini</p>
-            <p className="text-2xl font-bold text-slate-800 mt-1">
-              {data.totalSetoran}<span className="text-xs font-normal text-slate-500">/{data.totalSantri}</span>
-            </p>
-          </div>
-
-          <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs">
-            <p className="text-slate-500 text-xs font-medium">Target Selesai</p>
-            <p className="text-2xl font-bold text-emerald-600 mt-1">{persentase}%</p>
-          </div>
-
-          {agregat && (
-            <>
-              <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs">
-                <p className="text-slate-500 text-xs font-medium flex items-center gap-1">
-                  <Activity className="w-3.5 h-3.5 text-emerald-600"/> Kehadiran 7 Hari
-                </p>
-                <p className="text-xl font-bold text-slate-800 mt-1">{agregat.rataKehadiranPersen}%</p>
-              </div>
-
-              <div className={`border rounded-xl p-3.5 shadow-xs ${agregat.santriTanpaSetoran > 0 ? 'bg-amber-50/50 border-amber-200' : 'bg-white border-slate-200/80'}`}>
-                <p className={`text-xs font-medium flex items-center gap-1 ${agregat.santriTanpaSetoran > 0 ? 'text-amber-700' : 'text-slate-500'}`}>
-                  <Users className="w-3.5 h-3.5"/> Tanpa Setor (7 Hari)
-                </p>
-                <p className={`text-xl font-bold mt-1 ${agregat.santriTanpaSetoran > 0 ? 'text-amber-800' : 'text-slate-800'}`}>
-                  {agregat.santriTanpaSetoran} <span className="text-xs font-normal text-slate-500">santri</span>
-                </p>
-              </div>
-            </>
-          )}
-
-        </div>
-      </section>
-
-      {/* 5. BELUM SETOR HARI INI */}
+      {/* 4. BELUM SETOR HARI INI */}
       <section className="pt-1">
         <div className="flex justify-between items-center mb-2.5">
           <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">Belum Setor Hari Ini</h3>
@@ -249,7 +234,7 @@ function UstadzDashboard() {
         </div>
       </section>
 
-      {/* 6. SETORAN TERBARU */}
+      {/* 5. SETORAN TERBARU */}
       <section className="pt-1">
         <div className="flex justify-between items-center mb-2.5">
           <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">Setoran Terbaru</h3>
