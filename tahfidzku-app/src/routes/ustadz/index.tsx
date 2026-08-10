@@ -6,6 +6,7 @@ import { getAllRubrikTenant } from "../../server-fns/rubrik"
 import { FormatPenilaian } from "../../components/FormatPenilaian"
 import { AuthErrorAlert } from "../../components/AuthErrorAlert"
 import { Activity, Users, TrendingUp, TrendingDown } from "lucide-react"
+import { formatDateWithHijri } from "../../lib/hijri-date"
 
 export const Route = createFileRoute('/ustadz/')({
   component: UstadzDashboard,
@@ -18,15 +19,14 @@ export const Route = createFileRoute('/ustadz/')({
         return { data: null, agregat: null, rubrikAktif: null, authError: { message: res.error?.message, code: res.error?.code } }
       }
       const rubrikRes = await getAllRubrikTenant()
-      return {
-        data: res.data!,
+      return { 
+        data: res.data, 
         agregat: agregatRes.success ? agregatRes.data : null,
-        rubrikAktif: rubrikRes,
-        authError: null
+        rubrikAktif: Array.isArray(rubrikRes) ? rubrikRes.filter((r: any) => r.aktif) : []
       }
     } catch (err: any) {
       if (isRedirect(err)) throw err
-      return { data: null, rubrikAktif: null, authError: { message: 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.', code: 'NETWORK_ERROR' } }
+      return { data: null, agregat: null, rubrikAktif: null, authError: { message: 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.', code: 'NETWORK_ERROR' } }
     }
   }
 })
@@ -37,7 +37,7 @@ function UstadzDashboard() {
   if (authError) return <AuthErrorAlert error={authError} />
   if (!data) return null
 
-  const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+  const today = formatDateWithHijri(new Date(), { includeWeekday: true })
   const persentase = data.totalSantri > 0 ? Math.round((data.totalSetoran / data.totalSantri) * 100) : 0
 
   return (

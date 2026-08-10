@@ -1,8 +1,9 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, isRedirect } from '@tanstack/react-router'
 import { getWaliBeranda } from '../../server-fns/wali-beranda'
 import { DailyQuoteCard } from '../../components/dashboard/DailyQuoteCard'
 import { BerandaHighlightCarousel } from '../../components/dashboard/BerandaHighlightCarousel'
 import { PengumumanWaliList } from '../../components/dashboard/PengumumanWaliList'
+import { formatDateWithHijri } from '../../lib/hijri-date'
 
 export const Route = createFileRoute('/wali/')({
   component: WaliBeranda,
@@ -13,20 +14,10 @@ export const Route = createFileRoute('/wali/')({
         throw new Error(res.error?.message || 'Gagal memuat data beranda')
       }
       return res.data
-    } catch (error) {
-      console.error(error)
-      throw error
+    } catch (err: any) {
+      if (isRedirect(err)) throw err
+      return null
     }
-  },
-  staleTime: 5 * 60 * 1000, // Cache selama 5 menit
-  gcTime: 10 * 60 * 1000, // Simpan di memori selama 10 menit
-  errorComponent: ({ error }) => {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] p-4 text-center">
-        <h2 className="text-xl font-bold text-slate-800 mb-2">Terjadi Kesalahan</h2>
-        <p className="text-slate-600 mb-4">{error.message}</p>
-      </div>
-    )
   }
 })
 
@@ -35,20 +26,8 @@ function WaliBeranda() {
 
   if (!data) return null
 
-  // Hijriah date logic placeholder - in a real app this might use a library
   const today = new Date()
-  const masehiDate = today.toLocaleDateString('id-ID', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  })
-  
-  const hijriahDate = new Intl.DateTimeFormat('id-u-ca-islamic', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  }).format(today)
+  const formattedFullDate = formatDateWithHijri(today, { includeWeekday: true })
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center">
@@ -62,8 +41,7 @@ function WaliBeranda() {
             </h1>
           </div>
           <div className="text-right">
-            <p className="text-xs font-semibold text-emerald-600">{hijriahDate}</p>
-            <p className="text-[10px] text-slate-500">{masehiDate}</p>
+            <p className="text-xs font-semibold text-emerald-700">{formattedFullDate}</p>
           </div>
         </div>
         

@@ -7,6 +7,7 @@ import { checkAuth, logout } from "../server-fns/auth"
 import { getTenantInfo } from "../server-fns/admin-settings"
 import { HelpTicketButton } from "../components/tiket/HelpTicketButton"
 import { RoleSwitcher } from "../components/shared/RoleSwitcher"
+import { formatDateWithHijri } from "../lib/hijri-date"
 
 export const Route = createFileRoute('/admin')({
   beforeLoad: async ({ location }) => {
@@ -194,7 +195,7 @@ function AdminLayout() {
 
           <div className="flex items-center gap-4">
             <div className="hidden sm:block text-right mr-2">
-              <p className="text-xs font-medium text-slate-900">{new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+              <p className="text-xs font-medium text-slate-900">{formatDateWithHijri(new Date(), { includeWeekday: true })}</p>
             </div>
             <HelpTicketButton baseUrl="/admin/tiket" />
             <button className="p-2 rounded-full hover:bg-slate-100 text-slate-400 transition-colors relative">
