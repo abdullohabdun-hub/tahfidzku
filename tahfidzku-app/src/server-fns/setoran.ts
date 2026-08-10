@@ -331,6 +331,12 @@ export const getSetoranRiwayat = createServerFn({ method: 'POST' }).handler(
 
       return success(mappedResults, 'Riwayat setoran berhasil dimuat')
     } catch (err) {
+      console.error('❌ [CRITICAL_RIWAYAT_ERROR]', {
+        name: (err as Error)?.name,
+        message: (err as Error)?.message,
+        stack: (err as Error)?.stack,
+        cause: (err as any)?.cause,
+      })
       return handleError(err)
     }
   }

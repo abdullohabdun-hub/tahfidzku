@@ -176,6 +176,12 @@ export const getUstadzDashboard = createServerFn({ method: 'POST' }).handler(
         'Dashboard berhasil dimuat',
       )
     } catch (err) {
+      console.error('❌ [CRITICAL_DASHBOARD_ERROR]', {
+        name: (err as Error)?.name,
+        message: (err as Error)?.message,
+        stack: (err as Error)?.stack,
+        cause: (err as any)?.cause,
+      })
       return handleError(err)
     }
   }
