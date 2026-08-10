@@ -72,8 +72,6 @@ function UstadzLayout() {
     { name: "Beranda", path: "/ustadz", icon: <Home className="w-5 h-5" /> },
     { name: "Input", path: "/ustadz/input", icon: <PlusCircle className="w-5 h-5" /> },
     { name: "Absensi", path: "/ustadz/absensi", icon: <Calendar className="w-5 h-5" /> },
-    { name: "Pantau", path: "/ustadz/pantau", icon: <Clock className="w-5 h-5" /> },
-    { name: "Ujian", path: "/ustadz/ujian", icon: <Award className="w-5 h-5" /> },
     { name: "Riwayat", path: "/ustadz/riwayat", icon: <History className="w-5 h-5" /> },
     { name: "Analitik", path: "/ustadz/analitik", icon: <BarChart3 className="w-5 h-5" /> },
   ]
@@ -81,13 +79,9 @@ function UstadzLayout() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 pb-20 md:pb-0">
       
-      {/* Top Header (Logo) */}
-      <header className="bg-white border-b border-slate-200 p-4 sticky top-0 z-50 flex justify-between items-center shadow-sm">
+      {/* Top Header (Ringkas) */}
+      <header className="bg-white border-b border-slate-200 px-4 py-3 sticky top-0 z-50 flex justify-between items-center shadow-sm">
         <div className="flex items-center gap-2">
-          <div className="bg-emerald-600 p-1.5 rounded-md">
-            <BookOpen className="h-4 w-4 text-white" />
-          </div>
-          <span className="font-bold text-base text-emerald-950 tracking-tight">{tenantName}</span>
           <RoleSwitcher user={user} currentRole="ustadz" />
         </div>
         <div className="flex gap-2 items-center">
