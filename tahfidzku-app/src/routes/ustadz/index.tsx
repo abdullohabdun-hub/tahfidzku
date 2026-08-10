@@ -101,8 +101,8 @@ function UstadzDashboard() {
         </div>
       </section>
 
-      {/* 2. SEKSI 2: KARTU MOTIVASI ISLAMI (Carousel Banner) */}
-      <section className="relative bg-gradient-to-br from-emerald-800 via-teal-900 to-slate-900 rounded-2xl p-5 text-white shadow-md overflow-hidden">
+      {/* 2. SEKSI 2: KARTU MOTIVASI ISLAMI (Carousel Banner - Aligned with Emerald Primary Token Scale) */}
+      <section className="relative bg-gradient-to-br from-emerald-900 to-emerald-950 border border-emerald-800/80 rounded-2xl p-5 text-white shadow-md overflow-hidden">
         <div className="absolute right-2 top-2 opacity-10 pointer-events-none">
           <Quote className="w-24 h-24 text-white" />
         </div>
