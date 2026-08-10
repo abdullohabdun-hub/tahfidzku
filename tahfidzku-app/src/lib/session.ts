@@ -23,14 +23,18 @@ export async function createSession(user: SessionUser, ttlMinutes: number = 7 * 
     .setExpirationTime(Math.floor(expiresAt.getTime() / 1000))
     .sign(encodedKey)
 
-  // Menyimpan token ke cookie browser
-  setCookie(SESSION_COOKIE_NAME, sessionToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    expires: expiresAt,
-    path: '/',
-  })
+  // Menyimpan token ke cookie browser dengan error handling
+  try {
+    setCookie(SESSION_COOKIE_NAME, sessionToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      expires: expiresAt,
+      path: '/',
+    })
+  } catch (err) {
+    console.error('[SessionCookieError] Failed to set cookie:', err)
+  }
 }
 
 // Membaca dan memverifikasi token JWT dari cookie
