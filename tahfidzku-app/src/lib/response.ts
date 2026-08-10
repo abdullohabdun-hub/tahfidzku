@@ -69,10 +69,11 @@ export function handleError(err: unknown): ApiError {
     return error('CONFLICT', 'Data yang Anda masukkan berkonflik atau sudah ada/duplikat di sistem.')
   }
 
-  // Fallback: error generik aman untuk client
+  // Fallback: error generik dengan rincian log diagnostik
+  const rawMsg = err instanceof Error ? `${err.name}: ${err.message}` : String(err)
   return error(
     'INTERNAL_ERROR',
-    'Terjadi kesalahan pada server. Silakan coba lagi nanti.',
+    `Terjadi kesalahan pada server [DEBUG: ${rawMsg}]. Silakan coba lagi nanti.`,
   )
 }
 
