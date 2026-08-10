@@ -153,45 +153,45 @@ function UstadzDashboard() {
         </div>
       </section>
 
-      {/* 3. SEKSI 3: MENU CEPAT (Quick Menu Grid) */}
+      {/* 3. SEKSI 3: MENU CEPAT (Quick Menu Grid - Uniform Neutral Icons & Clear Labels) */}
       <section className="space-y-2">
         <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">Menu Cepat</h3>
         <div className="grid grid-cols-4 gap-2.5">
           <Link
             to="/ustadz/pantau"
-            className="flex flex-col items-center justify-center bg-white border border-slate-200/70 p-3 rounded-xl shadow-xs hover:border-emerald-300 hover:bg-emerald-50/50 transition-all duration-200 group text-center"
+            className="flex flex-col items-center justify-center bg-white border border-slate-200/80 p-3 rounded-xl shadow-xs hover:border-emerald-300 hover:bg-emerald-50/40 transition-all duration-200 group text-center"
           >
-            <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-700 border border-slate-200/80 flex items-center justify-center mb-1.5 group-hover:bg-emerald-100 group-hover:text-emerald-700 group-hover:border-emerald-200 group-hover:scale-105 transition-all">
               <Clock className="w-5 h-5" />
             </div>
-            <span className="text-[11px] font-bold text-slate-700 group-hover:text-emerald-800 leading-tight">Pantau Murojaah</span>
+            <span className="text-[11px] font-bold text-slate-700 group-hover:text-emerald-800 leading-tight">Pantau Mandiri</span>
           </Link>
 
           <Link
             to="/ustadz/ujian"
-            className="flex flex-col items-center justify-center bg-white border border-slate-200/70 p-3 rounded-xl shadow-xs hover:border-emerald-300 hover:bg-emerald-50/50 transition-all duration-200 group text-center"
+            className="flex flex-col items-center justify-center bg-white border border-slate-200/80 p-3 rounded-xl shadow-xs hover:border-emerald-300 hover:bg-emerald-50/40 transition-all duration-200 group text-center"
           >
-            <div className="w-10 h-10 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-700 border border-slate-200/80 flex items-center justify-center mb-1.5 group-hover:bg-emerald-100 group-hover:text-emerald-700 group-hover:border-emerald-200 group-hover:scale-105 transition-all">
               <Award className="w-5 h-5" />
             </div>
             <span className="text-[11px] font-bold text-slate-700 group-hover:text-emerald-800 leading-tight">Ujian Santri</span>
           </Link>
 
           <Link
-            to="/ustadz/input"
-            className="flex flex-col items-center justify-center bg-white border border-slate-200/70 p-3 rounded-xl shadow-xs hover:border-emerald-300 hover:bg-emerald-50/50 transition-all duration-200 group text-center"
+            to="/ustadz/absensi"
+            className="flex flex-col items-center justify-center bg-white border border-slate-200/80 p-3 rounded-xl shadow-xs hover:border-emerald-300 hover:bg-emerald-50/40 transition-all duration-200 group text-center"
           >
-            <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
-              <PlusCircle className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-700 border border-slate-200/80 flex items-center justify-center mb-1.5 group-hover:bg-emerald-100 group-hover:text-emerald-700 group-hover:border-emerald-200 group-hover:scale-105 transition-all">
+              <CalendarCheck className="w-5 h-5" />
             </div>
-            <span className="text-[11px] font-bold text-slate-700 group-hover:text-emerald-800 leading-tight">Input Setoran</span>
+            <span className="text-[11px] font-bold text-slate-700 group-hover:text-emerald-800 leading-tight">Laporan Absensi</span>
           </Link>
 
           <Link
             to="/ustadz/analitik"
-            className="flex flex-col items-center justify-center bg-white border border-slate-200/70 p-3 rounded-xl shadow-xs hover:border-emerald-300 hover:bg-emerald-50/50 transition-all duration-200 group text-center"
+            className="flex flex-col items-center justify-center bg-white border border-slate-200/80 p-3 rounded-xl shadow-xs hover:border-emerald-300 hover:bg-emerald-50/40 transition-all duration-200 group text-center"
           >
-            <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-700 border border-slate-200/80 flex items-center justify-center mb-1.5 group-hover:bg-emerald-100 group-hover:text-emerald-700 group-hover:border-emerald-200 group-hover:scale-105 transition-all">
               <BarChart3 className="w-5 h-5" />
             </div>
             <span className="text-[11px] font-bold text-slate-700 group-hover:text-emerald-800 leading-tight">Analitik Detail</span>
