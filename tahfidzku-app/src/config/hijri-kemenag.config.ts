@@ -4,8 +4,11 @@
  * File ini menjadi Single Source of Truth (SSOT) referensi tanggal awal bulan Hijriah 
  * berdasarkan Taqwim Standar Indonesia Kemenag RI (Bimas Islam).
  * 
- * Untuk memperbarui tanggal resmi pasca Sidang Isbat Kemenag:
- * Cukup ubah/tambahkan tanggal pada array KEMENAG_HIJRI_MONTHS di bawah ini.
+ * CATATAN PENTING HARIAN / BULANAN:
+ * Entri dengan `isOfficialIsbat: false` (seperti Ramadhan, Syawal, Dzulhijjah)
+ * adalah ESTIMASI HISAB AWAL. Pengembang/Admin HARUS memperbarui `startDateMasehi` 
+ * dan mengubah `isOfficialIsbat: true` setiap kali Kemenag RI mengumumkan hasil 
+ * Sidang Isbat resmi menjelang bulan terkait.
  */
 
 export interface HijriMonthRef {
