@@ -95,7 +95,12 @@ export const login = createServerFn({ method: 'POST' })
       console.log('✅ Login berhasil untuk:', user.nama, '(', user.role, ')')
       return success({ role: user.role }, 'Berhasil masuk')
     } catch (err) {
-      console.error('❌ Login Error:', err)
+      console.error('❌ [CRITICAL_LOGIN_ERROR]', {
+        name: (err as Error)?.name,
+        message: (err as Error)?.message,
+        stack: (err as Error)?.stack,
+        cause: (err as any)?.cause,
+      })
       return handleError(err)
     }
   })
