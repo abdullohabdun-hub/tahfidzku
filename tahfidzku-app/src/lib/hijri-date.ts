@@ -47,13 +47,16 @@ export function getHijriDate(inputDate: Date | string = new Date()): HijriDateRe
     const diffDays = Math.floor((targetTime - refTime) / (1000 * 60 * 60 * 24));
     const day = diffDays + 1;
 
+    const isEstimated = !matchedRef.isOfficialIsbat;
+    const marker = isEstimated ? '*' : '';
+
     return {
       day,
       month: matchedRef.monthHijri,
       monthName: matchedRef.monthNameHijri,
       year: matchedRef.yearHijri,
-      isEstimated: false,
-      formattedHijri: `${day} ${matchedRef.monthNameHijri} ${matchedRef.yearHijri} H`
+      isEstimated,
+      formattedHijri: `${day} ${matchedRef.monthNameHijri} ${matchedRef.yearHijri} H${marker}`
     };
   }
 
