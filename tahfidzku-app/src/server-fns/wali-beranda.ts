@@ -6,7 +6,6 @@ import { getAuthSession, requireRole } from '../middleware/auth.middleware'
 import { AuthenticationError } from '../lib/errors'
 import { getSantriDisplayMode } from '../lib/santri-display'
 import { getTodayWIB } from '../lib/dateUtils'
-import { getDailyQuote } from '../utils/quotes'
 
 export const getWaliBeranda = createServerFn({ method: 'POST' }).handler(
   async () => {
@@ -124,8 +123,6 @@ export const getWaliBeranda = createServerFn({ method: 'POST' }).handler(
 
       const daftarAnak = highlightAnakResults.filter((a): a is NonNullable<typeof a> => a !== null)
 
-      const dailyQuote = getDailyQuote()
-
       return {
         success: true,
         data: {
@@ -135,8 +132,7 @@ export const getWaliBeranda = createServerFn({ method: 'POST' }).handler(
           pengumuman: pengumumanList.map(p => ({
             ...p,
             createdAt: p.createdAt.toISOString()
-          })),
-          dailyQuote
+          }))
         }
       }
     } catch (error: any) {

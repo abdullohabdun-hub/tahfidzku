@@ -1,11 +1,11 @@
 import { createFileRoute, Link, redirect, isRedirect } from "@tanstack/react-router"
-import { useState } from "react"
-import { Edit, Clock, Award, PlusCircle, BarChart3, ChevronLeft, ChevronRight, Activity, Users, BookOpen, Quote, CalendarCheck, UserX } from "lucide-react"
+import { Edit, Clock, Award, PlusCircle, BarChart3, Activity, Users, CalendarCheck, UserX } from "lucide-react"
 import { getUstadzDashboard, getAgregatSantriDashboard } from "../../server-fns/dashboard"
 import { getAllRubrikTenant } from "../../server-fns/rubrik"
 import { FormatPenilaian } from "../../components/FormatPenilaian"
 import { AuthErrorAlert } from "../../components/AuthErrorAlert"
 import { StatCard } from "../../components/shared/StatCard"
+import { MotivationCard } from "../../components/shared/MotivationCard"
 
 export const Route = createFileRoute('/ustadz/')({
   component: UstadzDashboard,
@@ -30,55 +30,33 @@ export const Route = createFileRoute('/ustadz/')({
   }
 })
 
-// Pool Kutipan Motivasi dengan 100% TEMPORARY PLACEHOLDER (Teks & Sitasi) sampai verifikasi independen selesai
-const MOTIVASI_POOL = [
-  { text: "Kutipan Motivasi Islami #1 (Placeholder)", ref: "Sumber Rujukan #1 (Placeholder)" },
-  { text: "Kutipan Motivasi Islami #2 (Placeholder)", ref: "Sumber Rujukan #2 (Placeholder)" },
-  { text: "Kutipan Motivasi Islami #3 (Placeholder)", ref: "Sumber Rujukan #3 (Placeholder)" },
-  { text: "Kutipan Motivasi Islami #4 (Placeholder)", ref: "Sumber Rujukan #4 (Placeholder)" },
-  { text: "Kutipan Motivasi Islami #5 (Placeholder)", ref: "Sumber Rujukan #5 (Placeholder)" },
-  { text: "Kutipan Motivasi Islami #6 (Placeholder)", ref: "Sumber Rujukan #6 (Placeholder)" }
-]
-
 function UstadzDashboard() {
   const { data, agregat, authError } = Route.useLoaderData()
-  const [currentSlide, setCurrentSlide] = useState(0)
   
   if (authError) return <AuthErrorAlert error={authError} />
   if (!data) return null
 
   const persentase = data.totalSantri > 0 ? Math.round((data.totalSetoran / data.totalSantri) * 100) : 0
 
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % MOTIVASI_POOL.length)
-  }
-
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + MOTIVASI_POOL.length) % MOTIVASI_POOL.length)
-  }
-
-  const activeMotivasi = MOTIVASI_POOL[currentSlide]
-
   return (
     <div className="p-4 space-y-6 max-w-lg mx-auto pb-32 font-sans">
       
       {/* 1. SEKSI 1: RINGKASAN HARI INI (Memakai Komponen Shared StatCard) */}
       <section className="space-y-2.5">
-        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">Ringkasan Hari Ini</h3>
+        <h3 className="text-xs font-semibold text-slate-500 px-1">Ringkasan Hari Ini</h3>
         <div className="grid grid-cols-2 gap-3">
           <StatCard
             label="Santri Setor Hari Ini"
             value={`${data.totalSetoran}/${data.totalSantri}`}
+            unit="santri"
             icon={Users}
             tone="neutral"
-            className="p-4"
           />
           <StatCard
             label="Target Selesai"
             value={`${persentase}%`}
             icon={Activity}
             tone="neutral"
-            className="p-4"
           />
           {agregat && (
             <>
@@ -87,75 +65,27 @@ function UstadzDashboard() {
                 value={`${agregat.rataKehadiranPersen}%`}
                 icon={CalendarCheck}
                 tone="neutral"
-                className="p-4"
               />
               <StatCard
                 label="Tanpa Setor (7 Hari)"
-                value={`${agregat.santriTanpaSetoran} santri`}
+                value={agregat.santriTanpaSetoran}
+                unit="santri"
+                badge={agregat.santriTanpaSetoran > 0 ? "Perlu Perhatian" : undefined}
+                badgeVariant={agregat.santriTanpaSetoran > 0 ? "amber" : "slate"}
                 icon={UserX}
                 tone={agregat.santriTanpaSetoran > 0 ? "warning" : "neutral"}
-                className="p-4"
               />
             </>
           )}
         </div>
       </section>
 
-      {/* 2. SEKSI 2: KARTU MOTIVASI ISLAMI (Carousel Banner - Aligned with Emerald Primary Token Scale) */}
-      <section className="relative bg-gradient-to-br from-emerald-900 to-emerald-950 border border-emerald-800/80 rounded-2xl p-5 text-white shadow-md overflow-hidden">
-        <div className="absolute right-2 top-2 opacity-10 pointer-events-none">
-          <Quote className="w-24 h-24 text-white" />
-        </div>
-        
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-300 uppercase tracking-wider">
-            <BookOpen className="w-3.5 h-3.5" /> Motivasi & Hikmah
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] text-emerald-200/80 font-medium">{currentSlide + 1} / {MOTIVASI_POOL.length}</span>
-            <div className="flex gap-1">
-              <button 
-                onClick={prevSlide}
-                className="p-1 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white"
-                title="Sebelumnya"
-              >
-                <ChevronLeft className="w-3.5 h-3.5" />
-              </button>
-              <button 
-                onClick={nextSlide}
-                className="p-1 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white"
-                title="Berikutnya"
-              >
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="min-h-[64px] flex flex-col justify-center my-1">
-          <p className="text-sm md:text-base font-medium text-emerald-50 italic leading-relaxed">
-            "{activeMotivasi.text}"
-          </p>
-          <p className="text-xs text-emerald-300/90 font-semibold mt-2 text-right">
-            — {activeMotivasi.ref}
-          </p>
-        </div>
-
-        {/* Indicators */}
-        <div className="flex justify-center gap-1.5 mt-3 pt-2 border-t border-white/10">
-          {MOTIVASI_POOL.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => setCurrentSlide(idx)}
-              className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentSlide ? 'w-5 bg-emerald-400' : 'w-1.5 bg-white/20'}`}
-            />
-          ))}
-        </div>
-      </section>
+      {/* 2. SEKSI 2: KARTU MOTIVASI ISLAMI (Shared MotivationCard) */}
+      <MotivationCard />
 
       {/* 3. SEKSI 3: MENU CEPAT (Quick Menu Grid - Uniform Neutral Icons & Clear Labels) */}
       <section className="space-y-2">
-        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">Menu Cepat</h3>
+        <h3 className="text-xs font-semibold text-slate-500 px-1">Menu Cepat</h3>
         <div className="grid grid-cols-4 gap-2.5">
           <Link
             to="/ustadz/pantau"
@@ -202,7 +132,7 @@ function UstadzDashboard() {
       {/* 4. BELUM SETOR HARI INI */}
       <section className="pt-1">
         <div className="flex justify-between items-center mb-2.5">
-          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">Belum Setor Hari Ini</h3>
+          <h3 className="text-xs font-semibold text-slate-500 px-1">Belum Setor Hari Ini</h3>
           <Link to="/ustadz/pantau" className="text-emerald-700 text-xs font-bold hover:underline">Lihat Semua</Link>
         </div>
         <div className="space-y-2.5">
@@ -237,7 +167,7 @@ function UstadzDashboard() {
       {/* 5. SETORAN TERBARU */}
       <section className="pt-1">
         <div className="flex justify-between items-center mb-2.5">
-          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">Setoran Terbaru</h3>
+          <h3 className="text-xs font-semibold text-slate-500 px-1">Setoran Terbaru</h3>
         </div>
         <div className="space-y-2.5">
           {data.setoranTerbaru.length === 0 ? (

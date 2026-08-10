@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Building2, CheckCircle2, Ban, Clock, Users, FileText, AlertCircle, ArrowRight } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
+import { StatCard } from '../../components/shared/StatCard'
 
 export const Route = createFileRoute('/superadmin/')({
   component: SuperAdminDashboard,
@@ -32,100 +33,63 @@ function SuperAdminDashboard() {
     fetchStats()
   }, [])
 
-  if (loading) return <div className="p-8 text-center text-slate-500">Memuat statistik...</div>
-  if (error) return <div className="p-8 text-center text-red-500">{error}</div>
-  if (!stats) return null
+  if (loading) {
+    return (
+      <div className="p-8 text-center text-slate-500">
+        Memuat data overview...
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 bg-red-50 text-red-700 rounded-xl border border-red-200">
+        {error}
+      </div>
+    )
+  }
 
   return (
-    <div className="space-y-8 pb-12">
-      {stats.pendingCount > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center justify-between shadow-sm">
-          <div className="flex items-center gap-3 text-red-800">
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
-            <div>
-              <p className="font-bold text-sm">Ada {stats.pendingCount} Lembaga Baru Menunggu Persetujuan!</p>
-              <p className="text-xs text-red-600/80 mt-0.5">Segera tinjau pendaftaran lembaga baru agar mereka bisa mulai menggunakan sistem.</p>
-            </div>
-          </div>
-          <Link to="/superadmin/lembaga" className="shrink-0 bg-red-100 hover:bg-red-200 text-red-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2">
-            Tinjau Sekarang <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-      )}
-
+    <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-slate-900">Overview Sistem</h1>
         <p className="text-slate-500 mt-1">Status dan metrik lintas lembaga secara real-time.</p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-5">
-        {/* Card: Pending */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm shadow-slate-200/50 border border-slate-100 hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-red-50 rounded-bl-full -z-10 opacity-50"></div>
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-sm font-medium text-red-600/80 tracking-wide uppercase">Menunggu</p>
-              <h3 className="text-3xl font-bold text-red-600 mt-2 tracking-tight">{stats.pendingCount || 0}</h3>
-            </div>
-            <div className="p-3 bg-red-50 rounded-xl border border-red-100/50">
-              <AlertCircle className="w-5 h-5 text-red-600" />
-            </div>
-          </div>
-        </div>
-        {/* Card 1: Total Lembaga */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm shadow-slate-200/50 border border-slate-100 hover:-translate-y-1 transition-transform duration-300">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-sm font-medium text-slate-500 tracking-wide uppercase">Total Lembaga</p>
-              <h3 className="text-3xl font-bold text-slate-900 mt-2 tracking-tight">{stats.totalLembaga}</h3>
-            </div>
-            <div className="p-3 bg-indigo-50 rounded-xl border border-indigo-100/50">
-              <Building2 className="w-5 h-5 text-indigo-600" />
-            </div>
-          </div>
-        </div>
-        
-        {/* Card 2: Aktif */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm shadow-slate-200/50 border border-slate-100 hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-bl-full -z-10 opacity-50"></div>
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-sm font-medium text-emerald-600/80 tracking-wide uppercase">Aktif</p>
-              <h3 className="text-3xl font-bold text-emerald-600 mt-2 tracking-tight">{stats.aktif}</h3>
-            </div>
-            <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100/50">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-            </div>
-          </div>
-        </div>
-
-        {/* Card 3: Trial */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm shadow-slate-200/50 border border-slate-100 hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-bl-full -z-10 opacity-50"></div>
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-sm font-medium text-amber-600/80 tracking-wide uppercase">Trial</p>
-              <h3 className="text-3xl font-bold text-amber-600 mt-2 tracking-tight">{stats.trial}</h3>
-            </div>
-            <div className="p-3 bg-amber-50 rounded-xl border border-amber-100/50">
-              <Clock className="w-5 h-5 text-amber-600" />
-            </div>
-          </div>
-        </div>
-
-        {/* Card 4: Suspend */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm shadow-slate-200/50 border border-slate-100 hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-rose-50 rounded-bl-full -z-10 opacity-50"></div>
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-sm font-medium text-rose-600/80 tracking-wide uppercase">Suspend</p>
-              <h3 className="text-3xl font-bold text-rose-600 mt-2 tracking-tight">{stats.suspend}</h3>
-            </div>
-            <div className="p-3 bg-rose-50 rounded-xl border border-rose-100/50">
-              <Ban className="w-5 h-5 text-rose-600" />
-            </div>
-          </div>
-        </div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <StatCard
+          label="Menunggu"
+          value={stats.pendingCount || 0}
+          unit="lembaga"
+          badge={stats.pendingCount > 0 ? "Perlu Akses" : undefined}
+          badgeVariant={stats.pendingCount > 0 ? "rose" : "slate"}
+          icon={AlertCircle}
+          tone={stats.pendingCount > 0 ? "danger" : "neutral"}
+        />
+        <StatCard
+          label="Total Lembaga"
+          value={stats.totalLembaga}
+          icon={Building2}
+          tone="neutral"
+        />
+        <StatCard
+          label="Aktif"
+          value={stats.aktif}
+          icon={CheckCircle2}
+          tone="success"
+        />
+        <StatCard
+          label="Trial"
+          value={stats.trial}
+          icon={Clock}
+          tone="warning"
+        />
+        <StatCard
+          label="Suspend"
+          value={stats.suspend}
+          icon={Ban}
+          tone={stats.suspend > 0 ? "danger" : "neutral"}
+        />
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">

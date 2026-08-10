@@ -9,6 +9,7 @@ import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
 import { Button } from '../../components/ui/button'
 import { AuthErrorAlert } from '../../components/AuthErrorAlert'
+import { MotivationCard } from '../../components/shared/MotivationCard'
 
 export const Route = createFileRoute('/santri/')({
   component: SantriDashboard,
@@ -62,12 +63,6 @@ function SantriDashboard() {
   return (
     <div className="space-y-6 pb-6">
       
-      {/* Header Welcome */}
-      <div>
-        <h1 className="text-xl font-bold text-slate-800">Ahlan, {profil?.nama}! 👋</h1>
-        <p className="text-sm text-slate-500 mt-0.5">Semoga istiqomah {isIqra ? 'belajar mengaji' : 'menjaga hafalan'} hari ini.</p>
-      </div>
-
       {/* Streak Card */}
       <div className="bg-gradient-to-r from-orange-400 to-amber-500 rounded-2xl p-4 text-white shadow-md flex items-center justify-between">
         <div>
@@ -85,6 +80,9 @@ function SantriDashboard() {
           <Flame className="w-6 h-6 text-white" />
         </div>
       </div>
+
+      {/* Motivation & Hikmah Card */}
+      <MotivationCard />
 
       {/* Ujian Kenaikan Juz — tampil jika ada pending (hanya tahfidz) */}
       {profil?.juzUjianPending && !isIqra && (

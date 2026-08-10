@@ -126,7 +126,7 @@ function Dashboard() {
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat, i) => (
           <StatCard
             key={i}
@@ -139,7 +139,7 @@ function Dashboard() {
       </div>
 
       {agregat && (
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-3">
           {/* TODO(product): Threshold tone (kapan warning/danger) sengaja belum ditentukan.
           // Perlu data riil beberapa lembaga dulu untuk kalibrasi angka yang masuk akal.
           // Lihat ticket Dashboard Revamp — keputusan Abdulloh 2026-08-03. */}
@@ -164,6 +164,7 @@ function Dashboard() {
           <StatCard 
             label="Trend Halaman (7 Hari)" 
             value={agregat.trendHalaman.mingguIni}
+            unit="hal"
             icon={BarChart3}
             tone="neutral"
             description={agregat.trendHalaman.selisih < 0 ? "Menurun dibanding minggu lalu" : "Total setoran halaman minggu ini"} 
@@ -171,9 +172,12 @@ function Dashboard() {
 
           <StatCard 
             label="Stagnan (Tanpa Setor 7 Hari)" 
-            value={agregat.santriTanpaSetoran} 
+            value={agregat.santriTanpaSetoran}
+            unit="santri"
+            badge={agregat.santriTanpaSetoran > 0 ? "Perlu Perhatian" : undefined}
+            badgeVariant={agregat.santriTanpaSetoran > 0 ? "amber" : "slate"}
             icon={UserX} 
-            tone="neutral"
+            tone={agregat.santriTanpaSetoran > 0 ? "warning" : "neutral"}
             description="Santri belum setor seminggu terakhir" 
           />
         </div>

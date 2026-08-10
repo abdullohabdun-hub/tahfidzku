@@ -1,11 +1,11 @@
 import { createFileRoute, Outlet, Link, useLocation, useRouter } from "@tanstack/react-router"
-import { Home, PencilLine, Award, BookOpen, LogOut, History } from "lucide-react"
+import { Home, PencilLine, Award, BookOpen, LogOut, History, Bell } from "lucide-react"
 import { useState, useEffect } from "react"
 import { checkAuth, logout } from "../server-fns/auth"
 import { HelpTicketButton } from "../components/tiket/HelpTicketButton"
 import { useServerFn } from "@tanstack/react-start"
 import { getUnreadCountSantri } from "../server-fns/notifikasi-santri"
-import { Bell } from "lucide-react"
+import { formatDateWithHijri } from "../lib/hijri-date"
 
 export const Route = createFileRoute('/santri')({
   component: SantriLayout,
@@ -15,6 +15,11 @@ function SantriLayout() {
   const location = useLocation()
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
+  const [today, setToday] = useState('')
+
+  useEffect(() => {
+    setToday(formatDateWithHijri(new Date(), { includeWeekday: true }))
+  }, [])
 
   useEffect(() => {
     async function loadProfile() {
@@ -69,28 +74,29 @@ function SantriLayout() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 pb-20 md:pb-0">
       
-      {/* Top Header (Logo) */}
-      <header className="bg-white border-b border-slate-200 p-4 sticky top-0 z-50 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-2">
-          <div className="bg-emerald-600 p-1.5 rounded-md">
-            <BookOpen className="h-4 w-4 text-white" />
+      {/* Top Header */}
+      <header className="bg-white border-b border-slate-200 px-4 py-2.5 sticky top-0 z-50 shadow-xs">
+        <div className="flex justify-between items-center">
+          <div className="flex flex-col">
+            <h1 className="text-sm font-bold text-emerald-700 leading-tight">
+              {user?.nama || "Santri"}
+            </h1>
+            <p className="text-[11px] text-slate-500 font-medium leading-normal mt-0.5">
+              {today}
+            </p>
           </div>
-          <span className="font-bold text-base text-emerald-950 tracking-tight">TahfidzKu Santri</span>
-        </div>
-        <div className="flex gap-2 items-center">
-          <HelpTicketButton baseUrl="/santri/tiket" />
-          <Link to="/santri/notifikasi" className="relative p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-colors mr-1 md:hidden">
-            <Bell className="w-5 h-5" />
-            {unreadCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
-            )}
-          </Link>
-          <Link to="/santri/profil" className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold border border-emerald-200 uppercase text-xs md:text-sm hover:ring-2 hover:ring-emerald-500 hover:bg-emerald-200 transition-all cursor-pointer">
-            {user?.nama ? user.nama.substring(0, 2) : "SA"}
-          </Link>
-          <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors md:hidden">
-            <LogOut className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            <HelpTicketButton baseUrl="/santri/tiket" />
+            <Link to="/santri/notifikasi" className="relative p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-slate-100 rounded-full transition-colors">
+              <Bell className="w-4 h-4" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 border border-white rounded-full"></span>
+              )}
+            </Link>
+            <Link to="/santri/profil" className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs border border-emerald-200 uppercase hover:ring-2 hover:ring-emerald-500 transition-all">
+              {user?.nama ? user.nama.substring(0, 2) : "SA"}
+            </Link>
+          </div>
         </div>
       </header>
 

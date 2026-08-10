@@ -1,7 +1,10 @@
 import { createFileRoute, Outlet, Link, useLocation } from "@tanstack/react-router"
 import { PieChart, CalendarDays, User, Award, Home } from "lucide-react"
+import { useState, useEffect } from "react"
 import { HelpTicketButton } from "../components/tiket/HelpTicketButton"
 import { getWaliLayout } from "../server-fns/wali-layout"
+import { checkAuth } from "../server-fns/auth"
+import { formatDateWithHijri } from "../lib/hijri-date"
 
 export const Route = createFileRoute('/wali')({
   component: WaliLayout,
@@ -23,6 +26,23 @@ export const Route = createFileRoute('/wali')({
 function WaliLayout() {
   const location = useLocation()
   const layoutData = Route.useLoaderData()
+  const [user, setUser] = useState<any>(null)
+  const [today, setToday] = useState('')
+
+  useEffect(() => {
+    setToday(formatDateWithHijri(new Date(), { includeWeekday: true }))
+    async function loadProfile() {
+      try {
+        const auth = await checkAuth()
+        if (auth) {
+          setUser(auth)
+        }
+      } catch (err) {
+        console.error('Failed to load wali profile:', err)
+      }
+    }
+    loadProfile()
+  }, [])
 
   const navItems = [
     { name: "Beranda", path: "/wali", icon: <Home className="w-5 h-5" strokeWidth={1.5} /> },
@@ -32,35 +52,27 @@ function WaliLayout() {
     { name: "Profil", path: "/wali/profil", icon: <User className="w-5 h-5" strokeWidth={1.5} /> },
   ]
 
-  const isBeranda = location.pathname === "/wali" || location.pathname === "/wali/"
-
   return (
     <div className="min-h-[100dvh] bg-slate-50 flex flex-col font-sans text-slate-900 pb-[76px]">
       
       {/* Top Header */}
-      <header className="bg-white border-b border-slate-200 p-4 sticky top-0 z-50 flex justify-between items-center shadow-sm">
-        {isBeranda ? (
-          <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center font-bold text-sm">
-              {layoutData?.namaLembaga?.charAt(0) || 'T'}
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider leading-none">Aplikasi Wali</span>
-              <span className="text-sm font-bold text-slate-800 leading-tight">{layoutData?.namaLembaga || 'Tahfidzku'}</span>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="w-9" /> {/* Spacer to keep title centered */}
-            <h1 className="font-bold text-lg text-slate-800 tracking-tight">
-              {location.pathname.startsWith('/wali/progres') ? 'Pemantauan' :
-               location.pathname.startsWith('/wali/jadwal') ? 'Jadwal' :
-               location.pathname.startsWith('/wali/ujian') ? 'Ujian' :
-               location.pathname.startsWith('/wali/profil') ? 'Profil' : 'Tahfidzku'}
+      <header className="bg-white border-b border-slate-200 px-4 py-2.5 sticky top-0 z-50 shadow-xs">
+        <div className="flex justify-between items-center">
+          <div className="flex flex-col">
+            <h1 className="text-sm font-bold text-emerald-700 leading-tight">
+              {user?.nama || "Wali"}
             </h1>
-          </>
-        )}
-        <HelpTicketButton baseUrl="/wali/tiket" />
+            <p className="text-[11px] text-slate-500 font-medium leading-normal mt-0.5">
+              {today}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <HelpTicketButton baseUrl="/wali/tiket" />
+            <Link to="/wali/profil" className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs border border-emerald-200 uppercase hover:ring-2 hover:ring-emerald-500 transition-all">
+              {user?.nama ? user.nama.substring(0, 2) : "WA"}
+            </Link>
+          </div>
+        </div>
       </header>
 
       {/* Main Content Area */}
