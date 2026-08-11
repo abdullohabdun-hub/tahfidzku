@@ -13,8 +13,17 @@ const encodedKey = new TextEncoder().encode(secretKey)
 
 const SESSION_COOKIE_NAME = 'tahfidzku_session'
 
+export function resolveCookieDomain(host?: string): string | undefined {
+  if (!host) return undefined
+  const bareHost = host.split(':')[0].toLowerCase().trim()
+  if (bareHost === 'tahfidzku.my.id' || bareHost.endsWith('.tahfidzku.my.id')) {
+    return '.tahfidzku.my.id'
+  }
+  return undefined // Custom domain -> host-only cookie
+}
+
 // Membuat token JWT dari data user
-export async function createSession(user: SessionUser, ttlMinutes: number = 7 * 24 * 60) {
+export async function createSession(user: SessionUser, ttlMinutes: number = 7 * 24 * 60, host?: string) {
   const expiresAt = new Date(Date.now() + ttlMinutes * 60 * 1000)
 
   const sessionToken = await new SignJWT({ ...user })
@@ -22,6 +31,8 @@ export async function createSession(user: SessionUser, ttlMinutes: number = 7 * 
     .setIssuedAt()
     .setExpirationTime(Math.floor(expiresAt.getTime() / 1000))
     .sign(encodedKey)
+
+  const cookieDomain = resolveCookieDomain(host)
 
   // Menyimpan token ke cookie browser dengan error handling
   try {
@@ -31,6 +42,7 @@ export async function createSession(user: SessionUser, ttlMinutes: number = 7 * 
       sameSite: 'lax',
       expires: expiresAt,
       path: '/',
+      ...(cookieDomain ? { domain: cookieDomain } : {}),
     })
   } catch (err) {
     console.error('[SessionCookieError] Failed to set cookie:', err)

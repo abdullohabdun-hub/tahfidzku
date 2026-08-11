@@ -81,6 +81,7 @@ export const createSetoran = createServerFn({ method: 'POST' })
             penilaianKustom: data.penilaianKustom ?? null,
             catatan: data.catatan ?? null,
             sumber: 'ustadz',
+            ditinjauOlehUstadz: true,
             tanggalSetoran: data.tanggalSetoran,
             isBackdated,
           })
@@ -88,7 +89,9 @@ export const createSetoran = createServerFn({ method: 'POST' })
 
         // ② Guard posisiTerakhir + juzUjianPending (satu CTE, atomik)
         if (data.jenis === 'ziyadah' && data.surahNomor && data.ayatAkhir) {
-          const surahSelesaiNo = data.surahMeta?.meta?.[0]?.surahSelesai?.nomor;
+          const metaList = data.surahMeta?.meta;
+          const lastMeta = Array.isArray(metaList) && metaList.length > 0 ? metaList[metaList.length - 1] : null;
+          const surahSelesaiNo = lastMeta?.surahSelesai?.nomor ?? data.surahNomor;
           if (!surahSelesaiNo) {
             throw new ValidationError('Data surahSelesai tidak ditemukan dalam meta Ziyadah');
           }
@@ -111,7 +114,11 @@ export const createSetoran = createServerFn({ method: 'POST' })
                 SELECT 1 FROM setoran
                 WHERE santri_id = ${data.santriId}
                   AND jenis = 'ziyadah'
-                  AND tanggal_setoran > ${data.tanggalSetoran}
+                  AND id != ${row.id}
+                  AND (
+                    tanggal_setoran > ${data.tanggalSetoran}
+                    OR (tanggal_setoran = ${data.tanggalSetoran} AND created_at > ${row.createdAt})
+                  )
               ) AS boleh_update
             )
             UPDATE santri SET
@@ -239,7 +246,9 @@ export const updateSetoran = createServerFn({ method: 'POST' })
         }
 
         // Cek apakah posisi tepat di ayat terakhir sebuah juz → trigger ujian pending, else clear
-        const surahSelesaiNo = data.surahMeta?.meta?.[0]?.surahSelesai?.nomor;
+        const metaList = data.surahMeta?.meta;
+        const lastMeta = Array.isArray(metaList) && metaList.length > 0 ? metaList[metaList.length - 1] : null;
+        const surahSelesaiNo = lastMeta?.surahSelesai?.nomor ?? data.surahNomor;
         if (!surahSelesaiNo) {
           throw new ValidationError('Data surahSelesai tidak ditemukan dalam meta Ziyadah saat update');
         }

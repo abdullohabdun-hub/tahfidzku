@@ -149,8 +149,10 @@ function InputSetoranPage() {
     const res = await createSetoran({ data: payload })
     if (res.success) {
       if (payload.jenis === 'ziyadah') {
-        const surahSelesaiNomor = payload.surahMeta?.meta?.[0]?.surahSelesai?.nomor ?? payload.surahNomor
-        const ayatSelesai = payload.surahMeta?.meta?.[0]?.surahSelesai?.ayat ?? payload.ayatAkhir
+        const metaList = payload.surahMeta?.meta
+        const lastMeta = Array.isArray(metaList) && metaList.length > 0 ? metaList[metaList.length - 1] : null
+        const surahSelesaiNomor = lastMeta?.surahSelesai?.nomor ?? payload.surahNomor
+        const ayatSelesai = lastMeta?.surahSelesai?.ayat ?? payload.ayatAkhir
 
         setSantriList(prev => prev.map(s => {
           if (s.id === santriId) {

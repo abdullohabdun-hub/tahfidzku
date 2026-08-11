@@ -6,6 +6,14 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 const config = defineConfig({
   resolve: { tsconfigPaths: true },
+  server: {
+    allowedHosts: [
+      'localhost',
+      '127.0.0.1',
+      'tahfidzku.my.id',
+      '.tahfidzku.my.id',
+    ],
+  },
   plugins: [
     tailwindcss(), 
     tanstackStart(), 
@@ -13,37 +21,7 @@ const config = defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: false,
-      manifest: {
-        name: 'TahfidzKu',
-        short_name: 'TahfidzKu',
-        description: 'Aplikasi Manajemen Hafalan Al-Quran',
-        theme_color: '#059669',
-        background_color: '#ffffff',
-        display: 'standalone',
-        display_override: ['standalone', 'minimal-ui'],
-        start_url: '/',
-        scope: '/',
-        orientation: 'portrait',
-        lang: 'id',
-        icons: [
-          {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512-maskable.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'maskable'
-          }
-        ]
-      }
+      manifest: false,
     })
   ],
 })

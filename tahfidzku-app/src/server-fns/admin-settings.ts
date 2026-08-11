@@ -20,6 +20,13 @@ export const getTenantInfo = createServerFn({ method: 'POST' }).handler(
           namaLembaga: tenants.namaLembaga,
           slug: tenants.slug,
           minHariMasukSantri: tenants.minHariMasukSantri,
+          themeColor: tenants.themeColor,
+          themePreset: tenants.themePreset,
+          logoUrl: tenants.logoUrl,
+          themeConfigured: tenants.themeConfigured,
+          customDomain: tenants.customDomain,
+          customDomainStatus: tenants.customDomainStatus,
+          customDomainVerifiedAt: tenants.customDomainVerifiedAt,
         })
         .from(tenants)
         .where(eq(tenants.id, session.user.tenantId))

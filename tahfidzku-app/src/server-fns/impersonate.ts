@@ -1,4 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
+import { getRequest } from '@tanstack/react-start/server'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '../db'
@@ -104,8 +105,10 @@ export const impersonateUser = createServerFn({ method: 'POST' })
       newSessionUser.impersonationLogId = log.id
       newSessionUser.impersonateExpiresAt = Date.now() + 60 * 60 * 1000 // 60 menit
 
+      const requestHost = getRequest()?.headers.get('host') ?? undefined
+
       // 7. Buat Sesi Baru
-      await createSession(newSessionUser, 60) // TTL 60 menit
+      await createSession(newSessionUser, 60, requestHost) // TTL 60 menit
 
       const targetUrl = `/${data.targetRole}`
       return success({ redirectUrl: targetUrl }, `Berhasil menyamar sebagai ${newSessionUser.nama}`)
@@ -157,7 +160,8 @@ export const stopImpersonating = createServerFn({ method: 'POST' })
         role: 'admin',
       }
       
-      await createSession(adminSessionUser) // Sesi normal 7 hari
+      const requestHost = getRequest()?.headers.get('host') ?? undefined
+      await createSession(adminSessionUser, 7 * 24 * 60, requestHost) // Sesi normal 7 hari
       
       return success({ redirectUrl: '/admin' }, 'Berhasil kembali ke Admin')
     } catch (err) {

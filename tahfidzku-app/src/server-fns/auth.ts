@@ -2,6 +2,7 @@
 // Server Functions untuk Autentikasi (Login & Logout)
 
 import { createServerFn } from '@tanstack/react-start'
+import { getRequest } from '@tanstack/react-start/server'
 import { eq, or, sql } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
 import { db } from '../db'
@@ -79,6 +80,8 @@ export const login = createServerFn({ method: 'POST' })
         }
       }
 
+      const requestHost = getRequest()?.headers.get('host') ?? undefined
+
       await createSession({
         id: user.id,
         tenantId: user.tenantId,
@@ -90,7 +93,7 @@ export const login = createServerFn({ method: 'POST' })
         roles: user.roles as ('admin' | 'ustadz' | 'santri' | 'wali')[],
         santriId: user.santriId,
         forcePasswordChange: user.forcePasswordChange,
-      })
+      }, 7 * 24 * 60, requestHost)
 
       console.log('✅ Login berhasil untuk:', user.nama, '(', user.role, ')')
       return success({ role: user.role }, 'Berhasil masuk')
@@ -203,7 +206,8 @@ export const changePassword = createServerFn({ method: 'POST' })
       
       // Regenerate session supaya device saat ini tidak ter-logout
       // Karena getSession mengandalkan cookies, kita panggil createSession() untuk nimpa JWT lama
-      await createSession({ ...session.user, forcePasswordChange: false })
+      const changePassHost = getRequest()?.headers.get('host') ?? undefined
+      await createSession({ ...session.user, forcePasswordChange: false }, 7 * 24 * 60, changePassHost)
 
       return success(null, 'Password berhasil diubah.')
     } catch (err) {

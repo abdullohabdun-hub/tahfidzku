@@ -10,6 +10,9 @@ import { LabelPenilaianSettings } from '../../components/admin/LabelPenilaianSet
 import { ChangePasswordForm } from '../../components/ChangePasswordForm'
 import { checkAuth } from '../../server-fns/auth'
 
+import { VisualIdentitySettings } from '../../components/admin/VisualIdentitySettings'
+import { DomainSettings } from '../../components/admin/DomainSettings'
+
 export const Route = createFileRoute('/admin/pengaturan')({
   component: PengaturanPage,
 })
@@ -21,6 +24,13 @@ function PengaturanPage() {
   const [namaLembaga, setNamaLembaga] = useState('')
   const [slug, setSlug] = useState('')
   const [minHariMasukSantri, setMinHariMasukSantri] = useState(2)
+  const [themeColor, setThemeColor] = useState('#047857')
+  const [themePreset, setThemePreset] = useState<string | null>(null)
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [customDomain, setCustomDomain] = useState<string | null>(null)
+  const [customDomainStatus, setCustomDomainStatus] = useState<'none' | 'pending' | 'active' | 'failed'>('none')
+  const [customDomainVerifiedAt, setCustomDomainVerifiedAt] = useState<Date | string | null>(null)
+
   const [sesiRegulerDefault, setSesiRegulerDefault] = useState<WaktuShalat[]>([])
   const [savingSesiDefault, setSavingSesiDefault] = useState(false)
   const [forcePasswordChange, setForcePasswordChange] = useState(false)
@@ -46,6 +56,12 @@ function PengaturanPage() {
       setNamaLembaga(res.data.namaLembaga)
       setSlug(res.data.slug)
       setMinHariMasukSantri(res.data.minHariMasukSantri ?? 2)
+      if (res.data.themeColor) setThemeColor(res.data.themeColor)
+      if (res.data.themePreset !== undefined) setThemePreset(res.data.themePreset)
+      if (res.data.logoUrl !== undefined) setLogoUrl(res.data.logoUrl)
+      if (res.data.customDomain !== undefined) setCustomDomain(res.data.customDomain)
+      if (res.data.customDomainStatus !== undefined) setCustomDomainStatus(res.data.customDomainStatus)
+      if (res.data.customDomainVerifiedAt !== undefined) setCustomDomainVerifiedAt(res.data.customDomainVerifiedAt)
     }
     const raporRes = await getRaporSettings()
     if (raporRes.success && raporRes.data) {
@@ -159,6 +175,24 @@ function PengaturanPage() {
           </form>
         </div>
       </div>
+
+      <VisualIdentitySettings
+        initialThemeColor={themeColor}
+        initialThemePreset={themePreset}
+        initialLogoUrl={logoUrl}
+        onThemeUpdated={(newColor, newLogo) => {
+          setThemeColor(newColor)
+          setLogoUrl(newLogo)
+        }}
+      />
+
+      <DomainSettings
+        slug={slug}
+        initialCustomDomain={customDomain}
+        initialCustomDomainStatus={customDomainStatus}
+        initialCustomDomainVerifiedAt={customDomainVerifiedAt}
+        onDomainUpdated={loadData}
+      />
       
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden p-6 mt-8">
         <h3 className="font-semibold text-lg text-slate-800 mb-2">Pengaturan Kelas & Absensi</h3>

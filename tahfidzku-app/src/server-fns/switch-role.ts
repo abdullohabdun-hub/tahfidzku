@@ -1,4 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
+import { getRequest } from '@tanstack/react-start/server'
 import { eq, and } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '../db'
@@ -40,12 +41,14 @@ export const switchRoleFn = createServerFn({ method: 'POST' })
         throw new ForbiddenError('Akses ditolak: Anda tidak memiliki role tersebut.')
       }
 
+      const requestHost = getRequest()?.headers.get('host') ?? undefined
+
       // 4. Re-issue session dengan role baru
       await createSession({
         ...session.user,
         role: data.targetRole as Role,
         roles: rolesArray as Role[],
-      })
+      }, 7 * 24 * 60, requestHost)
 
       // 5. Tulis audit log
       await db.insert(auditLogs).values({

@@ -9,6 +9,8 @@ import { HelpTicketButton } from "../components/tiket/HelpTicketButton"
 import { RoleSwitcher } from "../components/shared/RoleSwitcher"
 import { formatDateWithHijri } from "../lib/hijri-date"
 
+import { hexToOklch } from "../lib/theme-utils"
+
 export const Route = createFileRoute('/admin')({
   beforeLoad: async ({ location }) => {
     const user = await checkAuth()
@@ -39,6 +41,11 @@ function AdminLayout() {
         const tenantRes = await getTenantInfo()
         if (tenantRes.success && tenantRes.data) {
           setTenantName(tenantRes.data.namaLembaga)
+          if (tenantRes.data.themeConfigured && tenantRes.data.themeColor) {
+            const oklch = hexToOklch(tenantRes.data.themeColor)
+            document.documentElement.style.setProperty('--primary', oklch)
+            document.documentElement.style.setProperty('--sidebar-primary', oklch)
+          }
         }
       }
     }

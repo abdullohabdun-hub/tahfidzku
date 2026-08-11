@@ -43,7 +43,7 @@ export const getPantauanMurojaah = createServerFn({ method: 'GET' })
           and(
             eq(setoran.tenantId, session.user.tenantId),
             eq(kelas.ustadzId, session.user.id),
-            or(eq(setoran.jenis, 'sabqi'), eq(setoran.jenis, 'manzil'))
+            eq(setoran.sumber, 'santri_self_report')
           )
         )
         .orderBy(desc(setoran.createdAt))

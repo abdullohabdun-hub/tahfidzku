@@ -28,10 +28,14 @@ export const Route = createRootRoute({
       },
       {
         name: 'theme-color',
-        content: '#059669',
+        content: '#047857',
       }
     ],
     links: [
+      {
+        rel: 'manifest',
+        href: '/api/manifest.webmanifest',
+      },
       {
         rel: 'apple-touch-icon',
         href: '/pwa-192x192.png',
@@ -46,6 +50,22 @@ export const Route = createRootRoute({
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  useEffect(() => {
+    // Dynamic theme-color meta update post-login
+    checkAuth().then(async (user) => {
+      if (user) {
+        const { getTenantInfo } = await import('../server-fns/admin-settings')
+        const res = await getTenantInfo()
+        if (res.success && res.data && res.data.themeConfigured && res.data.themeColor) {
+          const metaThemeColor = document.querySelector('meta[name="theme-color"]')
+          if (metaThemeColor) {
+            metaThemeColor.setAttribute('content', res.data.themeColor)
+          }
+        }
+      }
+    })
+  }, [])
+
   return (
     <html lang="en">
       <head>

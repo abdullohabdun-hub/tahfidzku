@@ -1,7 +1,7 @@
 // src/db/schema/index.ts
 // Barrel export — satu pintu masuk untuk semua skema database
 
-export { tenants, statusEnum as tenantStatusEnum } from './tenants'
+export { tenants, statusEnum as tenantStatusEnum, customDomainStatusEnum } from './tenants'
 export { users, roleEnum } from './users'
 export { santri, tipeSantriEnum, tahapSantriEnum } from './santri'
 export { setoran, jenisSetoranEnum, kualitasEnum, sumberSetoranEnum, rubrikPenilaian, rubrikOpsi } from './setoran'

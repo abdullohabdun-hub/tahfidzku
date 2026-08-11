@@ -39,6 +39,8 @@ import { Route as SantriRiwayatRouteImport } from './routes/santri/riwayat'
 import { Route as SantriProfilRouteImport } from './routes/santri/profil'
 import { Route as SantriNotifikasiRouteImport } from './routes/santri/notifikasi'
 import { Route as SantriInputRouteImport } from './routes/santri/input'
+import { Route as MasukSlugRouteImport } from './routes/masuk.$slug'
+import { Route as ApiManifestDotwebmanifestRouteImport } from './routes/api/manifest[.]webmanifest'
 import { Route as AdminUstadzRouteImport } from './routes/admin/ustadz'
 import { Route as AdminUjianRouteImport } from './routes/admin/ujian'
 import { Route as AdminPengaturanRouteImport } from './routes/admin/pengaturan'
@@ -219,6 +221,17 @@ const SantriInputRoute = SantriInputRouteImport.update({
   path: '/input',
   getParentRoute: () => SantriRoute,
 } as any)
+const MasukSlugRoute = MasukSlugRouteImport.update({
+  id: '/masuk/$slug',
+  path: '/masuk/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiManifestDotwebmanifestRoute =
+  ApiManifestDotwebmanifestRouteImport.update({
+    id: '/api/manifest.webmanifest',
+    path: '/api/manifest.webmanifest',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminUstadzRoute = AdminUstadzRouteImport.update({
   id: '/ustadz',
   path: '/ustadz',
@@ -380,6 +393,8 @@ export interface FileRoutesByFullPath {
   '/admin/pengaturan': typeof AdminPengaturanRoute
   '/admin/ujian': typeof AdminUjianRoute
   '/admin/ustadz': typeof AdminUstadzRoute
+  '/api/manifest.webmanifest': typeof ApiManifestDotwebmanifestRoute
+  '/masuk/$slug': typeof MasukSlugRoute
   '/santri/input': typeof SantriInputRoute
   '/santri/notifikasi': typeof SantriNotifikasiRoute
   '/santri/profil': typeof SantriProfilRoute
@@ -436,6 +451,8 @@ export interface FileRoutesByTo {
   '/admin/pengaturan': typeof AdminPengaturanRoute
   '/admin/ujian': typeof AdminUjianRoute
   '/admin/ustadz': typeof AdminUstadzRoute
+  '/api/manifest.webmanifest': typeof ApiManifestDotwebmanifestRoute
+  '/masuk/$slug': typeof MasukSlugRoute
   '/santri/input': typeof SantriInputRoute
   '/santri/notifikasi': typeof SantriNotifikasiRoute
   '/santri/profil': typeof SantriProfilRoute
@@ -498,6 +515,8 @@ export interface FileRoutesById {
   '/admin/pengaturan': typeof AdminPengaturanRoute
   '/admin/ujian': typeof AdminUjianRoute
   '/admin/ustadz': typeof AdminUstadzRoute
+  '/api/manifest.webmanifest': typeof ApiManifestDotwebmanifestRoute
+  '/masuk/$slug': typeof MasukSlugRoute
   '/santri/input': typeof SantriInputRoute
   '/santri/notifikasi': typeof SantriNotifikasiRoute
   '/santri/profil': typeof SantriProfilRoute
@@ -561,6 +580,8 @@ export interface FileRouteTypes {
     | '/admin/pengaturan'
     | '/admin/ujian'
     | '/admin/ustadz'
+    | '/api/manifest.webmanifest'
+    | '/masuk/$slug'
     | '/santri/input'
     | '/santri/notifikasi'
     | '/santri/profil'
@@ -617,6 +638,8 @@ export interface FileRouteTypes {
     | '/admin/pengaturan'
     | '/admin/ujian'
     | '/admin/ustadz'
+    | '/api/manifest.webmanifest'
+    | '/masuk/$slug'
     | '/santri/input'
     | '/santri/notifikasi'
     | '/santri/profil'
@@ -678,6 +701,8 @@ export interface FileRouteTypes {
     | '/admin/pengaturan'
     | '/admin/ujian'
     | '/admin/ustadz'
+    | '/api/manifest.webmanifest'
+    | '/masuk/$slug'
     | '/santri/input'
     | '/santri/notifikasi'
     | '/santri/profil'
@@ -735,6 +760,8 @@ export interface RootRouteChildren {
   SuperadminRoute: typeof SuperadminRouteWithChildren
   UstadzRoute: typeof UstadzRouteWithChildren
   WaliRoute: typeof WaliRouteWithChildren
+  ApiManifestDotwebmanifestRoute: typeof ApiManifestDotwebmanifestRoute
+  MasukSlugRoute: typeof MasukSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -948,6 +975,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/santri/input'
       preLoaderRoute: typeof SantriInputRouteImport
       parentRoute: typeof SantriRoute
+    }
+    '/masuk/$slug': {
+      id: '/masuk/$slug'
+      path: '/masuk/$slug'
+      fullPath: '/masuk/$slug'
+      preLoaderRoute: typeof MasukSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/manifest.webmanifest': {
+      id: '/api/manifest.webmanifest'
+      path: '/api/manifest.webmanifest'
+      fullPath: '/api/manifest.webmanifest'
+      preLoaderRoute: typeof ApiManifestDotwebmanifestRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/ustadz': {
       id: '/admin/ustadz'
@@ -1310,6 +1351,8 @@ const rootRouteChildren: RootRouteChildren = {
   SuperadminRoute: SuperadminRouteWithChildren,
   UstadzRoute: UstadzRouteWithChildren,
   WaliRoute: WaliRouteWithChildren,
+  ApiManifestDotwebmanifestRoute: ApiManifestDotwebmanifestRoute,
+  MasukSlugRoute: MasukSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
