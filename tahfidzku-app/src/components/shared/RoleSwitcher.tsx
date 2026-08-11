@@ -51,7 +51,7 @@ export function RoleSwitcher({ user, currentRole }: RoleSwitcherProps) {
   const availableRoles = user.roles as string[]
 
   return (
-    <div className="hidden sm:block ml-2">
+    <div className="inline-flex items-center ml-2">
       <DropdownMenu>
         <DropdownMenuTrigger className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 rounded-full text-xs font-semibold text-slate-700 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-0.5"></span>

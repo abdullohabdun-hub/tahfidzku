@@ -8,13 +8,22 @@ import { getUnreadCountSantri } from "../server-fns/notifikasi-santri"
 import { formatDateWithHijri } from "../lib/hijri-date"
 
 export const Route = createFileRoute('/santri')({
+  loader: async () => {
+    try {
+      const auth = await checkAuth()
+      return { user: auth }
+    } catch (err) {
+      return { user: null }
+    }
+  },
   component: SantriLayout,
 })
 
 function SantriLayout() {
   const location = useLocation()
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
+  const loaderData = Route.useLoaderData()
+  const [user, setUser] = useState<any>(loaderData?.user || null)
   const [today, setToday] = useState('')
 
   useEffect(() => {
@@ -22,18 +31,10 @@ function SantriLayout() {
   }, [])
 
   useEffect(() => {
-    async function loadProfile() {
-      try {
-        const auth = await checkAuth()
-        if (auth) {
-          setUser(auth)
-        }
-      } catch (err) {
-        console.error('Failed to load santri profile:', err)
-      }
+    if (loaderData?.user) {
+      setUser(loaderData.user)
     }
-    loadProfile()
-  }, [])
+  }, [loaderData?.user])
 
   const [unreadCount, setUnreadCount] = useState(0)
   const fetchUnreadCount = useServerFn(getUnreadCountSantri)

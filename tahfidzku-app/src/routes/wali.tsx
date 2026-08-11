@@ -7,17 +7,19 @@ import { checkAuth } from "../server-fns/auth"
 import { formatDateWithHijri } from "../lib/hijri-date"
 
 export const Route = createFileRoute('/wali')({
-  component: WaliLayout,
   loader: async () => {
     try {
-      const res = await getWaliLayout()
-      if (!res.success) {
-        throw new Error(res.error?.message || 'Gagal memuat layout')
+      const [res, auth] = await Promise.all([
+        getWaliLayout(),
+        checkAuth()
+      ])
+      return {
+        layoutData: res.success ? res.data : null,
+        user: auth
       }
-      return res.data
     } catch (error) {
       console.error(error)
-      throw error
+      return { layoutData: null, user: null }
     }
   },
   staleTime: 60 * 60 * 1000, // Cache for 1 hour
@@ -25,24 +27,17 @@ export const Route = createFileRoute('/wali')({
 
 function WaliLayout() {
   const location = useLocation()
-  const layoutData = Route.useLoaderData()
-  const [user, setUser] = useState<any>(null)
+  const loaderData = Route.useLoaderData()
+  const layoutData = loaderData?.layoutData
+  const [user, setUser] = useState<any>(loaderData?.user || null)
   const [today, setToday] = useState('')
 
   useEffect(() => {
     setToday(formatDateWithHijri(new Date(), { includeWeekday: true }))
-    async function loadProfile() {
-      try {
-        const auth = await checkAuth()
-        if (auth) {
-          setUser(auth)
-        }
-      } catch (err) {
-        console.error('Failed to load wali profile:', err)
-      }
+    if (loaderData?.user) {
+      setUser(loaderData.user)
     }
-    loadProfile()
-  }, [])
+  }, [loaderData?.user])
 
   const navItems = [
     { name: "Beranda", path: "/wali", icon: <Home className="w-5 h-5" strokeWidth={1.5} /> },

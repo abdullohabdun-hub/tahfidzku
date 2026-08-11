@@ -12,33 +12,35 @@ import { RoleSwitcher } from "../components/shared/RoleSwitcher"
 import { formatDateWithHijri } from "../lib/hijri-date"
 
 export const Route = createFileRoute('/ustadz')({
+  loader: async () => {
+    try {
+      const [auth, tenantRes] = await Promise.all([
+        checkAuth(),
+        getTenantInfo()
+      ])
+      return {
+        user: auth,
+        tenantName: tenantRes.success && tenantRes.data ? tenantRes.data.namaLembaga : 'TahfidzKu'
+      }
+    } catch (err) {
+      return { user: null, tenantName: 'TahfidzKu' }
+    }
+  },
   component: UstadzLayout,
 })
 
 function UstadzLayout() {
   const location = useLocation()
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
-  const [tenantName, setTenantName] = useState('Memuat...')
+  const loaderData = Route.useLoaderData()
+  const [user, setUser] = useState<any>(loaderData?.user || null)
+  const tenantName = loaderData?.tenantName || 'TahfidzKu'
 
   useEffect(() => {
-    async function loadProfile() {
-      try {
-        const auth = await checkAuth()
-        if (auth) {
-          setUser(auth)
-          const tenantRes = await getTenantInfo()
-          if (tenantRes.success && tenantRes.data) {
-            setTenantName(tenantRes.data.namaLembaga)
-          }
-        }
-      } catch (err) {
-        console.error('Failed to load layout profile:', err)
-        setTenantName('TahfidzKu')
-      }
+    if (loaderData?.user) {
+      setUser(loaderData.user)
     }
-    loadProfile()
-  }, [])
+  }, [loaderData?.user])
 
   const [unreadCount, setUnreadCount] = useState(0)
   const fetchUnreadCount = useServerFn(getUnreadCount)
@@ -100,7 +102,7 @@ function UstadzLayout() {
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
               <h1 className="text-sm font-bold text-emerald-700 leading-tight">
-                {user?.nama || "Ustadz 1"}
+                {user?.nama || "Ustadz"}
               </h1>
               {user?.roles && user.roles.length > 1 ? (
                 <RoleSwitcher user={user} currentRole="ustadz" />
