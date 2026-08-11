@@ -1,8 +1,7 @@
 import { createFileRoute, redirect, Link, useNavigate } from '@tanstack/react-router'
-import { getRequest } from '@tanstack/react-start/server'
 import { useState } from 'react'
 import { checkAuth, login } from '../server-fns/auth'
-import { resolveTenantFromHost } from '../lib/tenant-resolver'
+import { resolveTenantContextServer } from '../server-fns/tenant-domain'
 import { BookOpen, Shield, Smartphone, ArrowRight, CheckCircle2 } from "lucide-react"
 import { Button, buttonVariants } from "../components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card"
@@ -33,8 +32,7 @@ export const Route = createFileRoute('/')({
   },
   loader: async () => {
     try {
-      const host = getRequest()?.headers.get('host')
-      const tenant = await resolveTenantFromHost(host)
+      const tenant = await resolveTenantContextServer()
       return { tenant }
     } catch (err) {
       return { tenant: null }

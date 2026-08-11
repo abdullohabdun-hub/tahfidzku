@@ -202,3 +202,17 @@ export const removeCustomDomain = createServerFn({ method: 'POST' })
       return handleError(err)
     }
   })
+
+export const resolveTenantContextServer = createServerFn({ method: 'GET' })
+  .handler(async () => {
+    try {
+      const { getRequest } = await import('@tanstack/react-start/server')
+      const { resolveTenantFromHost } = await import('../lib/tenant-resolver')
+      const host = getRequest()?.headers.get('host')
+      const tenant = await resolveTenantFromHost(host)
+      return tenant
+    } catch (err) {
+      return null
+    }
+  })
+
