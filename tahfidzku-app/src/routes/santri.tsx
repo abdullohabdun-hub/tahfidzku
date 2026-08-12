@@ -16,6 +16,7 @@ export const Route = createFileRoute('/santri')({
       return { user: null }
     }
   },
+  staleTime: 5 * 60 * 1000,
   component: SantriLayout,
 })
 

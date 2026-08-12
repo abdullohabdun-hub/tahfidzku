@@ -20,37 +20,42 @@ export const Route = createFileRoute('/admin')({
       }
     }
   },
+  loader: async () => {
+    try {
+      const [auth, tenantRes] = await Promise.all([
+        checkAuth(),
+        getTenantInfo()
+      ])
+      return {
+        user: auth,
+        tenantData: tenantRes.success ? tenantRes.data : null
+      }
+    } catch (err) {
+      return { user: null, tenantData: null }
+    }
+  },
+  staleTime: 5 * 60 * 1000,
   component: AdminLayout,
 })
 
 function AdminLayout() {
   const location = useLocation()
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
-  const [tenantName, setTenantName] = useState('Memuat...')
+  const loaderData = Route.useLoaderData()
+  const user = loaderData?.user || null
+  const tenantName = loaderData?.tenantData?.namaLembaga || 'TahfidzKu'
   
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
 
   useEffect(() => {
-    async function loadProfile() {
-      const auth = await checkAuth()
-      if (auth) {
-        setUser(auth)
-        const tenantRes = await getTenantInfo()
-        if (tenantRes.success && tenantRes.data) {
-          setTenantName(tenantRes.data.namaLembaga)
-          if (tenantRes.data.themeConfigured && tenantRes.data.themeColor) {
-            const oklch = hexToOklch(tenantRes.data.themeColor)
-            document.documentElement.style.setProperty('--primary', oklch)
-            document.documentElement.style.setProperty('--sidebar-primary', oklch)
-          }
-        }
-      }
+    if (loaderData?.tenantData?.themeConfigured && loaderData?.tenantData?.themeColor) {
+      const oklch = hexToOklch(loaderData.tenantData.themeColor)
+      document.documentElement.style.setProperty('--primary', oklch)
+      document.documentElement.style.setProperty('--sidebar-primary', oklch)
     }
-    loadProfile()
-  }, [])
+  }, [loaderData?.tenantData])
 
   // Auto-close mobile sidebar when route changes
   useEffect(() => {
@@ -197,7 +202,7 @@ function AdminLayout() {
               </h1>
             </div>
             
-            <RoleSwitcher user={user} currentRole="admin" />
+            {user && <RoleSwitcher user={user} currentRole="admin" />}
           </div>
 
           <div className="flex items-center gap-4">

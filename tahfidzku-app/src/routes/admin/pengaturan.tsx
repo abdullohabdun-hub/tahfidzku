@@ -187,6 +187,7 @@ function PengaturanPage() {
       />
 
       <DomainSettings
+        key={`${slug}-${customDomain}-${customDomainStatus}`}
         slug={slug}
         initialCustomDomain={customDomain}
         initialCustomDomainStatus={customDomainStatus}

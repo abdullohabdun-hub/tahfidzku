@@ -11,6 +11,32 @@ import { success, handleError } from '../lib/response'
 import { AuthenticationError, ValidationError } from '../lib/errors'
 import { sanitizeCustomDomainInput, isValidCustomDomain } from '../lib/domain-utils'
 
+// ---------------------------------------------------------------------------
+// Helper: Cek apakah DNS domain sudah diarahkan dengan benar ke Vercel.
+//
+// Menggunakan endpoint /v6/domains/{domain}/config yang mengembalikan field
+// `misconfigured: boolean`. Ini adalah sumber kebenaran DNS aktual, berbeda
+// dari field `verified` di endpoint project domain yang hanya mengindikasikan
+// "tidak ada konflik kepemilikan" — BUKAN indikasi DNS/SSL sudah beres.
+//
+// Referensi: https://vercel.com/docs/rest-api/endpoints/domains#get-a-domain-configuration
+// ---------------------------------------------------------------------------
+async function checkDomainMisconfigured(domain: string, vercelToken: string): Promise<boolean> {
+  const res = await fetch(
+    `https://api.vercel.com/v6/domains/${encodeURIComponent(domain)}/config`,
+    { headers: { Authorization: `Bearer ${vercelToken}` } }
+  )
+  if (!res.ok) {
+    // Kalau endpoint config gagal (misal domain belum pernah terdaftar),
+    // kita asumsikan misconfigured = true (aman: default ke pending).
+    return true
+  }
+  const json = await res.json()
+  // `misconfigured: true`  → DNS belum diarahkan ke Vercel, SSL belum terbit
+  // `misconfigured: false` → DNS sudah benar, SSL aktif
+  return json.misconfigured === true
+}
+
 const VERCEL_PROJECT = 'tahfidzku-app'
 
 export const addCustomDomain = createServerFn({ method: 'POST' })
@@ -82,24 +108,36 @@ export const addCustomDomain = createServerFn({ method: 'POST' })
         throw new ValidationError(result.error?.message || 'Gagal mendaftarkan domain ke Vercel.')
       }
 
+      // PENTING: Jangan gunakan result.verified dari POST response untuk menentukan
+      // status 'active'. Field `verified` di Vercel hanya berarti "tidak ada konflik
+      // kepemilikan" — BUKAN "DNS sudah diarahkan dan SSL sudah aktif".
+      // Domain yang baru didaftarkan SELALU dimulai sebagai 'pending'.
+      // Status akan diperbarui oleh checkCustomDomainStatus setelah admin konfirmasi
+      // bahwa DNS sudah diarahkan.
       await db
         .update(tenants)
         .set({
           customDomain: normalizedDomain,
-          customDomainStatus: result.verified ? 'active' : 'pending',
-          customDomainVerifiedAt: result.verified ? new Date() : null,
+          customDomainStatus: 'pending',
+          customDomainVerifiedAt: null,
         })
         .where(eq(tenants.id, tenantId))
 
       return success(
         {
           domain: normalizedDomain,
-          verified: result.verified ?? false,
+          status: 'pending' as const,
+          // Kirimkan verification hints (TXT record dll) ke UI supaya admin tahu
+          // apa yang harus dikonfigurasi di DNS mereka.
+          verified: false,
           verification: result.verification ?? null,
         },
-        'Domain berhasil didaftarkan. Silakan arahkan CNAME record DNS Anda ke cname.vercel-dns.com'
+        'Domain berhasil didaftarkan. Silakan arahkan CNAME record DNS Anda ke cname.vercel-dns.com, lalu klik "Cek Status" setelah DNS propagasi selesai (biasanya 5–60 menit).'
       )
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.code === '23505' || err?.cause?.code === '23505') {
+        return handleError(new ValidationError('Domain ini sudah terdaftar untuk lembaga lain.'))
+      }
       return handleError(err)
     }
   })
@@ -129,32 +167,48 @@ export const checkCustomDomainStatus = createServerFn({ method: 'POST' })
         throw new Error('VERCEL_API_TOKEN belum dikonfigurasi di server.')
       }
 
-      const res = await fetch(
-        `https://api.vercel.com/v9/projects/${VERCEL_PROJECT}/domains/${domain}`,
-        {
-          headers: { Authorization: `Bearer ${vercelToken}` },
-        }
+      // --- Step 1: Cek kepemilikan / konflik domain via endpoint project ---
+      const projectRes = await fetch(
+        `https://api.vercel.com/v9/projects/${VERCEL_PROJECT}/domains/${encodeURIComponent(domain)}`,
+        { headers: { Authorization: `Bearer ${vercelToken}` } }
       )
-      const result = await res.json()
+      const projectJson = await projectRes.json()
 
-      if (!res.ok) {
-        throw new ValidationError(result.error?.message || 'Gagal mengecek status domain dari Vercel.')
+      if (!projectRes.ok) {
+        throw new ValidationError(projectJson.error?.message || 'Gagal mengecek status domain dari Vercel.')
       }
 
-      const newStatus = result.verified ? 'active' : 'pending'
+      // --- Step 2: Cek konfigurasi DNS aktual via endpoint /v6/domains/{domain}/config ---
+      // Endpoint ini adalah satu-satunya cara akurat untuk mengetahui apakah DNS
+      // sudah diarahkan ke Vercel dan SSL sudah bisa diterbitkan.
+      const isMisconfigured = await checkDomainMisconfigured(domain, vercelToken)
+
+      // Status 'active' HANYA boleh di-set kalau KEDUA kondisi ini terpenuhi:
+      // 1. verified === true  (tidak ada konflik kepemilikan di Vercel)
+      // 2. misconfigured === false (DNS sudah benar-benar diarahkan ke Vercel)
+      const isVerified = projectJson.verified === true
+      const isFullyActive = isVerified && !isMisconfigured
+
+      const newStatus = isFullyActive ? 'active' : 'pending'
       await db
         .update(tenants)
         .set({
           customDomainStatus: newStatus,
-          customDomainVerifiedAt: result.verified ? new Date() : null,
+          customDomainVerifiedAt: isFullyActive ? new Date() : null,
         })
         .where(eq(tenants.id, tenantId))
 
       return success({
         status: newStatus,
-        verified: result.verified ?? false,
-        verification: result.verification ?? null,
-      }, result.verified ? 'Domain sudah aktif dan terverifikasi!' : 'Domain masih dalam proses verifikasi DNS.')
+        verified: isVerified,
+        misconfigured: isMisconfigured,
+        verification: projectJson.verification ?? null,
+      }, isFullyActive
+        ? 'Domain sudah aktif dan terverifikasi! SSL akan aktif dalam beberapa menit.'
+        : isVerified
+          ? 'Kepemilikan domain terverifikasi, tapi DNS belum diarahkan ke Vercel. Pastikan CNAME record sudah ditambahkan di panel DNS lembaga Anda.'
+          : 'Domain masih dalam proses verifikasi. Silakan tambahkan DNS record sesuai instruksi di bawah.'
+      )
     } catch (err) {
       return handleError(err)
     }

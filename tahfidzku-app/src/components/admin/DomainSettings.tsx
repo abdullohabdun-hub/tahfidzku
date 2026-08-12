@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Globe, Copy, Check, ExternalLink, Loader2, RefreshCw, Trash2, ShieldCheck, AlertCircle } from 'lucide-react'
 import { addCustomDomain, checkCustomDomainStatus, removeCustomDomain } from '../../server-fns/tenant-domain'
 import { sanitizeCustomDomainInput, isValidCustomDomain } from '../../lib/domain-utils'
@@ -25,6 +25,11 @@ export function DomainSettings({
   const [domainInput, setDomainInput] = useState('')
   const [customDomain, setCustomDomain] = useState<string | null>(initialCustomDomain)
   const [domainStatus, setDomainStatus] = useState<'none' | 'pending' | 'active' | 'failed'>(initialCustomDomainStatus)
+
+  useEffect(() => {
+    setCustomDomain(initialCustomDomain)
+    setDomainStatus(initialCustomDomainStatus)
+  }, [initialCustomDomain, initialCustomDomainStatus])
 
   const [submitting, setSubmitting] = useState(false)
   const [checking, setChecking] = useState(false)
@@ -59,7 +64,7 @@ export function DomainSettings({
       const res = await addCustomDomain({ data: { domain: sanitized } })
       if (res.success && res.data) {
         setCustomDomain(res.data.domain)
-        setDomainStatus(res.data.verified ? 'active' : 'pending')
+        setDomainStatus((res.data.status as any) || 'pending')
         setDomainInput('')
         toast.success(res.message || 'Domain berhasil didaftarkan')
         if (onDomainUpdated) onDomainUpdated()

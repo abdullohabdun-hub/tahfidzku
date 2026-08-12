@@ -13,53 +13,36 @@ export const Route = createFileRoute('/admin/')({
   component: Dashboard,
   loader: async () => {
     try {
-      const rubrikRes = await getAllRubrikTenant()
-      const agregatRes = await getAgregatSantriDashboard()
+      const [rubrikRes, agregatRes, statsRes] = await Promise.all([
+        getAllRubrikTenant(),
+        getAgregatSantriDashboard(),
+        getAdminDashboardStats()
+      ])
       return {
         rubrikAktif: rubrikRes,
         agregat: agregatRes.success ? agregatRes.data : null,
+        statsData: statsRes.success ? statsRes.data : null,
         authError: null
       }
     } catch (err: any) {
       if (isRedirect(err)) throw err
-      return { rubrikAktif: [], agregat: null, authError: { message: 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.', code: 'NETWORK_ERROR' } }
+      return {
+        rubrikAktif: [],
+        agregat: null,
+        statsData: null,
+        authError: { message: 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.', code: 'NETWORK_ERROR' }
+      }
     }
-  }
+  },
+  staleTime: 60 * 1000,
 })
 
 function Dashboard() {
-  const { rubrikAktif, authError, agregat } = Route.useLoaderData()
+  const { rubrikAktif, authError, agregat, statsData } = Route.useLoaderData()
 
   const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-  
-  const [statsData, setStatsData] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
 
   if (authError) return <AuthErrorAlert error={authError} />
-
-  useEffect(() => {
-    async function fetchStats() {
-      try {
-        const res = await getAdminDashboardStats()
-        if (res.success && res.data) {
-          setStatsData(res.data)
-        }
-      } catch (err) {
-        console.error(err)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchStats()
-  }, [])
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-12 text-primary min-h-[50vh]">
-        <Loader2 className="animate-spin w-8 h-8" />
-      </div>
-    )
-  }
 
   const stats = [
     {

@@ -26,6 +26,7 @@ export const Route = createFileRoute('/ustadz')({
       return { user: null, tenantName: 'TahfidzKu' }
     }
   },
+  staleTime: 5 * 60 * 1000,
   component: UstadzLayout,
 })
 

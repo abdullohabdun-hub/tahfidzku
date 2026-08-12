@@ -50,21 +50,6 @@ export const Route = createRootRoute({
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
-  useEffect(() => {
-    // Dynamic theme-color meta update post-login
-    checkAuth().then(async (user) => {
-      if (user) {
-        const { getTenantInfo } = await import('../server-fns/admin-settings')
-        const res = await getTenantInfo()
-        if (res.success && res.data && res.data.themeConfigured && res.data.themeColor) {
-          const metaThemeColor = document.querySelector('meta[name="theme-color"]')
-          if (metaThemeColor) {
-            metaThemeColor.setAttribute('content', res.data.themeColor)
-          }
-        }
-      }
-    })
-  }, [])
 
   return (
     <html lang="en">
