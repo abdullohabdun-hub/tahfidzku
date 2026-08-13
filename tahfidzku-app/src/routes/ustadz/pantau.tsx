@@ -33,6 +33,7 @@ export const getPantauanMurojaah = createServerFn({ method: 'GET' })
           surat: setoran.surah,
           kualitas: setoran.kualitas,
           penilaianKustom: setoran.penilaianKustom,
+          santriId: santri.id,
           santriNama: santri.nama,
           ditinjauOlehUstadz: setoran.ditinjauOlehUstadz,
         })

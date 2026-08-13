@@ -4,22 +4,26 @@ import { useState, useEffect } from "react"
 import { HelpTicketButton } from "../components/tiket/HelpTicketButton"
 import { getWaliLayout } from "../server-fns/wali-layout"
 import { checkAuth } from "../server-fns/auth"
+import { getTenantInfo } from "../server-fns/admin-settings"
 import { formatDateWithHijri } from "../lib/hijri-date"
+import { useTenantTheme } from "../lib/useTenantTheme"
 
 export const Route = createFileRoute('/wali')({
   loader: async () => {
     try {
-      const [res, auth] = await Promise.all([
+      const [res, auth, tenantRes] = await Promise.all([
         getWaliLayout(),
-        checkAuth()
+        checkAuth(),
+        getTenantInfo()
       ])
       return {
         layoutData: res.success ? res.data : null,
-        user: auth
+        user: auth,
+        tenantData: tenantRes.success ? tenantRes.data : null,
       }
     } catch (error) {
       console.error(error)
-      return { layoutData: null, user: null }
+      return { layoutData: null, user: null, tenantData: null }
     }
   },
   staleTime: 60 * 60 * 1000, // Cache for 1 hour
@@ -31,6 +35,9 @@ function WaliLayout() {
   const layoutData = loaderData?.layoutData
   const [user, setUser] = useState<any>(loaderData?.user || null)
   const [today, setToday] = useState('')
+
+  // Inject CSS variable tema per-lembaga (shared hook)
+  useTenantTheme(loaderData?.tenantData)
 
   useEffect(() => {
     setToday(formatDateWithHijri(new Date(), { includeWeekday: true }))
@@ -54,7 +61,7 @@ function WaliLayout() {
       <header className="bg-white border-b border-slate-200 px-4 py-2.5 sticky top-0 z-50 shadow-xs">
         <div className="flex justify-between items-center">
           <div className="flex flex-col">
-            <h1 className="text-sm font-bold text-emerald-700 leading-tight">
+            <h1 className="text-sm font-bold text-slate-800 leading-tight">
               {user?.nama || "Wali"}
             </h1>
             <p className="text-[11px] text-slate-500 font-medium leading-normal mt-0.5">
@@ -63,7 +70,7 @@ function WaliLayout() {
           </div>
           <div className="flex items-center gap-2">
             <HelpTicketButton baseUrl="/wali/tiket" />
-            <Link to="/wali/profil" className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs border border-emerald-200 uppercase hover:ring-2 hover:ring-emerald-500 transition-all">
+            <Link to="/wali/profil" className="w-7 h-7 rounded-full bg-primary/15 text-primary flex items-center justify-center font-bold text-xs border border-primary/30 uppercase hover:ring-2 hover:ring-primary transition-all">
               {user?.nama ? user.nama.substring(0, 2) : "WA"}
             </Link>
           </div>
@@ -85,7 +92,7 @@ function WaliLayout() {
                 key={item.path}
                 to={item.path}
                 className={`flex flex-col items-center justify-center w-full h-full transition-all duration-200
-                  ${isActive ? "text-emerald-600 space-y-1" : "text-slate-400 hover:text-slate-600"}
+                  ${isActive ? "text-primary space-y-1 font-bold" : "text-slate-400 hover:text-slate-600"}
                 `}
               >
                 <div className={`${isActive ? 'scale-110' : 'scale-100'} transition-transform`}>

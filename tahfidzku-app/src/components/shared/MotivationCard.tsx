@@ -54,8 +54,8 @@ export function MotivationCard() {
   }
 
   return (
-    <section 
-      className="relative bg-gradient-to-br from-emerald-900 to-emerald-950 border border-emerald-800/80 rounded-2xl p-5 text-white shadow-md overflow-hidden select-none"
+    <section
+      className="relative bg-primary border border-primary/80 rounded-2xl p-5 text-white shadow-md overflow-hidden select-none"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={() => setIsPaused(true)}
@@ -66,9 +66,9 @@ export function MotivationCard() {
         <Quote className="w-20 h-20 text-white" />
       </div>
 
-      {/* Control Header (No Title Text, only slide counter & navigation buttons) */}
+      {/* Control Header */}
       <div className="flex items-center justify-between mb-3">
-        <div className="text-[11px] text-emerald-200/80 font-medium tracking-wide">
+        <div className="text-[11px] text-white/70 font-medium tracking-wide">
           {currentSlide + 1} / {totalSlides}
         </div>
         <div className="flex items-center gap-1.5 z-10">
@@ -91,23 +91,20 @@ export function MotivationCard() {
         </div>
       </div>
 
-      {/* Content Body: Teks Arab → Terjemahan → Sumber */}
+      {/* Content Body: Teks Arab -> Terjemahan -> Sumber */}
       <div className="min-h-[110px] flex flex-col justify-center my-1 space-y-3 z-10 relative">
-        {/* Teks Arab (Font Noto Naskh Arabic, ~1.4x terjemahan, leading-loose for harakat) */}
-        <p 
-          dir="rtl" 
-          className="font-arabic text-xl sm:text-2xl text-emerald-50 leading-[1.9] text-right font-normal tracking-wide"
+        <p
+          dir="rtl"
+          className="font-arabic text-xl sm:text-2xl text-white leading-[1.9] text-right font-normal tracking-wide"
         >
           {activeMotivasi.teksArab}
         </p>
 
-        {/* Terjemahan Indonesia */}
-        <p className="text-xs sm:text-sm font-medium text-emerald-100/90 leading-relaxed">
+        <p className="text-xs sm:text-sm font-medium text-white/90 leading-relaxed">
           "{activeMotivasi.terjemahan}"
         </p>
 
-        {/* Sumber & Derajat */}
-        <p className="text-xs text-emerald-300/90 font-medium italic text-right">
+        <p className="text-xs text-white/70 font-medium italic text-right">
           {formatSumber(activeMotivasi)}
         </p>
       </div>
@@ -119,7 +116,7 @@ export function MotivationCard() {
             key={idx}
             onClick={() => goToSlide(idx)}
             className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
-              idx === currentSlide ? "w-5 bg-emerald-400" : "w-1.5 bg-white/20 hover:bg-white/40"
+              idx === currentSlide ? "w-5 bg-white/80" : "w-1.5 bg-white/20 hover:bg-white/40"
             }`}
             aria-label={`Slide ${idx + 1}`}
           />

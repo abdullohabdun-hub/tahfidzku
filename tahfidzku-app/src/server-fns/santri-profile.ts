@@ -1,5 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
-import { and, eq, desc, gte } from 'drizzle-orm'
+import { and, eq, desc, gte, inArray } from 'drizzle-orm'
 import { db } from '../db'
 import { santri, kelas, setoran, setoranIqra } from '../db/schema'
 import { getAuthSession } from '../middleware/auth.middleware'
@@ -13,35 +13,44 @@ export const getSantriProfileDetail = createServerFn({ method: 'POST' })
       const session = await getAuthSession()
       if (!session) throw new AuthenticationError()
       
-      // Explicit Allow-list Guard
-      if (!['admin', 'ustadz'].includes(session.user.role)) {
-        throw new ForbiddenError('Akses profil detail saat ini dibatasi untuk staf (Fase 1).')
-      }
-
       const isUstadz = session.user.role === 'ustadz'
+      const isSantri = session.user.role === 'santri'
+
+      if (!['admin', 'ustadz', 'santri'].includes(session.user.role)) {
+        throw new ForbiddenError('Akses ditolak.')
+      }
 
       // Ownership Check & Tenant Isolation
       const [profile] = await db.select({
         santri: santri,
         kelasNama: kelas.nama,
         tipeKelas: kelas.tipeKelas,
+        kelasUstadzId: kelas.ustadzId,
       }).from(santri)
         .leftJoin(kelas, eq(santri.kelasId, kelas.id))
         .where(and(
           eq(santri.tenantId, session.user.tenantId),
           eq(santri.id, santriId),
-          isUstadz ? eq(kelas.ustadzId, session.user.id) : undefined
         ))
         .limit(1)
 
       if (!profile) {
-        throw new Error('Santri tidak ditemukan atau Anda tidak memiliki akses.')
+        throw new ForbiddenError('Santri tidak ditemukan atau Anda tidak memiliki akses.')
+      }
+
+      if (isUstadz && profile.kelasUstadzId !== session.user.id) {
+        throw new ForbiddenError('Santri tidak ditemukan atau Anda tidak memiliki akses.')
+      }
+
+      if (isSantri && session.user.santriId !== santriId && profile.santri.id !== santriId) {
+        throw new ForbiddenError('Anda hanya dapat mengakses profil milik Anda sendiri.')
       }
 
       const isIqra = profile.santri.tahapSantri === 'iqra'
       
       let distribusiSetoran = { ziyadah: 0, sabqi: 0, manzil: 0 }
       let trendNilai: any[] = []
+      let lastMurojaah = { lastSabqi: null as any, lastManzil: null as any }
 
       if (!isIqra) {
         const last30Days = new Date()
@@ -62,11 +71,37 @@ export const getSantriProfileDetail = createServerFn({ method: 'POST' })
           else if (s.jenis === 'manzil') distribusiSetoran.manzil++
         })
 
-        // TODO: Map to actual trend chart for tahfidz scores
         trendNilai = recentSetoran.map(s => ({
           tanggal: s.tanggalSetoran,
           nilai: s.skorKualitas
         }))
+
+        const lastMurojaahList = await db
+          .select({
+            id: setoran.id,
+            jenis: setoran.jenis,
+            juz: setoran.juz,
+            juzMulai: setoran.juzMulai,
+            juzSelesai: setoran.juzSelesai,
+            halamanAwal: setoran.halamanAwal,
+            halamanAkhir: setoran.halamanAkhir,
+            surah: setoran.surah,
+            tanggalSetoran: setoran.tanggalSetoran,
+            skorKualitas: setoran.skorKualitas,
+            createdAt: setoran.createdAt,
+          })
+          .from(setoran)
+          .where(
+            and(
+              eq(setoran.tenantId, session.user.tenantId),
+              eq(setoran.santriId, santriId),
+              inArray(setoran.jenis, ['sabqi', 'manzil'])
+            )
+          )
+          .orderBy(desc(setoran.createdAt))
+
+        lastMurojaah.lastSabqi = lastMurojaahList.find(s => s.jenis === 'sabqi') || null
+        lastMurojaah.lastManzil = lastMurojaahList.find(s => s.jenis === 'manzil') || null
       }
 
       return success({
@@ -74,7 +109,8 @@ export const getSantriProfileDetail = createServerFn({ method: 'POST' })
         kelasNama: profile.kelasNama,
         tipeKelas: profile.tipeKelas,
         distribusiSetoran,
-        trendNilai
+        trendNilai,
+        lastMurojaah
       }, "Berhasil mengambil profil santri")
 
     } catch (err) {

@@ -169,3 +169,21 @@ Agen tidak boleh mulai mengeksekusi langkah-langkah dalam Implementation Plan ha
 ## Validasi URL Database Sebelum Modifikasi
 **Wajib dijalankan sebelum eksekusi script DB:**
 Sebelum menjalankan migrate.ts atau perintah apapun yang menyentuh database, WAJIB tampilkan dan minta konfirmasi eksplisit hostname/branch database yang akan dikenai, sebelum eksekusi — bukan sesudah.
+
+## Standard Visual Typography & Summary Card Styling
+**Wajib diterapkan konsisten pada semua halaman Admin, Ustadz, dan Santri:**
+
+1. **Hirarki Page Header**:
+   - h1: 	ext-2xl font-bold text-slate-900 (atau 	ext-slate-800) dengan 	racking-tight dan flex layout untuk ikon halaman.
+   - Deskripsi Subheader: 	ext-sm text-slate-500 mt-1 font-normal.
+
+2. **Struktur Summary/Metric Cards**:
+   - Kontainer: g-white rounded-2xl border border-slate-200/80 p-4 shadow-xs flex justify-between items-start.
+   - Judul Metrik: 	ext-xs font-semibold text-slate-500.
+   - Angka Utama: 	ext-2xl font-bold text-slate-900 mt-2 tracking-tight (atau ont-extrabold).
+   - Subteks / Status Badge: 	ext-[10px] text-slate-400 font-medium mt-1 (atau badge status 	ext-[10px] font-bold px-1.5 py-0.5 rounded).
+   - Badge Ikon (Kanan Atas): w-9 h-9 rounded-xl flex items-center justify-center shrink-0 dengan latar belakang lembut sesuai tema (mis. g-slate-100/80, g-emerald-50, g-amber-50).
+
+3. **Kemudahan Akses Navigasi Profile**:
+   - Nama pengguna/santri dan avatar pada daftar atau tabel HARUS dapat diklik secara intuitif sebagai pintu utama menuju detail profil.
+   - Hindari tombol aksensial berulang seperti "Profil >" jika nama/avatar sudah berfungsi sebagai link profil interaktif.

@@ -1183,6 +1183,69 @@ export function cariHalamanAbsolutUntukAyat(surahNomor, ayat) {
   return 1;
 }
 
+export function cariHalamanAbsolutUntukAyatOrNull(surahNomor: number, ayat: number): number | null {
+  for (const page of PAGES_DATA) {
+    const found = page.surahs.find(s => s.nomor === surahNomor && ayat >= s.ayatAwal && ayat <= s.ayatAkhir);
+    if (found) return page.halaman;
+  }
+  return null;
+}
+
+export function derivasiPrefillSabqiManzil(
+  posisiTerakhir: { surahNomor: number; ayat: number } | null | undefined
+): { juz: number; halamanAwal: string; halamanAkhir: string } | null {
+  if (!posisiTerakhir) return null;
+
+  const halamanAbsolut = cariHalamanAbsolutUntukAyatOrNull(
+    posisiTerakhir.surahNomor,
+    posisiTerakhir.ayat
+  );
+  if (halamanAbsolut === null) return null;
+
+  try {
+    const { juz, halamanRelatif } = halamanAbsolutKeRelatif(halamanAbsolut);
+    return {
+      juz,
+      halamanAwal: String(halamanRelatif),
+      halamanAkhir: String(halamanRelatif),
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function hitungKelanjutanMurojaah(
+  lastSetoran: { juzMulai?: number; juzSelesai?: number; halamanAkhir?: string | number } | null | undefined,
+  fallbackPosisi: { surahNomor: number; ayat: number } | null | undefined
+): { juz: number; halamanAwal: string; halamanAkhir: string } | null {
+  if (lastSetoran && lastSetoran.halamanAkhir !== undefined && lastSetoran.halamanAkhir !== null) {
+    const juz = lastSetoran.juzSelesai || lastSetoran.juzMulai || 30
+    const currentHal = typeof lastSetoran.halamanAkhir === 'number'
+      ? lastSetoran.halamanAkhir
+      : parseFloat(String(lastSetoran.halamanAkhir).replace(',', '.'))
+
+    if (!isNaN(currentHal)) {
+      const juzInfo = JUZ_TABLE.find(j => j.juz === juz)
+      const maxHalInJuz = juzInfo ? (juzInfo.halamanAkhir - juzInfo.halamanAwal + 1) : 20
+      let nextHal = Math.floor(currentHal) + 1
+      let nextJuz = juz
+
+      if (nextHal > maxHalInJuz) {
+        nextHal = 1
+        nextJuz = juz >= 30 ? 1 : juz + 1
+      }
+
+      return {
+        juz: nextJuz,
+        halamanAwal: String(nextHal),
+        halamanAkhir: String(nextHal),
+      }
+    }
+  }
+
+  return derivasiPrefillSabqiManzil(fallbackPosisi)
+}
+
 export function bangunUrutanHafalan(juzProgress) {
   if (!juzProgress || juzProgress.length === 0) return urutanJuzMundurDari30();
   

@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { useState, useEffect, useMemo } from 'react'
 import { ChevronDown, Loader2, AlertTriangle, Info } from 'lucide-react'
 import { getSantriList, setupSantriInitialHafalan } from '../../server-fns/santri'
@@ -11,17 +11,23 @@ import { AuthErrorAlert } from '../../components/AuthErrorAlert'
 
 export const Route = createFileRoute('/ustadz/input')({
   component: InputSetoranPage,
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      santriId: (search.santriId as string) || undefined,
+    }
+  },
 })
 
 function InputSetoranPage() {
   const navigate = useNavigate()
+  const searchParams = useSearch({ from: '/ustadz/input' })
   const [authError, setAuthError] = useState<{ message: string, code?: string } | null>(null)
 
   const [santriList, setSantriList] = useState<any[]>([])
   const [loadingInitial, setLoadingInitial] = useState(true)
   
   const [selectedKelasNama, setSelectedKelasNama] = useState<string>('Semua Kelas')
-  const [santriId, setSantriId] = useState('')
+  const [santriId, setSantriId] = useState(searchParams.santriId || '')
   const selectedSantri = useMemo(() => santriList.find(s => s.id === santriId), [santriId, santriList])
 
   const kelasList = useMemo(() => {
@@ -34,6 +40,10 @@ function InputSetoranPage() {
   }, [santriList, selectedKelasNama])
 
   useEffect(() => {
+    if (searchParams.santriId && santriList.some(s => s.id === searchParams.santriId)) {
+      setSantriId(searchParams.santriId)
+      return
+    }
     if (santriFiltered.length > 0) {
       if (!santriFiltered.find(s => s.id === santriId)) {
         setSantriId(santriFiltered[0].id)
@@ -41,7 +51,7 @@ function InputSetoranPage() {
     } else {
       setSantriId('')
     }
-  }, [santriFiltered, santriId])
+  }, [santriFiltered, santriId, searchParams.santriId, santriList])
 
   // Setup Hafalan Awal (Santri Baru)
   const [showSetup, setShowSetup] = useState(false)
@@ -84,7 +94,7 @@ function InputSetoranPage() {
       }
       if (res.data) {
         setSantriList(res.data)
-        setSantriId(prev => {
+        setSantriId((prev: any) => {
           if (prev && res.data.find(s => s.id === prev)) return prev
           return res.data.length > 0 ? res.data[0].id : ''
         })

@@ -8,8 +8,7 @@ import { getTenantInfo } from "../server-fns/admin-settings"
 import { HelpTicketButton } from "../components/tiket/HelpTicketButton"
 import { RoleSwitcher } from "../components/shared/RoleSwitcher"
 import { formatDateWithHijri } from "../lib/hijri-date"
-
-import { hexToOklch } from "../lib/theme-utils"
+import { useTenantTheme } from "../lib/useTenantTheme"
 
 export const Route = createFileRoute('/admin')({
   beforeLoad: async ({ location }) => {
@@ -49,13 +48,9 @@ function AdminLayout() {
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
 
-  useEffect(() => {
-    if (loaderData?.tenantData?.themeConfigured && loaderData?.tenantData?.themeColor) {
-      const oklch = hexToOklch(loaderData.tenantData.themeColor)
-      document.documentElement.style.setProperty('--primary', oklch)
-      document.documentElement.style.setProperty('--sidebar-primary', oklch)
-    }
-  }, [loaderData?.tenantData])
+  // Inject CSS variable tema per-lembaga via shared hook
+  useTenantTheme(loaderData?.tenantData)
+
 
   // Auto-close mobile sidebar when route changes
   useEffect(() => {

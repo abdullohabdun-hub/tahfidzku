@@ -1,7 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { getTodayWIB } from '../lib/dateUtils'
 import { precomputeRekapMingguan } from './cron'
-import { eq, and, desc, sql } from 'drizzle-orm'
+import { eq, and, desc, sql, inArray } from 'drizzle-orm'
 import { db } from '../db'
 import { setoran, santri, rubrikPenilaian } from '../db/schema'
 import { getAuthSession, requireRole } from '../middleware/auth.middleware'
@@ -860,6 +860,53 @@ export const submitFeedbackSetoran = createServerFn({ method: 'POST' })
       })
 
       return success(null, 'Feedback berhasil dikirim')
+    } catch (err) {
+      return handleError(err)
+    }
+  })
+
+// ═══════════════════════════════════════════════════════
+// 11. AMBIL SETORAN TERAKHIR PER JENIS (SABQI & MANZIL)
+// ═══════════════════════════════════════════════════════
+export const getRiwayatTerakhirPerJenis = createServerFn({ method: 'POST' })
+  .validator((data: unknown) => {
+    const schema = z.object({
+      santriId: z.string().uuid(),
+    })
+    return schema.parse(data)
+  })
+  .handler(async ({ data }) => {
+    try {
+      const session = await getAuthSession()
+      if (!session) throw new AuthenticationError()
+
+      const lastSetoranList = await db
+        .select({
+          jenis: setoran.jenis,
+          juzMulai: setoran.juzMulai,
+          juzSelesai: setoran.juzSelesai,
+          halamanAwal: setoran.halamanAwal,
+          halamanAkhir: setoran.halamanAkhir,
+          lintasJuz: setoran.lintasJuz,
+          createdAt: setoran.createdAt,
+        })
+        .from(setoran)
+        .where(
+          and(
+            eq(setoran.tenantId, session.user.tenantId),
+            eq(setoran.santriId, data.santriId),
+            inArray(setoran.jenis, ['sabqi', 'manzil'])
+          )
+        )
+        .orderBy(desc(setoran.createdAt))
+
+      const lastSabqi = lastSetoranList.find(s => s.jenis === 'sabqi') || null
+      const lastManzil = lastSetoranList.find(s => s.jenis === 'manzil') || null
+
+      return success({
+        lastSabqi,
+        lastManzil,
+      }, 'Berhasil mengambil setoran terakhir per jenis')
     } catch (err) {
       return handleError(err)
     }

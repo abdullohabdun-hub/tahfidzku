@@ -67,7 +67,7 @@ export function WeeklySetoranChart({ data, isLoading }: WeeklySetoranChartProps)
           />
           <Bar 
             dataKey="jumlah" 
-            fill={primaryColor} 
+            fill="var(--primary)" 
             radius={[4, 4, 0, 0]} 
             maxBarSize={50}
           />

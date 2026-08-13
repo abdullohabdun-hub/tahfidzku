@@ -8,6 +8,7 @@ import { getAdminDashboardStats, getAgregatSantriDashboard } from "../../server-
 import { getAllRubrikTenant } from "../../server-fns/rubrik"
 import { FormatPenilaian } from "../../components/FormatPenilaian"
 import { AuthErrorAlert } from "../../components/AuthErrorAlert"
+import { KATEGORI_COLORS } from "../../constants/kategori-colors"
 
 export const Route = createFileRoute('/admin/')({
   component: Dashboard,
@@ -39,8 +40,6 @@ export const Route = createFileRoute('/admin/')({
 
 function Dashboard() {
   const { rubrikAktif, authError, agregat, statsData } = Route.useLoaderData()
-
-  const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 
   if (authError) return <AuthErrorAlert error={authError} />
 
@@ -99,14 +98,9 @@ function Dashboard() {
         </div>
       )}
 
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">Ahlan wa Sahlan, Administrator!</h2>
-          <p className="text-slate-500 text-sm mt-1">Berikut adalah ringkasan aktivitas lembaga Anda hari ini.</p>
-        </div>
-        <div className="bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm inline-flex w-fit">
-          <p className="text-primary font-semibold text-sm">{today}</p>
-        </div>
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight text-slate-900">Ahlan wa Sahlan, Administrator!</h2>
+        <p className="text-slate-500 text-sm mt-1">Berikut adalah ringkasan aktivitas lembaga Anda hari ini.</p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -191,12 +185,18 @@ function Dashboard() {
                   infoTarget = `Juz ${juzVal || ''} Hal ${item.halamanAwal || ''}-${item.halamanAkhir || ''}`
                 }
 
+                const catColor = isIqra 
+                  ? 'bg-violet-100 text-violet-700' 
+                  : (KATEGORI_COLORS[item.jenis as keyof typeof KATEGORI_COLORS] 
+                      ? `${KATEGORI_COLORS[item.jenis as keyof typeof KATEGORI_COLORS].bg} ${KATEGORI_COLORS[item.jenis as keyof typeof KATEGORI_COLORS].text}` 
+                      : 'bg-emerald-100 text-emerald-700')
+
                 return (
                   <div key={i} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl transition-colors border border-transparent hover:border-slate-100 group">
                     <div>
                       <p className="font-semibold text-sm text-slate-900">{item.santriNama}</p>
                       <p className="text-xs text-slate-500 capitalize mt-0.5 group-hover:text-slate-600 transition-colors">
-                        <span className={`px-1.5 py-0.5 rounded mr-1.5 font-semibold text-[10px] uppercase tracking-wider ${isIqra ? 'bg-violet-100 text-violet-700' : 'bg-emerald-100 text-emerald-700'}`}>{isIqra ? 'Iqra' : item.jenis}</span>
+                        <span className={`px-1.5 py-0.5 rounded mr-1.5 font-semibold text-[10px] uppercase tracking-wider ${catColor}`}>{isIqra ? 'Iqra' : item.jenis}</span>
                         {infoTarget}
                       </p>
                     </div>

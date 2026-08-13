@@ -88,43 +88,54 @@ function UstadzDashboard() {
         <h3 className="text-xs font-semibold text-slate-500 px-1">Menu Cepat</h3>
         <div className="grid grid-cols-4 gap-2.5">
           <Link
-            to="/ustadz/pantau"
-            className="flex flex-col items-center justify-center bg-white border border-slate-200/80 p-3 rounded-xl shadow-xs hover:border-emerald-300 hover:bg-emerald-50/40 transition-all duration-200 group text-center"
+            to="/ustadz/santri"
+            search={{ status: 'semua', program: 'semua', q: '' }}
+            className="flex flex-col items-center justify-center bg-white border border-slate-200/80 p-3 rounded-xl shadow-xs hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 group text-center"
           >
-            <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-700 border border-slate-200/80 flex items-center justify-center mb-1.5 group-hover:bg-emerald-100 group-hover:text-emerald-700 group-hover:border-emerald-200 group-hover:scale-105 transition-all">
+            <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-700 border border-slate-200/80 flex items-center justify-center mb-1.5 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20 group-hover:scale-105 transition-all">
+              <Users className="w-5 h-5 text-primary" />
+            </div>
+            <span className="text-[11px] font-bold text-slate-700 group-hover:text-primary leading-tight">Daftar Santri</span>
+          </Link>
+
+          <Link
+            to="/ustadz/pantau"
+            className="flex flex-col items-center justify-center bg-white border border-slate-200/80 p-3 rounded-xl shadow-xs hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 group text-center"
+          >
+            <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-700 border border-slate-200/80 flex items-center justify-center mb-1.5 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20 group-hover:scale-105 transition-all">
               <Clock className="w-5 h-5" />
             </div>
-            <span className="text-[11px] font-bold text-slate-700 group-hover:text-emerald-800 leading-tight">Pantau Mandiri</span>
+            <span className="text-[11px] font-bold text-slate-700 group-hover:text-primary leading-tight">Pantau Mandiri</span>
           </Link>
 
           <Link
             to="/ustadz/ujian"
-            className="flex flex-col items-center justify-center bg-white border border-slate-200/80 p-3 rounded-xl shadow-xs hover:border-emerald-300 hover:bg-emerald-50/40 transition-all duration-200 group text-center"
+            className="flex flex-col items-center justify-center bg-white border border-slate-200/80 p-3 rounded-xl shadow-xs hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 group text-center"
           >
-            <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-700 border border-slate-200/80 flex items-center justify-center mb-1.5 group-hover:bg-emerald-100 group-hover:text-emerald-700 group-hover:border-emerald-200 group-hover:scale-105 transition-all">
+            <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-700 border border-slate-200/80 flex items-center justify-center mb-1.5 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20 group-hover:scale-105 transition-all">
               <Award className="w-5 h-5" />
             </div>
-            <span className="text-[11px] font-bold text-slate-700 group-hover:text-emerald-800 leading-tight">Ujian Santri</span>
+            <span className="text-[11px] font-bold text-slate-700 group-hover:text-primary leading-tight">Ujian Santri</span>
           </Link>
 
           <Link
             to="/ustadz/absensi"
-            className="flex flex-col items-center justify-center bg-white border border-slate-200/80 p-3 rounded-xl shadow-xs hover:border-emerald-300 hover:bg-emerald-50/40 transition-all duration-200 group text-center"
+            className="flex flex-col items-center justify-center bg-white border border-slate-200/80 p-3 rounded-xl shadow-xs hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 group text-center"
           >
-            <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-700 border border-slate-200/80 flex items-center justify-center mb-1.5 group-hover:bg-emerald-100 group-hover:text-emerald-700 group-hover:border-emerald-200 group-hover:scale-105 transition-all">
+            <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-700 border border-slate-200/80 flex items-center justify-center mb-1.5 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20 group-hover:scale-105 transition-all">
               <CalendarCheck className="w-5 h-5" />
             </div>
-            <span className="text-[11px] font-bold text-slate-700 group-hover:text-emerald-800 leading-tight">Laporan Absensi</span>
+            <span className="text-[11px] font-bold text-slate-700 group-hover:text-primary leading-tight">Laporan Absensi</span>
           </Link>
 
           <Link
             to="/ustadz/analitik"
-            className="flex flex-col items-center justify-center bg-white border border-slate-200/80 p-3 rounded-xl shadow-xs hover:border-emerald-300 hover:bg-emerald-50/40 transition-all duration-200 group text-center"
+            className="flex flex-col items-center justify-center bg-white border border-slate-200/80 p-3 rounded-xl shadow-xs hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 group text-center"
           >
-            <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-700 border border-slate-200/80 flex items-center justify-center mb-1.5 group-hover:bg-emerald-100 group-hover:text-emerald-700 group-hover:border-emerald-200 group-hover:scale-105 transition-all">
+            <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-700 border border-slate-200/80 flex items-center justify-center mb-1.5 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20 group-hover:scale-105 transition-all">
               <BarChart3 className="w-5 h-5" />
             </div>
-            <span className="text-[11px] font-bold text-slate-700 group-hover:text-emerald-800 leading-tight">Analitik Detail</span>
+            <span className="text-[11px] font-bold text-slate-700 group-hover:text-primary leading-tight">Analitik Detail</span>
           </Link>
         </div>
       </section>
@@ -133,28 +144,48 @@ function UstadzDashboard() {
       <section className="pt-1">
         <div className="flex justify-between items-center mb-2.5">
           <h3 className="text-xs font-semibold text-slate-500 px-1">Belum Setor Hari Ini</h3>
-          <Link to="/ustadz/pantau" className="text-emerald-700 text-xs font-bold hover:underline">Lihat Semua</Link>
+          <Link to="/ustadz/santri" search={{ status: 'belum_setor', program: 'semua', q: '' }} className="text-primary text-xs font-bold hover:underline">Lihat Semua</Link>
         </div>
         <div className="space-y-2.5">
           {data.belumSetor.length === 0 ? (
             <p className="text-sm text-slate-500 italic text-center py-4 bg-white rounded-xl border border-dashed border-slate-200">Semua santri sudah setor hari ini 🎉</p>
           ) : data.belumSetor.slice(0, 4).map((santri) => {
             const isIqra = santri.displayMode === 'iqra'
-            const targetLabel = isIqra ? `Iqra Jilid ${santri.jilidIqraTerakhir || 1}` : `Target: Juz ${santri.targetJuz}`
+            
+            let posLabel = 'Belum ada setoran'
+            if (isIqra) {
+              if (santri.jilidIqraTerakhir && santri.halamanIqraTerakhir) {
+                posLabel = `Jilid ${santri.jilidIqraTerakhir}, Hal. ${santri.halamanIqraTerakhir}`
+              } else if (santri.jilidIqraTerakhir) {
+                posLabel = `Jilid ${santri.jilidIqraTerakhir}`
+              }
+            } else {
+              if (santri.posisiTerakhir && santri.posisiTerakhir.surahNama && santri.posisiTerakhir.ayat) {
+                posLabel = `${santri.posisiTerakhir.surahNama} : Ayat ${santri.posisiTerakhir.ayat}`
+              }
+            }
+
             return (
               <div key={santri.id} className="group bg-white border border-slate-200/80 rounded-xl shadow-xs hover:shadow-md transition-all duration-200 p-3.5 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold border uppercase text-xs ${isIqra ? 'bg-violet-50 text-violet-600 border-violet-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}>
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold border uppercase text-xs ${isIqra ? 'bg-violet-50 text-violet-600 border-violet-200' : 'bg-primary/10 text-primary border-primary/20'}`}>
                     {santri.nama.charAt(0)}
                   </div>
                   <div>
-                    <p className="font-bold text-slate-800 text-sm">{santri.nama}</p>
-                    <p className="text-xs text-slate-500 font-medium mt-0.5">{targetLabel}</p>
+                    <Link
+                      to="/ustadz/santri/$santriId"
+                      params={{ santriId: santri.id }}
+                      className="font-bold text-slate-800 text-sm hover:underline hover:text-primary transition-colors"
+                    >
+                      {santri.nama}
+                    </Link>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">{posLabel}</p>
                   </div>
                 </div>
                 <Link 
                   to="/ustadz/input"
-                  className="bg-emerald-50 text-emerald-700 font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-emerald-100 transition-colors border border-emerald-200/60"
+                  search={{ santriId: santri.id }}
+                  className="bg-primary/10 text-primary font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-primary/20 transition-colors border border-primary/20"
                 >
                   Input
                 </Link>
@@ -177,13 +208,23 @@ function UstadzDashboard() {
             return (
               <div key={s.id} className="group bg-white border border-slate-200/80 rounded-xl shadow-xs hover:shadow-md transition-all duration-200 p-3.5 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold border uppercase text-xs ${isIqra ? 'bg-violet-50 text-violet-700 border-violet-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold border uppercase text-xs ${isIqra ? 'bg-violet-50 text-violet-700 border-violet-200' : 'bg-primary/10 text-primary border-primary/20'}`}>
                     {s.santriNama?.charAt(0) || 'S'}
                   </div>
                   <div>
-                    <p className="font-bold text-slate-800 text-sm">{s.santriNama}</p>
+                    {s.santriId ? (
+                      <Link
+                        to="/ustadz/santri/$santriId"
+                        params={{ santriId: s.santriId }}
+                        className="font-bold text-slate-800 text-sm hover:underline hover:text-primary transition-colors"
+                      >
+                        {s.santriNama}
+                      </Link>
+                    ) : (
+                      <p className="font-bold text-slate-800 text-sm">{s.santriNama}</p>
+                    )}
                     <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1 mt-0.5">
-                      <span className={`font-bold px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider ${isIqra ? 'text-violet-700 bg-violet-50' : 'text-emerald-700 bg-emerald-50'}`}>
+                      <span className={`font-bold px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider ${isIqra ? 'text-violet-700 bg-violet-50' : 'text-primary bg-primary/10'}`}>
                         {isIqra ? 'Iqra' : (s as any).jenis}
                       </span>
                       <span>•</span>
@@ -192,7 +233,7 @@ function UstadzDashboard() {
                     <FormatPenilaian item={s} />
                   </div>
                 </div>
-                <Link to="/ustadz/riwayat" className="flex items-center justify-center gap-1 bg-white text-slate-600 border border-slate-200 shadow-xs font-semibold px-2.5 py-1.5 rounded-lg text-xs hover:bg-slate-50 hover:text-emerald-700 transition-colors">
+                <Link to="/ustadz/riwayat" className="flex items-center justify-center gap-1 bg-white text-slate-600 border border-slate-200 shadow-xs font-semibold px-2.5 py-1.5 rounded-lg text-xs hover:bg-slate-50 hover:text-primary transition-colors">
                   <Edit className="w-3 h-3" /> Edit
                 </Link>
               </div>

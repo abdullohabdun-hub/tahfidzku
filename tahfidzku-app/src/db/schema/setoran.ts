@@ -6,7 +6,7 @@ import { tenants } from './tenants'
 import { santri } from './santri'
 import { users } from './users'
 import { sesiKelas } from './absensi'
-import { uniqueIndex } from 'drizzle-orm/pg-core'
+import { index, uniqueIndex } from 'drizzle-orm/pg-core'
 
 export const jenisSetoranEnum = pgEnum('jenis_setoran', ['ziyadah', 'sabqi', 'manzil'])
 export const kualitasEnum = pgEnum('kualitas_bacaan', ['lancar', 'mengulang', 'terbata'])
@@ -55,6 +55,10 @@ export const setoran = pgTable('setoran', {
   isBackdated: boolean('is_backdated').default(false).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => {
+  return {
+    idxSetoranSantriJenisCreated: index('idx_setoran_santri_jenis_created').on(table.santriId, table.jenis, table.createdAt),
+  }
 })
 
 export const rubrikPenilaian = pgTable('rubrik_penilaian', {

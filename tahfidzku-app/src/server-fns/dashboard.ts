@@ -5,10 +5,44 @@ import { santri, setoran, setoranIqra, users, kelas, tenants, waliSantri } from 
 import { getAuthSession, requireRole } from '../middleware/auth.middleware'
 import { success, handleError } from '../lib/response'
 import { AuthenticationError, ForbiddenError } from '../lib/errors'
-import { hitungProgresHalaman, kalkulasiJuzProgress } from '../lib/quranMapper'
+import { hitungProgresHalaman, kalkulasiJuzProgress, surahByNomor } from '../lib/quranMapper'
 import { hitungDailyStreak, hitungWeeklyStreak } from '../lib/streak'
 import { getSantriDisplayMode } from '../lib/santri-display'
 import { getTodayWIB } from '../lib/dateUtils'
+
+export async function getPosisiTerakhirBatch(
+  santriIds: string[],
+  tenantId: string
+): Promise<Map<string, { surahNomor: number; surahNama: string; ayat: number }>> {
+  const result = new Map<string, { surahNomor: number; surahNama: string; ayat: number }>()
+  if (!santriIds || santriIds.length === 0) return result
+
+  const rows = await db
+    .select({
+      id: santri.id,
+      posisiTerakhir: santri.posisiTerakhir,
+    })
+    .from(santri)
+    .where(
+      and(
+        eq(santri.tenantId, tenantId),
+        inArray(santri.id, santriIds)
+      )
+    )
+
+  for (const row of rows) {
+    if (row.posisiTerakhir && row.posisiTerakhir.surahNomor && row.posisiTerakhir.ayat) {
+      const sInfo = surahByNomor[row.posisiTerakhir.surahNomor]
+      result.set(row.id, {
+        surahNomor: row.posisiTerakhir.surahNomor,
+        surahNama: sInfo ? sInfo.nama : `Surah ${row.posisiTerakhir.surahNomor}`,
+        ayat: row.posisiTerakhir.ayat,
+      })
+    }
+  }
+
+  return result
+}
 
 export const getAdminDashboardStats = createServerFn({ method: 'POST' }).handler(
   async () => {
@@ -118,6 +152,8 @@ export const getUstadzDashboard = createServerFn({ method: 'POST' }).handler(
           targetJuz: santri.targetJuz,
           tahapSantri: santri.tahapSantri,
           jilidIqraTerakhir: santri.jilidIqraTerakhir,
+          halamanIqraTerakhir: santri.halamanIqraTerakhir,
+          posisiTerakhir: santri.posisiTerakhir,
         })
         .from(santri)
         .innerJoin(kelas, eq(santri.kelasId, kelas.id))
@@ -160,10 +196,27 @@ export const getUstadzDashboard = createServerFn({ method: 'POST' }).handler(
       setoranHariIni.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 
       const sudahSetorIds = setoranHariIni.map((s) => s.santriId)
-      const belumSetor = santriBinaan.filter((s) => !sudahSetorIds.includes(s.id)).map(s => ({
-        ...s,
-        displayMode: getSantriDisplayMode(s)
-      }))
+      const belumSetorSantri = santriBinaan.filter((s) => !sudahSetorIds.includes(s.id))
+      const belumSetorIds = belumSetorSantri.map((s) => s.id)
+
+      const posisiTerakhirBatchMap = await getPosisiTerakhirBatch(belumSetorIds, tenantId)
+
+      const belumSetor = belumSetorSantri.map(s => {
+        let pos = posisiTerakhirBatchMap.get(s.id) || null
+        if (!pos && s.posisiTerakhir && s.posisiTerakhir.surahNomor && s.posisiTerakhir.ayat) {
+          const sInfo = surahByNomor[s.posisiTerakhir.surahNomor]
+          pos = {
+            surahNomor: s.posisiTerakhir.surahNomor,
+            surahNama: sInfo ? sInfo.nama : `Surah ${s.posisiTerakhir.surahNomor}`,
+            ayat: s.posisiTerakhir.ayat,
+          }
+        }
+        return {
+          ...s,
+          displayMode: getSantriDisplayMode(s),
+          posisiTerakhir: pos,
+        }
+      })
 
       return success(
         {

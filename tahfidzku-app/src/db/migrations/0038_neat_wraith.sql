@@ -1,0 +1,1 @@
+CREATE INDEX "idx_setoran_santri_jenis_created" ON "setoran" USING btree ("santri_id","jenis","created_at");

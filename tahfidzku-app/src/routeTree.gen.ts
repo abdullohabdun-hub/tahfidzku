@@ -48,6 +48,7 @@ import { Route as AdminLaporanRouteImport } from './routes/admin/laporan'
 import { Route as AdminKelasRouteImport } from './routes/admin/kelas'
 import { Route as WaliTiketIndexRouteImport } from './routes/wali/tiket/index'
 import { Route as UstadzTiketIndexRouteImport } from './routes/ustadz/tiket/index'
+import { Route as UstadzSantriIndexRouteImport } from './routes/ustadz/santri.index'
 import { Route as SuperadminTiketIndexRouteImport } from './routes/superadmin/tiket/index'
 import { Route as SuperadminLembagaIndexRouteImport } from './routes/superadmin/lembaga/index'
 import { Route as SantriTiketIndexRouteImport } from './routes/santri/tiket/index'
@@ -60,6 +61,7 @@ import { Route as WaliTiketTiketIdRouteImport } from './routes/wali/tiket/$tiket
 import { Route as UstadzTiketBuatRouteImport } from './routes/ustadz/tiket/buat'
 import { Route as UstadzTiketTiketIdRouteImport } from './routes/ustadz/tiket/$tiketId'
 import { Route as UstadzSetoranSetIdRouteImport } from './routes/ustadz/setoran/$setId'
+import { Route as UstadzSantriSantriIdRouteImport } from './routes/ustadz/santri.$santriId'
 import { Route as SuperadminTiketBuatRouteImport } from './routes/superadmin/tiket/buat'
 import { Route as SuperadminTiketTiketIdRouteImport } from './routes/superadmin/tiket/$tiketId'
 import { Route as SuperadminLembagaTenantIdRouteImport } from './routes/superadmin/lembaga/$tenantId'
@@ -267,6 +269,11 @@ const UstadzTiketIndexRoute = UstadzTiketIndexRouteImport.update({
   path: '/tiket/',
   getParentRoute: () => UstadzRoute,
 } as any)
+const UstadzSantriIndexRoute = UstadzSantriIndexRouteImport.update({
+  id: '/santri/',
+  path: '/santri/',
+  getParentRoute: () => UstadzRoute,
+} as any)
 const SuperadminTiketIndexRoute = SuperadminTiketIndexRouteImport.update({
   id: '/tiket/',
   path: '/tiket/',
@@ -325,6 +332,11 @@ const UstadzTiketTiketIdRoute = UstadzTiketTiketIdRouteImport.update({
 const UstadzSetoranSetIdRoute = UstadzSetoranSetIdRouteImport.update({
   id: '/setoran/$setId',
   path: '/setoran/$setId',
+  getParentRoute: () => UstadzRoute,
+} as any)
+const UstadzSantriSantriIdRoute = UstadzSantriSantriIdRouteImport.update({
+  id: '/santri/$santriId',
+  path: '/santri/$santriId',
   getParentRoute: () => UstadzRoute,
 } as any)
 const SuperadminTiketBuatRoute = SuperadminTiketBuatRouteImport.update({
@@ -427,6 +439,7 @@ export interface FileRoutesByFullPath {
   '/superadmin/lembaga/$tenantId': typeof SuperadminLembagaTenantIdRoute
   '/superadmin/tiket/$tiketId': typeof SuperadminTiketTiketIdRoute
   '/superadmin/tiket/buat': typeof SuperadminTiketBuatRoute
+  '/ustadz/santri/$santriId': typeof UstadzSantriSantriIdRoute
   '/ustadz/setoran/$setId': typeof UstadzSetoranSetIdRoute
   '/ustadz/tiket/$tiketId': typeof UstadzTiketTiketIdRoute
   '/ustadz/tiket/buat': typeof UstadzTiketBuatRoute
@@ -439,6 +452,7 @@ export interface FileRoutesByFullPath {
   '/santri/tiket/': typeof SantriTiketIndexRoute
   '/superadmin/lembaga/': typeof SuperadminLembagaIndexRoute
   '/superadmin/tiket/': typeof SuperadminTiketIndexRoute
+  '/ustadz/santri/': typeof UstadzSantriIndexRoute
   '/ustadz/tiket/': typeof UstadzTiketIndexRoute
   '/wali/tiket/': typeof WaliTiketIndexRoute
 }
@@ -485,6 +499,7 @@ export interface FileRoutesByTo {
   '/superadmin/lembaga/$tenantId': typeof SuperadminLembagaTenantIdRoute
   '/superadmin/tiket/$tiketId': typeof SuperadminTiketTiketIdRoute
   '/superadmin/tiket/buat': typeof SuperadminTiketBuatRoute
+  '/ustadz/santri/$santriId': typeof UstadzSantriSantriIdRoute
   '/ustadz/setoran/$setId': typeof UstadzSetoranSetIdRoute
   '/ustadz/tiket/$tiketId': typeof UstadzTiketTiketIdRoute
   '/ustadz/tiket/buat': typeof UstadzTiketBuatRoute
@@ -497,6 +512,7 @@ export interface FileRoutesByTo {
   '/santri/tiket': typeof SantriTiketIndexRoute
   '/superadmin/lembaga': typeof SuperadminLembagaIndexRoute
   '/superadmin/tiket': typeof SuperadminTiketIndexRoute
+  '/ustadz/santri': typeof UstadzSantriIndexRoute
   '/ustadz/tiket': typeof UstadzTiketIndexRoute
   '/wali/tiket': typeof WaliTiketIndexRoute
 }
@@ -549,6 +565,7 @@ export interface FileRoutesById {
   '/superadmin/lembaga/$tenantId': typeof SuperadminLembagaTenantIdRoute
   '/superadmin/tiket/$tiketId': typeof SuperadminTiketTiketIdRoute
   '/superadmin/tiket/buat': typeof SuperadminTiketBuatRoute
+  '/ustadz/santri/$santriId': typeof UstadzSantriSantriIdRoute
   '/ustadz/setoran/$setId': typeof UstadzSetoranSetIdRoute
   '/ustadz/tiket/$tiketId': typeof UstadzTiketTiketIdRoute
   '/ustadz/tiket/buat': typeof UstadzTiketBuatRoute
@@ -561,6 +578,7 @@ export interface FileRoutesById {
   '/santri/tiket/': typeof SantriTiketIndexRoute
   '/superadmin/lembaga/': typeof SuperadminLembagaIndexRoute
   '/superadmin/tiket/': typeof SuperadminTiketIndexRoute
+  '/ustadz/santri/': typeof UstadzSantriIndexRoute
   '/ustadz/tiket/': typeof UstadzTiketIndexRoute
   '/wali/tiket/': typeof WaliTiketIndexRoute
 }
@@ -614,6 +632,7 @@ export interface FileRouteTypes {
     | '/superadmin/lembaga/$tenantId'
     | '/superadmin/tiket/$tiketId'
     | '/superadmin/tiket/buat'
+    | '/ustadz/santri/$santriId'
     | '/ustadz/setoran/$setId'
     | '/ustadz/tiket/$tiketId'
     | '/ustadz/tiket/buat'
@@ -626,6 +645,7 @@ export interface FileRouteTypes {
     | '/santri/tiket/'
     | '/superadmin/lembaga/'
     | '/superadmin/tiket/'
+    | '/ustadz/santri/'
     | '/ustadz/tiket/'
     | '/wali/tiket/'
   fileRoutesByTo: FileRoutesByTo
@@ -672,6 +692,7 @@ export interface FileRouteTypes {
     | '/superadmin/lembaga/$tenantId'
     | '/superadmin/tiket/$tiketId'
     | '/superadmin/tiket/buat'
+    | '/ustadz/santri/$santriId'
     | '/ustadz/setoran/$setId'
     | '/ustadz/tiket/$tiketId'
     | '/ustadz/tiket/buat'
@@ -684,6 +705,7 @@ export interface FileRouteTypes {
     | '/santri/tiket'
     | '/superadmin/lembaga'
     | '/superadmin/tiket'
+    | '/ustadz/santri'
     | '/ustadz/tiket'
     | '/wali/tiket'
   id:
@@ -735,6 +757,7 @@ export interface FileRouteTypes {
     | '/superadmin/lembaga/$tenantId'
     | '/superadmin/tiket/$tiketId'
     | '/superadmin/tiket/buat'
+    | '/ustadz/santri/$santriId'
     | '/ustadz/setoran/$setId'
     | '/ustadz/tiket/$tiketId'
     | '/ustadz/tiket/buat'
@@ -747,6 +770,7 @@ export interface FileRouteTypes {
     | '/santri/tiket/'
     | '/superadmin/lembaga/'
     | '/superadmin/tiket/'
+    | '/ustadz/santri/'
     | '/ustadz/tiket/'
     | '/wali/tiket/'
   fileRoutesById: FileRoutesById
@@ -1039,6 +1063,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UstadzTiketIndexRouteImport
       parentRoute: typeof UstadzRoute
     }
+    '/ustadz/santri/': {
+      id: '/ustadz/santri/'
+      path: '/santri'
+      fullPath: '/ustadz/santri/'
+      preLoaderRoute: typeof UstadzSantriIndexRouteImport
+      parentRoute: typeof UstadzRoute
+    }
     '/superadmin/tiket/': {
       id: '/superadmin/tiket/'
       path: '/tiket'
@@ -1121,6 +1152,13 @@ declare module '@tanstack/react-router' {
       path: '/setoran/$setId'
       fullPath: '/ustadz/setoran/$setId'
       preLoaderRoute: typeof UstadzSetoranSetIdRouteImport
+      parentRoute: typeof UstadzRoute
+    }
+    '/ustadz/santri/$santriId': {
+      id: '/ustadz/santri/$santriId'
+      path: '/santri/$santriId'
+      fullPath: '/ustadz/santri/$santriId'
+      preLoaderRoute: typeof UstadzSantriSantriIdRouteImport
       parentRoute: typeof UstadzRoute
     }
     '/superadmin/tiket/buat': {
@@ -1293,9 +1331,11 @@ interface UstadzRouteChildren {
   UstadzRiwayatRoute: typeof UstadzRiwayatRoute
   UstadzUjianRoute: typeof UstadzUjianRoute
   UstadzIndexRoute: typeof UstadzIndexRoute
+  UstadzSantriSantriIdRoute: typeof UstadzSantriSantriIdRoute
   UstadzSetoranSetIdRoute: typeof UstadzSetoranSetIdRoute
   UstadzTiketTiketIdRoute: typeof UstadzTiketTiketIdRoute
   UstadzTiketBuatRoute: typeof UstadzTiketBuatRoute
+  UstadzSantriIndexRoute: typeof UstadzSantriIndexRoute
   UstadzTiketIndexRoute: typeof UstadzTiketIndexRoute
 }
 
@@ -1309,9 +1349,11 @@ const UstadzRouteChildren: UstadzRouteChildren = {
   UstadzRiwayatRoute: UstadzRiwayatRoute,
   UstadzUjianRoute: UstadzUjianRoute,
   UstadzIndexRoute: UstadzIndexRoute,
+  UstadzSantriSantriIdRoute: UstadzSantriSantriIdRoute,
   UstadzSetoranSetIdRoute: UstadzSetoranSetIdRoute,
   UstadzTiketTiketIdRoute: UstadzTiketTiketIdRoute,
   UstadzTiketBuatRoute: UstadzTiketBuatRoute,
+  UstadzSantriIndexRoute: UstadzSantriIndexRoute,
   UstadzTiketIndexRoute: UstadzTiketIndexRoute,
 }
 

@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useRouter, useNavigate, Link } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { getSetoranRiwayat, updateSetoran } from '../../server-fns/setoran'
 import { getRiwayatIqraUstadz } from '../../server-fns/setoran-iqra'
@@ -134,8 +134,8 @@ function UstadzRiwayatSetoran() {
     <div className="pb-8 max-w-xl mx-auto space-y-4">
       <div className="bg-white sticky top-0 z-20 border-b border-slate-200 shadow-sm">
         <div className="p-4 flex items-center gap-3">
-          <div className="bg-emerald-100 p-2 rounded-lg">
-            <History className="w-5 h-5 text-emerald-600" />
+          <div className="bg-primary/10 p-2 rounded-lg">
+            <History className="w-5 h-5 text-primary" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-slate-800 tracking-tight">Riwayat Aktivitas</h1>
@@ -146,19 +146,19 @@ function UstadzRiwayatSetoran() {
         <div className="flex border-t border-slate-100 px-2 overflow-x-auto hide-scrollbar">
           <button 
             onClick={() => setActiveTab('setoran')}
-            className={`flex-1 min-w-[100px] py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'setoran' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
+            className={`flex-1 min-w-[100px] py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'setoran' ? 'border-primary text-primary font-bold' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
           >
             Tahfidz
           </button>
           <button 
             onClick={() => setActiveTab('iqra')}
-            className={`flex-1 min-w-[100px] py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'iqra' ? 'border-violet-600 text-violet-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
+            className={`flex-1 min-w-[100px] py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'iqra' ? 'border-violet-600 text-violet-700 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
           >
             Iqra
           </button>
           <button 
             onClick={() => setActiveTab('absensi')}
-            className={`flex-1 min-w-[100px] py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'absensi' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
+            className={`flex-1 min-w-[100px] py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'absensi' ? 'border-blue-600 text-blue-700 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
           >
             Absensi
           </button>
@@ -187,13 +187,9 @@ function UstadzRiwayatSetoran() {
                        <div className={`text-[9px] font-bold px-2.5 py-1 rounded-bl-lg uppercase tracking-widest ${jm?.color || 'bg-slate-100 text-slate-800'}`}>
                          {jm?.label || item.jenis}
                        </div>
-                       {isSelfReport ? (
-                         <div className="bg-orange-100 text-orange-800 text-[9px] font-bold px-2.5 py-1 uppercase tracking-widest">
-                           MANDIRI
-                         </div>
-                       ) : (
-                         <div className="bg-emerald-100 text-emerald-800 text-[9px] font-bold px-2.5 py-1 uppercase tracking-widest">
-                           USTADZ
+                       {isSelfReport && (
+                         <div className="bg-blue-100 text-blue-800 text-[9px] font-bold px-2.5 py-1 rounded-bl-lg uppercase tracking-widest flex items-center gap-1">
+                           SELF-REPORT
                          </div>
                        )}
                      </div>
@@ -219,40 +215,50 @@ function UstadzRiwayatSetoran() {
                      )}
 
                      {item.ditinjauOlehUstadz && item.responUstadz && (
-                        item.responUstadz.tipe === 'ditinjau' ? (
-                          <div className="flex items-center gap-2 mt-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg w-fit text-blue-700 text-xs font-medium">
-                            <span className="font-bold">✓</span>
-                            Telah Anda pantau
-                          </div>
-                        ) : (
-                          <div className="bg-blue-50 rounded-lg p-3 text-sm text-blue-800 border border-blue-100 mt-1 flex items-start gap-2">
-                            <span className="text-base mt-0.5">{item.responUstadz.tipe === 'jempol' ? '👍' : '💬'}</span>
-                            <div>
-                              <p className="text-[10px] font-bold text-blue-500 uppercase mb-0.5">Telah Anda Respon</p>
-                              <p className="font-medium text-blue-900">{item.responUstadz.tipe === 'jempol' ? 'Mantap!' : (item.responUstadz.catatan || item.responUstadz.teks)}</p>
-                            </div>
-                          </div>
-                        )
+                       item.responUstadz.tipe === 'ditinjau' ? (
+                         <div className="flex items-center gap-2 mt-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg w-fit text-blue-700 text-xs font-medium">
+                           <span className="font-bold">✓</span>
+                           Telah Anda pantau
+                         </div>
+                       ) : (
+                         <div className="bg-blue-50 rounded-lg p-3 text-sm text-blue-800 border border-blue-100 mt-1 flex items-start gap-2">
+                           <span className="text-base mt-0.5">{item.responUstadz.tipe === 'jempol' ? '👍' : '💬'}</span>
+                           <div>
+                             <p className="text-[10px] font-bold text-blue-500 uppercase mb-0.5">Telah Anda Respon</p>
+                             <p className="font-medium text-blue-900">{item.responUstadz.tipe === 'jempol' ? 'Mantap!' : (item.responUstadz.catatan || item.responUstadz.teks)}</p>
+                           </div>
+                         </div>
+                       )
                      )}
 
                      <div className="pt-2 border-t border-slate-50 flex items-center justify-between gap-2 text-sm text-slate-700">
                         <div className="flex items-center gap-2">
                           <User className="w-4 h-4 text-slate-400" />
-                          <span className="font-medium">{item.santriNama}</span>
+                          {item.santriId ? (
+                            <Link
+                              to="/ustadz/santri/$santriId"
+                              params={{ santriId: item.santriId }}
+                              className="font-medium text-slate-800 hover:underline hover:text-primary transition-colors"
+                            >
+                              {item.santriNama}
+                            </Link>
+                          ) : (
+                            <span className="font-medium text-slate-800">{item.santriNama}</span>
+                          )}
                         </div>
                         
                         {!isSelfReport && (
                           <button 
                             onClick={() => handleEdit(item)}
-                            className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100 flex items-center gap-1.5 hover:bg-emerald-100 transition-colors"
+                            className="text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 flex items-center gap-1.5 hover:bg-primary/20 transition-colors"
                           >
                             <Edit2 className="w-3.5 h-3.5" /> Edit
                           </button>
                         )}
-                     </div>
-                   </div>
-                 )
-              })
+                      </div>
+                    </div>
+                  )
+               })
             )}
           </>
         )}
@@ -314,20 +320,30 @@ function UstadzRiwayatSetoran() {
                      )}
 
                      {data.catatan && (
-                       <div className="bg-slate-50 rounded-lg p-3 text-sm text-slate-600 border border-slate-100">
-                         <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Catatan</p>
-                         {data.catatan}
-                       </div>
-                     )}
+                        <div className="bg-slate-50 rounded-lg p-3 text-sm text-slate-600 border border-slate-100">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Catatan</p>
+                          {data.catatan}
+                        </div>
+                      )}
 
-                     <div className="pt-2 border-t border-slate-50 flex items-center justify-between gap-2 text-sm text-slate-700">
+                      <div className="pt-2 border-t border-slate-50 flex items-center justify-between gap-2 text-sm text-slate-700">
                         <div className="flex items-center gap-2">
                           <User className="w-4 h-4 text-slate-400" />
-                          <span className="font-medium">{data.santri?.nama || 'Santri Terhapus'}</span>
+                          {(data.santriId || data.santri?.id) ? (
+                            <Link
+                              to="/ustadz/santri/$santriId"
+                              params={{ santriId: data.santriId || data.santri?.id }}
+                              className="font-medium text-slate-800 hover:underline hover:text-primary transition-colors"
+                            >
+                              {data.santri?.nama || 'Santri'}
+                            </Link>
+                          ) : (
+                            <span className="font-medium text-slate-800">{data.santri?.nama || 'Santri Terhapus'}</span>
+                          )}
                         </div>
-                     </div>
-                   </div>
-                 )
+                      </div>
+                    </div>
+                  )
               })
             )}
           </>

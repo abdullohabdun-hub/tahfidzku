@@ -2,10 +2,13 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { Check, ChevronDown, Loader2, Info, Settings2, Edit } from 'lucide-react'
 import { useRouter } from '@tanstack/react-router'
 import { KoreksiPosisiModal } from './KoreksiPosisiModal'
+import { getRiwayatTerakhirPerJenis } from '../server-fns/setoran'
 import {
   buatSurahMetaOtomatis,
   buatSurahMetaLintasJuz,
   prefillZiyadahBerikutnya,
+  derivasiPrefillSabqiManzil,
+  hitungKelanjutanMurojaah,
   surahByNomor,
   JUZ_TABLE,
   parseHalamanPecahan,
@@ -52,12 +55,26 @@ const ACCENTS = {
     chipBg: "bg-primary/15",
     chipText: "text-primary",
   },
+  // violet: warna semantik tetap untuk tab Manzil.
+  // Tidak menggunakan --primary agar tidak clash dengan tema tenant custom
+  // (misal: tenant hijau → indigo/primary = hijau = sama dengan Ziyadah/emerald).
+  violet: {
+    text: "text-violet-700",
+    solidBg: "bg-violet-600",
+    solidBgHover: "hover:bg-violet-700",
+    softBg: "bg-violet-50",
+    border: "border-violet-200",
+    ring: "focus:ring-violet-500 focus:border-violet-500",
+    dot: "bg-violet-500",
+    chipBg: "bg-violet-100",
+    chipText: "text-violet-800",
+  },
 }
 
 const JENIS_TABS = [
   { id: 'ziyadah', label: 'Ziyadah', desc: 'Hafalan Baru', accent: 'emerald' },
   { id: 'sabqi', label: 'Sabqi', desc: 'Ulang Hafalan Baru', accent: 'cyan' },
-  { id: 'manzil', label: 'Manzil', desc: 'Ulang Hafalan Lama', accent: 'indigo' }
+  { id: 'manzil', label: 'Manzil', desc: 'Ulang Hafalan Lama', accent: 'violet' }
 ]
 
 const SURAH_LIST = Object.values(surahByNomor).sort((a: any, b: any) => a.nomor - b.nomor)
@@ -128,6 +145,7 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
 
   // Sabqi / Manzil State
   const [lintasJuz, setLintasJuz] = useState(false)
+  const [userHasEdited, setUserHasEdited] = useState(false)
   
   // -- Standar (Tidak lintas juz)
   const [juz, setJuz] = useState<number>(30)
@@ -139,6 +157,46 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
   const [juzSelesai, setJuzSelesai] = useState<number>(30)
   const [halMulai, setHalMulai] = useState<string>('1')
   const [halSelesai, setHalSelesai] = useState<string>('1')
+
+  const [lastMurojaahData, setLastMurojaahData] = useState<{ lastSabqi: any; lastManzil: any } | null>(null)
+
+  useEffect(() => {
+    if (!santri?.id) return
+    let isCancelled = false
+    const loadLast = async () => {
+      try {
+        const res = await getRiwayatTerakhirPerJenis({ data: { santriId: santri.id } })
+        if (!isCancelled && res.success && res.data) {
+          setLastMurojaahData(res.data)
+        }
+      } catch (err) {
+        // ignore
+      }
+    }
+    loadLast()
+    return () => { isCancelled = true }
+  }, [santri?.id])
+
+  // Reset userHasEdited saat santri berganti
+  useEffect(() => {
+    setUserHasEdited(false)
+  }, [santri?.id])
+
+  // Ticket 3: Auto-refill Sabqi / Manzil berdasarkan kontinuitas murojaah (atau fallback posisiTerakhir)
+  useEffect(() => {
+    if (jenisSetoran === 'ziyadah' || mode === 'edit') return
+    if (userHasEdited) return
+
+    const lastSetoran = jenisSetoran === 'sabqi' ? lastMurojaahData?.lastSabqi : lastMurojaahData?.lastManzil
+    const derived = hitungKelanjutanMurojaah(lastSetoran, santri?.posisiTerakhir)
+
+    if (derived) {
+      setLintasJuz(false)
+      setJuz(derived.juz)
+      setHalamanAwal(derived.halamanAwal)
+      setHalamanAkhir(derived.halamanAkhir)
+    }
+  }, [jenisSetoran, santri?.posisiTerakhir, lastMurojaahData, mode, userHasEdited])
 
   // Presisi Manual
   const [showPresisi, setShowPresisi] = useState(false)
@@ -567,7 +625,7 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
                   <input
                     type="checkbox"
                     checked={lintasJuz}
-                    onChange={(e) => setLintasJuz(e.target.checked)}
+                    onChange={(e) => { setLintasJuz(e.target.checked); setUserHasEdited(true); }}
                     className={`w-4 h-4 rounded border-slate-300 focus:ring-2 ${ACCENTS[activeAccent].text} ${ACCENTS[activeAccent].ring}`}
                   />
                   <span className="text-[11px] font-bold text-slate-600 tracking-wider">LINTAS JUZ</span>
@@ -579,7 +637,7 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
                   <div className="relative">
                     <select
                       value={juz}
-                      onChange={(e) => setJuz(Number(e.target.value))}
+                      onChange={(e) => { setJuz(Number(e.target.value)); setUserHasEdited(true); }}
                       className={`w-full appearance-none bg-white border ${ACCENTS[activeAccent].border} text-slate-900 text-sm rounded-lg block px-3 py-2.5 pr-8`}
                     >
                       {JUZ_TABLE.map((j) => (
@@ -596,7 +654,7 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
                         type="text"
                         inputMode="decimal"
                         value={halamanAwal}
-                        onChange={(e) => setHalamanAwal(e.target.value)}
+                        onChange={(e) => { setHalamanAwal(e.target.value); setUserHasEdited(true); }}
                         placeholder="Cth: 1 atau 1,5"
                         className={`w-full border ${parseError.mulai ? 'border-red-300 bg-red-50' : ACCENTS[activeAccent].border} rounded-lg px-3 py-2 text-sm`}
                         required
@@ -609,7 +667,7 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
                         type="text"
                         inputMode="decimal"
                         value={halamanAkhir}
-                        onChange={(e) => setHalamanAkhir(e.target.value)}
+                        onChange={(e) => { setHalamanAkhir(e.target.value); setUserHasEdited(true); }}
                         placeholder="Cth: 2 atau 2,5"
                         className={`w-full border ${parseError.selesai ? 'border-red-300 bg-red-50' : ACCENTS[activeAccent].border} rounded-lg px-3 py-2 text-sm`}
                         required
@@ -622,14 +680,14 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
                 <div className="space-y-3">
                   <div className="flex gap-2 items-center">
                     <div className="flex-1 relative">
-                      <select value={juzMulai} onChange={(e) => setJuzMulai(Number(e.target.value))} className={`w-full appearance-none bg-white border ${ACCENTS[activeAccent].border} rounded-lg px-3 py-2 text-sm`}>
+                      <select value={juzMulai} onChange={(e) => { setJuzMulai(Number(e.target.value)); setUserHasEdited(true); }} className={`w-full appearance-none bg-white border ${ACCENTS[activeAccent].border} rounded-lg px-3 py-2 text-sm`}>
                         {JUZ_TABLE.map((j) => <option key={j.juz} value={j.juz}>Juz {j.juz}</option>)}
                       </select>
                       <ChevronDown className="h-4 w-4 text-slate-400 absolute right-2 top-2.5 pointer-events-none" />
                     </div>
                     <span className="text-slate-400 font-bold">→</span>
                     <div className="flex-1 relative">
-                      <select value={juzSelesai} onChange={(e) => setJuzSelesai(Number(e.target.value))} className={`w-full appearance-none bg-white border ${ACCENTS[activeAccent].border} rounded-lg px-3 py-2 text-sm`}>
+                      <select value={juzSelesai} onChange={(e) => { setJuzSelesai(Number(e.target.value)); setUserHasEdited(true); }} className={`w-full appearance-none bg-white border ${ACCENTS[activeAccent].border} rounded-lg px-3 py-2 text-sm`}>
                         {JUZ_TABLE.map((j) => <option key={j.juz} value={j.juz}>Juz {j.juz}</option>)}
                       </select>
                       <ChevronDown className="h-4 w-4 text-slate-400 absolute right-2 top-2.5 pointer-events-none" />
@@ -638,11 +696,11 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
                   
                   <div className="flex gap-2">
                     <div className="flex-1">
-                      <input type="text" inputMode="decimal" value={halMulai} onChange={(e) => setHalMulai(e.target.value)} placeholder="Hal. Mulai" className={`w-full border ${parseError.mulai ? 'border-red-300 bg-red-50' : ACCENTS[activeAccent].border} rounded-lg px-3 py-2 text-sm`} required />
+                      <input type="text" inputMode="decimal" value={halMulai} onChange={(e) => { setHalMulai(e.target.value); setUserHasEdited(true); }} placeholder="Hal. Mulai" className={`w-full border ${parseError.mulai ? 'border-red-300 bg-red-50' : ACCENTS[activeAccent].border} rounded-lg px-3 py-2 text-sm`} required />
                       {parseError.mulai && <p className="text-[10px] text-red-500 mt-1">{parseError.mulai}</p>}
                     </div>
                     <div className="flex-1">
-                      <input type="text" inputMode="decimal" value={halSelesai} onChange={(e) => setHalSelesai(e.target.value)} placeholder="Hal. Selesai" className={`w-full border ${parseError.selesai ? 'border-red-300 bg-red-50' : ACCENTS[activeAccent].border} rounded-lg px-3 py-2 text-sm`} required />
+                      <input type="text" inputMode="decimal" value={halSelesai} onChange={(e) => { setHalSelesai(e.target.value); setUserHasEdited(true); }} placeholder="Hal. Selesai" className={`w-full border ${parseError.selesai ? 'border-red-300 bg-red-50' : ACCENTS[activeAccent].border} rounded-lg px-3 py-2 text-sm`} required />
                       {parseError.selesai && <p className="text-[10px] text-red-500 mt-1">{parseError.selesai}</p>}
                     </div>
                   </div>
