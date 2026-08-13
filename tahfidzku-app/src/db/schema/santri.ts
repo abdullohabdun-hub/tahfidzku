@@ -1,7 +1,7 @@
 // src/db/schema/santri.ts
 // Tabel santri — data peserta didik, terkait tenant dan kelas
 
-import { pgTable, uuid, varchar, integer, timestamp, pgEnum, jsonb, date, text } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, varchar, integer, timestamp, pgEnum, jsonb, date, text, index } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import { tenants } from './tenants'
 import { kelas, hariEnum } from './kelas'
@@ -44,4 +44,6 @@ export const santri = pgTable('santri', {
    * sesuai kelasnya (atau backend auto-fill dari kelas.hariPertemuan).
    */
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-})
+}, (table) => ({
+  idxSantriTenantKelas: index('idx_santri_tenant_kelas').on(table.tenantId, table.kelasId),
+}))

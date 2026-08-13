@@ -1,4 +1,4 @@
-import { pgTable, uuid, timestamp, date, uniqueIndex, pgEnum, text, jsonb, integer } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, timestamp, date, uniqueIndex, pgEnum, text, jsonb, integer, index } from 'drizzle-orm/pg-core'
 import { tenants } from './tenants'
 import { kelas } from './kelas'
 import { santri } from './santri'
@@ -36,6 +36,7 @@ export const absensi = pgTable('absensi', {
   updatedAt: timestamp('updated_at', { withTimezone: true }),
 }, (table) => ({
   uniqAbsensi: uniqueIndex('uniq_absensi_santri_sesi').on(table.santriId, table.sesiKelasId),
+  idxAbsensiTenantSesi: index('idx_absensi_tenant_sesi').on(table.tenantId, table.sesiKelasId),
 }))
 
 export const rekapMingguanSantri = pgTable('rekap_mingguan_santri', {

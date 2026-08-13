@@ -148,7 +148,7 @@ export const getUjianPending = createServerFn({ method: 'POST' }).handler(async 
     const kelasIds = kelasList.map(k => k.id)
     if (kelasIds.length === 0) return success([], 'Tidak ada santri pending ujian')
 
-    const { inArray, isNotNull } = await import('drizzle-orm')
+    const { inArray, isNotNull, sql } = await import('drizzle-orm')
 
     const pending = await db
       .select({
@@ -164,20 +164,33 @@ export const getUjianPending = createServerFn({ method: 'POST' }).handler(async 
         isNotNull(santri.juzUjianPending)
       ))
 
-    // Hitung berapa kali sudah gagal untuk setiap santri
-    const withAttempts = await Promise.all(pending.map(async (s) => {
-      const attempts = await db
-        .select({ id: ujian.id, status: ujian.status })
+    // Hitung berapa kali sudah gagal untuk setiap santri (1 query aggregate GROUP BY)
+    let withAttempts: Array<{ santriId: string; santriNama: string; juzUjianPending: number | null; kelasId: string | null; gagalCount: number; warningGagal: boolean }> = []
+    if (pending.length > 0) {
+      const santriIds = pending.map(p => p.santriId)
+      const gagalCounts = await db
+        .select({
+          santriId: ujian.santriId,
+          juz: ujian.juz,
+          gagalCount: sql<number>`cast(count(*) filter (where ${ujian.status} = 'tidak_lulus') as integer)`
+        })
         .from(ujian)
         .where(and(
-          eq(ujian.santriId, s.santriId),
-          eq(ujian.juz, s.juzUjianPending!),
-          eq(ujian.tenantId, tenantId)
+          eq(ujian.tenantId, tenantId),
+          inArray(ujian.santriId, santriIds)
         ))
+        .groupBy(ujian.santriId, ujian.juz)
 
-      const gagalCount = attempts.filter(a => a.status === 'tidak_lulus').length
-      return { ...s, gagalCount, warningGagal: gagalCount >= 3 }
-    }))
+      const gagalMap = new Map<string, number>()
+      for (const row of gagalCounts) {
+        gagalMap.set(`${row.santriId}:${row.juz}`, Number(row.gagalCount))
+      }
+
+      withAttempts = pending.map((s) => {
+        const gagalCount = gagalMap.get(`${s.santriId}:${s.juzUjianPending}`) || 0
+        return { ...s, gagalCount, warningGagal: gagalCount >= 3 }
+      })
+    }
 
     // Query Iqra pending: santri yang punya jilidIqraUjianPending di kelas ustadz ini
     const pendingIqraRaw = await db
@@ -194,18 +207,33 @@ export const getUjianPending = createServerFn({ method: 'POST' }).handler(async 
         isNotNull(santri.jilidIqraUjianPending)
       ))
 
-    const pendingIqra = await Promise.all(pendingIqraRaw.map(async (s) => {
-      const attempts = await db
-        .select({ id: ujianIqra.id, lulus: ujianIqra.lulus })
+    // Hitung berapa kali sudah gagal untuk setiap santri Iqra (1 query aggregate GROUP BY)
+    let pendingIqra: Array<{ santriId: string; santriNama: string; jilidIqraUjianPending: number | null; kelasId: string | null; gagalCount: number; warningGagal: boolean }> = []
+    if (pendingIqraRaw.length > 0) {
+      const santriIqraIds = pendingIqraRaw.map(p => p.santriId)
+      const gagalIqraCounts = await db
+        .select({
+          santriId: ujianIqra.santriId,
+          jilidDiuji: ujianIqra.jilidDiuji,
+          gagalCount: sql<number>`cast(count(*) filter (where ${ujianIqra.lulus} = false) as integer)`
+        })
         .from(ujianIqra)
         .where(and(
-          eq(ujianIqra.santriId, s.santriId),
-          eq(ujianIqra.jilidDiuji, s.jilidIqraUjianPending!),
-          eq(ujianIqra.tenantId, tenantId)
+          eq(ujianIqra.tenantId, tenantId),
+          inArray(ujianIqra.santriId, santriIqraIds)
         ))
-      const gagalCount = attempts.filter(a => !a.lulus).length
-      return { ...s, gagalCount, warningGagal: gagalCount >= 3 }
-    }))
+        .groupBy(ujianIqra.santriId, ujianIqra.jilidDiuji)
+
+      const gagalIqraMap = new Map<string, number>()
+      for (const row of gagalIqraCounts) {
+        gagalIqraMap.set(`${row.santriId}:${row.jilidDiuji}`, Number(row.gagalCount))
+      }
+
+      pendingIqra = pendingIqraRaw.map((s) => {
+        const gagalCount = gagalIqraMap.get(`${s.santriId}:${s.jilidIqraUjianPending}`) || 0
+        return { ...s, gagalCount, warningGagal: gagalCount >= 3 }
+      })
+    }
 
     return success(
       { pendingTahfidz: withAttempts, pendingIqra },

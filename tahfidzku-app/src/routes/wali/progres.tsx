@@ -12,6 +12,7 @@ import { getSantriAnalitik } from '../../server-fns/analitik'
 import { EstimasiKhatam } from '../../components/dashboard/EstimasiKhatam'
 import { DistribusiKualitasJuzWali } from '../../components/dashboard/DistribusiKualitasJuzWali'
 import { GrafikAnalitikSantri } from '../../components/dashboard/GrafikAnalitikSantri'
+import { SantriProfileView } from '../../components/shared/SantriProfileView'
 
 function DashboardAnalitikContainer({ santriId, displayMode }: { santriId: string, displayMode?: 'iqra' | 'tahfidz' }) {
   const [data, setData] = useState<{grafik?: any, peta?: any, estimasi?: any} | null>(null)
@@ -138,25 +139,25 @@ function WaliDashboard() {
   const iconColorClass = isIqra ? 'text-violet-700' : 'text-emerald-700'
 
   return (
-    <div className="p-4 space-y-4 max-w-lg mx-auto pb-40 bg-slate-50 min-h-screen">
+    <div className="p-4 space-y-6 max-w-4xl mx-auto pb-40 bg-slate-50 min-h-screen">
       {/* Header Statis */}
-      <div className="flex items-center justify-center relative mb-4">
-        <h1 className="text-lg font-bold text-slate-800">{isIqra ? 'Pemantauan Bacaan' : 'Pemantauan Hafalan'}</h1>
+      <div className="flex items-center justify-between relative mb-2">
+        <h1 className="text-lg font-bold text-slate-800">{isIqra ? 'Pemantauan Bacaan Ananda' : 'Pemantauan Hafalan Ananda'}</h1>
       </div>
 
       {/* Tab Switcher Anak */}
       {daftarAnak.length > 1 && (
-        <div className="bg-white px-2 py-1 shadow-sm rounded-lg mb-4 flex gap-2 border-b border-slate-200 overflow-x-auto scrollbar-hide">
+        <div className="bg-white px-3 py-1.5 shadow-xs rounded-xl mb-4 flex gap-2 border border-slate-200 overflow-x-auto scrollbar-hide">
           {daftarAnak.map((anak: any, idx: number) => {
             const isChildIqra = anak.displayMode === 'iqra'
             return (
               <button
                 key={anak.profil.id}
                 onClick={() => setActiveIndex(idx)}
-                className={`whitespace-nowrap px-4 py-2 text-sm transition-colors border-b-2 font-medium ${
+                className={`whitespace-nowrap px-4 py-2 text-xs transition-colors rounded-lg font-semibold ${
                   idx === activeIndex 
-                    ? (isChildIqra ? 'text-violet-600 border-violet-600 font-semibold' : 'text-emerald-600 border-emerald-600 font-semibold')
-                    : 'text-slate-500 border-transparent hover:text-slate-700'
+                    ? (isChildIqra ? 'bg-violet-600 text-white shadow-xs' : 'bg-emerald-600 text-white shadow-xs')
+                    : 'text-slate-600 bg-slate-100 hover:bg-slate-200'
                 }`}
               >
                 {anak.profil.nama.split(' ')[0]}
@@ -166,45 +167,15 @@ function WaliDashboard() {
         </div>
       )}
 
-      {/* Jika Belum Ada Data (Santri Baru) */}
-      {riwayat.length === 0 ? (
-        <div className="space-y-4 mt-2">
-          <div className={`bg-gradient-to-r ${isIqra ? 'from-violet-50 to-violet-100 border-violet-200' : 'from-emerald-50 to-emerald-100 border-emerald-200'} rounded-xl p-4 border shadow-sm flex items-start gap-4`}>
-            <div className="text-3xl">🎉</div>
-            <div>
-              <h3 className={`font-bold text-sm ${isIqra ? 'text-violet-800' : 'text-emerald-800'}`}>Ahlan wa Sahlan!</h3>
-              <p className={`text-xs mt-1 ${isIqra ? 'text-violet-700' : 'text-emerald-700'}`}>
-                Ananda {profil.nama.split(' ')[0]} belum memiliki riwayat setoran. Grafik dan analitik akan otomatis muncul di sini setelah ananda menyetorkan {isIqra ? 'halaman baru' : 'hafalannya'}.
-              </p>
-            </div>
-          </div>
-          
-          <Card className="border-slate-100 shadow-sm opacity-50">
-            <CardContent className="p-4">
-              <div className="w-32 h-4 bg-slate-200 rounded mb-4"></div>
-              <div className="w-full h-32 bg-slate-100 rounded flex items-center justify-center">
-                <span className="text-xs text-slate-400 font-medium">Belum ada data (14 hari terakhir)</span>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Shared Santri Profile & Indeks View */}
+      <SantriProfileView santriId={profil.id} titlePrefix="Profil Ananda" />
 
-          <Card className="border-slate-100 shadow-sm opacity-50">
-            <CardContent className="p-4">
-              <div className="w-40 h-4 bg-slate-200 rounded mb-4"></div>
-              <div className="w-full h-32 bg-slate-100 rounded flex items-center justify-center">
-                <span className="text-xs text-slate-400 font-medium">Data kualitas belum tersedia</span>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <div className="bg-slate-100 rounded-xl p-5 border border-slate-200">
-            <h2 className="text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">Target Selesai</h2>
-            <div className="text-3xl font-black mb-1 text-slate-300">Menunggu Data</div>
-            <p className="text-slate-400 text-sm mt-2">Butuh minimal 3 sesi kunjungan untuk kalkulasi.</p>
-          </div>
+      {/* Analitik & Grafik Tambahan Wali */}
+      {riwayat.length > 0 && (
+        <div className="pt-4 border-t border-slate-200">
+          <h2 className="text-base font-bold text-slate-800 mb-2">Grafik & Peta Analitik</h2>
+          <DashboardAnalitikContainer santriId={profil.id} displayMode={isIqra ? 'iqra' : 'tahfidz'} />
         </div>
-      ) : (
-        <DashboardAnalitikContainer santriId={profil.id} displayMode={isIqra ? 'iqra' : 'tahfidz'} />
       )}
     </div>
   )

@@ -1,4 +1,4 @@
-import { pgTable, uuid, integer, varchar, text, timestamp, pgEnum, date } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, integer, varchar, text, timestamp, pgEnum, date, index } from 'drizzle-orm/pg-core'
 import { tenants } from './tenants'
 import { santri } from './santri'
 import { users } from './users'
@@ -18,4 +18,6 @@ export const setoranIqra = pgTable('setoran_iqra', {
   catatan: text('catatan'),
   createdBy: uuid('created_by').notNull().references(() => users.id),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-});
+}, (table) => ({
+  idxSetoranIqraTenantTanggal: index('idx_setoran_iqra_tenant_tanggal').on(table.tenantId, table.tanggalSetoran),
+}));

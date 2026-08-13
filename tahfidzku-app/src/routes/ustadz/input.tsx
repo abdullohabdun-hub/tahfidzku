@@ -6,7 +6,7 @@ import { createSetoran } from '../../server-fns/setoran'
 import { SetoranForm } from '../../components/SetoranForm'
 import { SetoranIqraForm } from '../../components/SetoranIqraForm'
 import { createSetoranIqra } from '../../server-fns/setoran-iqra'
-import { getSurahByJuz, getAyatRangeInJuz, bangunPosisiDariAdminInput } from '../../lib/quranMapper'
+import { bangunPosisiDariAdminInput } from '../../lib/quranMapper'
 import { AuthErrorAlert } from '../../components/AuthErrorAlert'
 
 export const Route = createFileRoute('/ustadz/input')({
@@ -65,7 +65,9 @@ function InputSetoranPage() {
 
   useEffect(() => {
     if (batasHafalanJuz !== '') {
-      setSurahOptions(getSurahByJuz(Number(batasHafalanJuz)))
+      import('../../lib/quranMapper').then(({ getSurahByJuz }) => {
+        setSurahOptions(getSurahByJuz(Number(batasHafalanJuz)))
+      })
     } else {
       setSurahOptions([])
       setBatasHafalanSurah('')
@@ -74,8 +76,10 @@ function InputSetoranPage() {
 
   useEffect(() => {
     if (batasHafalanJuz !== '' && batasHafalanSurah) {
-      const range = getAyatRangeInJuz(Number(batasHafalanJuz), batasHafalanSurah)
-      setAyatMax(range.ayatAkhir)
+      import('../../lib/quranMapper').then(({ getAyatRangeInJuz }) => {
+        const range = getAyatRangeInJuz(Number(batasHafalanJuz), batasHafalanSurah)
+        setAyatMax(range.ayatAkhir)
+      })
     } else {
       setAyatMax(999)
     }
@@ -83,7 +87,7 @@ function InputSetoranPage() {
 
   const fetchSantriList = async () => {
     try {
-      const res = await getSantriList()
+      const res = await getSantriList({ data: { fetchAll: true } })
       if (!res.success) {
         if (res.error?.code === 'UNAUTHENTICATED') {
           navigate({ to: '/login' })
@@ -93,10 +97,11 @@ function InputSetoranPage() {
         return
       }
       if (res.data) {
-        setSantriList(res.data)
+        const items = Array.isArray(res.data) ? res.data : (res.data.items || [])
+        setSantriList(items)
         setSantriId((prev: any) => {
-          if (prev && res.data.find(s => s.id === prev)) return prev
-          return res.data.length > 0 ? res.data[0].id : ''
+          if (prev && items.find((s: any) => s.id === prev)) return prev
+          return items.length > 0 ? items[0].id : ''
         })
       }
     } catch (err: any) {

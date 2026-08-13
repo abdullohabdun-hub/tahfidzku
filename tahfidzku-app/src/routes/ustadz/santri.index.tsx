@@ -3,8 +3,10 @@ import { useState, useMemo } from 'react'
 import { Users, Search, Filter, CheckCircle2, Clock, BookOpen, ChevronRight, User } from 'lucide-react'
 import { getSantriList } from '../../server-fns/santri'
 import { getUstadzDashboard } from '../../server-fns/dashboard'
+import { StatCard } from '../../components/shared/StatCard'
 import { AuthErrorAlert } from '../../components/AuthErrorAlert'
 import { KATEGORI_COLORS } from '../../constants/kategori-colors'
+import { surahByNomor } from '../../lib/quranMapper'
 
 export const Route = createFileRoute('/ustadz/santri/')({
   component: DaftarSantriBinaanPage,
@@ -18,7 +20,7 @@ export const Route = createFileRoute('/ustadz/santri/')({
   loader: async () => {
     try {
       const [resSantri, resAgregat] = await Promise.all([
-        getSantriList(),
+        getSantriList({ data: { fetchAll: true } }),
         getUstadzDashboard(),
       ])
 
@@ -26,6 +28,8 @@ export const Route = createFileRoute('/ustadz/santri/')({
         if (resSantri.error?.code === 'UNAUTHENTICATED') throw redirect({ to: '/login' })
         return { santriList: [], sudahSetorIds: [], authError: { message: resSantri.error?.message, code: resSantri.error?.code } }
       }
+
+      const santriListRaw = Array.isArray(resSantri.data) ? resSantri.data : (resSantri.data?.items || [])
 
       const belumSetorIds = new Set<string>()
       if (resAgregat.success && resAgregat.data?.belumSetor) {
@@ -35,7 +39,7 @@ export const Route = createFileRoute('/ustadz/santri/')({
       }
 
       return {
-        santriList: resSantri.data || [],
+        santriList: santriListRaw,
         belumSetorIds: Array.from(belumSetorIds),
         authError: null,
       }
@@ -100,72 +104,64 @@ function DaftarSantriBinaanPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <Users className="w-7 h-7 text-primary" />
+          <h1 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
+            <Users className="w-5 h-5 text-primary" />
             Daftar Santri Binaan
           </h1>
-          <p className="text-slate-500 text-sm mt-1">
-            Kelola dan pantau seluruh santri di halaqoh yang Anda ampu.
+          <p className="text-slate-400 text-xs mt-0.5">
+            Pantau santri di halaqoh yang Anda ampu.
           </p>
         </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-3 gap-3 md:gap-4">
+      <div className="grid grid-cols-3 gap-2">
         <button
+          type="button"
           onClick={() => setStatusFilter('semua')}
-          className={`p-4 rounded-2xl border text-left transition-all flex items-start justify-between ${
-            statusFilter === 'semua'
-              ? 'bg-white border-primary shadow-sm ring-2 ring-primary/20'
-              : 'bg-white border-slate-200/80 hover:border-slate-300'
+          className={`text-left transition-all rounded-xl focus:outline-none ${
+            statusFilter === 'semua' ? 'ring-2 ring-primary/40' : ''
           }`}
         >
-          <div>
-            <p className="text-xs font-semibold text-slate-500">Total Santri</p>
-            <p className="text-2xl font-bold text-slate-900 mt-2 tracking-tight">{totalSantri}</p>
-            <p className="text-[10px] text-slate-400 font-medium mt-1">Santri aktif terdaftar</p>
-          </div>
-          <div className="w-9 h-9 rounded-xl bg-slate-100/80 text-slate-600 flex items-center justify-center shrink-0">
-            <Users className="w-5 h-5" />
-          </div>
+          <StatCard
+            label="Total Santri"
+            value={totalSantri}
+            icon={Users}
+            tone="neutral"
+            compact
+          />
         </button>
 
         <button
+          type="button"
           onClick={() => setStatusFilter('sudah_setor')}
-          className={`p-4 rounded-2xl border text-left transition-all flex items-start justify-between ${
-            statusFilter === 'sudah_setor'
-              ? 'bg-emerald-50/60 border-emerald-500 shadow-sm ring-2 ring-emerald-500/20'
-              : 'bg-white border-slate-200/80 hover:border-emerald-300'
+          className={`text-left transition-all rounded-xl focus:outline-none ${
+            statusFilter === 'sudah_setor' ? 'ring-2 ring-emerald-500/40' : ''
           }`}
         >
-          <div>
-            <p className="text-xs font-semibold text-slate-500">Sudah Setor Hari Ini</p>
-            <p className="text-2xl font-bold text-slate-900 mt-2 tracking-tight">{totalSudahSetor}</p>
-            <p className="text-[10px] text-emerald-600 font-medium mt-1">Telah menyetor</p>
-          </div>
-          <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-            <CheckCircle2 className="w-5 h-5" />
-          </div>
+          <StatCard
+            label="Sudah Setor"
+            value={totalSudahSetor}
+            icon={CheckCircle2}
+            tone="success"
+            compact
+          />
         </button>
 
         <button
+          type="button"
           onClick={() => setStatusFilter('belum_setor')}
-          className={`p-4 rounded-2xl border text-left transition-all flex items-start justify-between ${
-            statusFilter === 'belum_setor'
-              ? 'bg-amber-50/60 border-amber-500 shadow-sm ring-2 ring-amber-500/20'
-              : 'bg-white border-slate-200/80 hover:border-amber-300'
+          className={`text-left transition-all rounded-xl focus:outline-none ${
+            statusFilter === 'belum_setor' ? 'ring-2 ring-amber-500/40' : ''
           }`}
         >
-          <div>
-            <p className="text-xs font-semibold text-slate-500">Belum Setor Hari Ini</p>
-            <p className="text-2xl font-bold text-slate-900 mt-2 tracking-tight">{totalBelumSetor}</p>
-            <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded mt-1 inline-block">
-              Perlu Perhatian
-            </span>
-          </div>
-          <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-            <Clock className="w-5 h-5" />
-          </div>
+          <StatCard
+            label="Belum Setor"
+            value={totalBelumSetor}
+            icon={Clock}
+            tone="warning"
+            compact
+          />
         </button>
       </div>
 
@@ -231,77 +227,80 @@ function DaftarSantriBinaanPage() {
                 posLabel = `Jilid ${s.jilidIqraTerakhir}${s.halamanIqraTerakhir ? `, Hal. ${s.halamanIqraTerakhir}` : ''}`
               }
             } else {
-              if (s.posisiTerakhir && s.posisiTerakhir.surahNama && s.posisiTerakhir.ayat) {
-                posLabel = `${s.posisiTerakhir.surahNama} : Ayat ${s.posisiTerakhir.ayat}`
+              const pos = s.posisiTerakhir
+              if (pos) {
+                const sNo = pos.surahNomor || (typeof pos.surah === 'number' ? pos.surah : parseInt(pos.surah, 10))
+                const sInfo = !isNaN(sNo) ? surahByNomor[sNo] : null
+                const sNama = pos.surahNama || (sInfo ? sInfo.nama : (typeof pos.surah === 'string' ? pos.surah : (sNo ? `Surah ${sNo}` : '')))
+                const ayatVal = pos.ayat || pos.ayatAkhir || pos.ayatAwal || 1
+                if (sNama) {
+                  posLabel = `${sNama} : ${ayatVal}`
+                }
               }
             }
 
             return (
               <div
                 key={s.id}
-                className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col md:flex-row md:items-center justify-between gap-4"
+                className="bg-white border border-slate-200/80 rounded-2xl p-3.5 shadow-xs hover:shadow-sm transition-all duration-200 flex items-center justify-between gap-3"
               >
                 {/* Info Santri */}
-                <div className="flex items-center gap-3.5">
+                <div className="flex items-center gap-3 min-w-0">
                   <Link
                     to="/ustadz/santri/$santriId"
                     params={{ santriId: s.id }}
-                    className={`w-11 h-11 rounded-full flex items-center justify-center font-extrabold uppercase text-sm border shrink-0 hover:scale-105 transition-transform ${
+                    className={`w-10 h-10 rounded-full flex items-center justify-center font-extrabold uppercase text-xs border shrink-0 hover:scale-105 transition-transform ${
                       isIqra
                         ? 'bg-violet-50 text-violet-700 border-violet-200'
-                        : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        : 'bg-primary/10 text-primary border-primary/20'
                     }`}
                   >
                     {s.nama.substring(0, 2)}
                   </Link>
 
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <Link
                         to="/ustadz/santri/$santriId"
                         params={{ santriId: s.id }}
-                        className="font-bold text-slate-900 hover:text-primary transition-colors text-base hover:underline"
+                        className="font-semibold text-slate-800 hover:text-primary transition-colors text-sm hover:underline truncate"
                       >
                         {s.nama}
                       </Link>
-
                       <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                          isIqra ? 'bg-violet-100 text-violet-800' : 'bg-emerald-100 text-emerald-800'
+                        className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider shrink-0 ${
+                          isIqra ? 'bg-violet-100 text-violet-800' : 'bg-primary/10 text-primary'
                         }`}
                       >
                         {isIqra ? 'Iqra' : 'Tahfidz'}
                       </span>
-
                       {isSudahSetor ? (
-                        <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Sudah Setor Hari Ini
+                        <span className="bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full text-[9px] font-bold flex items-center gap-0.5 shrink-0">
+                          <CheckCircle2 className="w-2.5 h-2.5" /> Setor
                         </span>
                       ) : (
-                        <span className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-amber-600" /> Belum Setor
+                        <span className="bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full text-[9px] font-bold flex items-center gap-0.5 shrink-0">
+                          <Clock className="w-2.5 h-2.5" /> Belum
                         </span>
                       )}
                     </div>
-
-                    <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
-                      <span>Kelas: <strong className="text-slate-700">{s.kelasNama || 'Tanpa Kelas'}</strong></span>
-                      <span>•</span>
-                      <span>Posisi: <strong className="text-slate-700">{posLabel}</strong></span>
-                    </div>
+                    <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+                      <span className="text-slate-500 font-medium">{s.kelasNama || 'Tanpa Kelas'}</span>
+                      {posLabel !== 'Belum ada setoran' && (
+                        <> · <span className="text-slate-600">{posLabel}</span></>
+                      )}
+                    </p>
                   </div>
                 </div>
 
-                {/* Quick Action Button */}
-                <div className="flex items-center gap-2 self-end md:self-auto">
-                  <Link
-                    to="/ustadz/input"
-                    search={{ santriId: s.id }}
-                    className="bg-primary/10 text-primary hover:bg-primary/20 font-bold px-3.5 py-2 rounded-xl text-xs transition-colors"
-                  >
-                    Input Setoran
-                  </Link>
-                </div>
+                {/* Quick Action */}
+                <Link
+                  to="/ustadz/input"
+                  search={{ santriId: s.id }}
+                  className="shrink-0 bg-primary/10 text-primary hover:bg-primary/20 font-bold px-3 py-1.5 rounded-lg text-xs transition-colors"
+                >
+                  Input
+                </Link>
               </div>
             )
           })

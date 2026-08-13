@@ -186,7 +186,7 @@ function AbsensiUstadzPage() {
           <Users className="w-5 h-5" />
         </div>
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">Input Absensi</h2>
+          <h2 className="text-lg font-bold tracking-tight text-slate-900">Input Absensi</h2>
           <p className="text-slate-500">Tandai kehadiran santri per sesi pertemuan.</p>
         </div>
       </div>

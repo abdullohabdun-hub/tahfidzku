@@ -2,7 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { eq, and, desc, or } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '../db'
-import { santri, users, waliSantri } from '../db/schema'
+import { santri, users, waliSantri, setoran } from '../db/schema'
 import { getAuthSession, requireRole } from '../middleware/auth.middleware'
 import { success, handleError } from '../lib/response'
 import { AuthenticationError, ValidationError, ForbiddenError, NotFoundError } from '../lib/errors'
@@ -13,8 +13,17 @@ import { kelas, tenants, hariEnum } from '../db/schema'
 // ==========================================
 // 1. GET SANTRI LIST (ADMIN & USTADZ)
 // ==========================================
-export const getSantriList = createServerFn({ method: 'POST' }).handler(
-  async () => {
+export const getSantriList = createServerFn({ method: 'POST' })
+  .validator((data?: {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+    filterTipe?: 'all' | 'dewasa' | 'reguler';
+    filterKelas?: string;
+    fetchAll?: boolean;
+  }) => data || {})
+  .handler(
+  async ({ data }) => {
     try {
       const session = await getAuthSession()
       if (!session) throw new AuthenticationError()
@@ -24,24 +33,58 @@ export const getSantriList = createServerFn({ method: 'POST' }).handler(
       }
 
       const tenantId = session.user.tenantId
+      const page = data?.page || 1
+      const pageSize = data?.pageSize || 20
+      const fetchAll = data?.fetchAll ?? false
+      const search = data?.search?.trim() || ''
+      const filterTipe = data?.filterTipe || 'all'
+      const filterKelas = data?.filterKelas || 'all'
 
-      let whereCondition: any = eq(santri.tenantId, tenantId)
+      const { ilike, isNull, sql, inArray } = await import('drizzle-orm')
+
+      const conditions: any[] = [eq(santri.tenantId, tenantId)]
 
       if (session.user.role === 'ustadz') {
         const ustadzKelas = await db.select({ id: kelas.id }).from(kelas).where(eq(kelas.ustadzId, session.user.id))
         const kelasIds = ustadzKelas.map(k => k.id)
         
         if (kelasIds.length === 0) {
-          return success([], 'Berhasil mengambil daftar santri')
+          return success({ items: [], totalCount: 0, page: 1, totalPages: 0, pageSize }, 'Berhasil mengambil daftar santri')
         }
         
-        whereCondition = and(eq(santri.tenantId, tenantId), inArray(santri.kelasId, kelasIds))
+        conditions.push(inArray(santri.kelasId, kelasIds))
       }
 
-      // Menggunakan Relational Query Drizzle
+      if (search) {
+        conditions.push(ilike(santri.nama, `%${search}%`))
+      }
+
+      if (filterTipe !== 'all') {
+        conditions.push(eq(santri.tipe, filterTipe))
+      }
+
+      if (filterKelas === 'none') {
+        conditions.push(isNull(santri.kelasId))
+      } else if (filterKelas !== 'all') {
+        conditions.push(eq(santri.kelasId, filterKelas))
+      }
+
+      const whereCondition = and(...conditions)
+
+      // Total Count Query
+      const [{ count: totalCountRaw }] = await db
+        .select({ count: sql<number>`cast(count(*) as integer)` })
+        .from(santri)
+        .where(whereCondition)
+
+      const totalCount = Number(totalCountRaw || 0)
+      const totalPages = fetchAll ? 1 : (Math.ceil(totalCount / pageSize) || 1)
+
+      // Menggunakan Relational Query Drizzle dengan limit & offset
       const results = await db.query.santri.findMany({
         where: whereCondition,
         orderBy: [desc(santri.createdAt)],
+        ...(fetchAll ? {} : { limit: pageSize, offset: (page - 1) * pageSize }),
         with: {
           kelas: { columns: { nama: true } },
           akun: { columns: { email: true, noWa: true, role: true, nama: true } },
@@ -53,10 +96,38 @@ export const getSantriList = createServerFn({ method: 'POST' }).handler(
         }
       })
 
+      // Fallback: Untuk santri yang posisiTerakhir nya null/kosong, coba cari dari riwayat setoran terbaru
+      const nullPosisiIds = results.filter(s => (!s.posisiTerakhir || !s.posisiTerakhir.surahNomor) && s.tahapSantri === 'tahfidz').map(s => s.id)
+      const fallbackPosisiMap = new Map<string, any>()
+      
+      if (nullPosisiIds.length > 0) {
+        const recentSetoranList = await db
+          .select({
+            santriId: setoran.santriId,
+            surah: setoran.surah,
+            ayatAkhir: setoran.ayatAkhir,
+          })
+          .from(setoran)
+          .where(and(eq(setoran.tenantId, tenantId), inArray(setoran.santriId, nullPosisiIds)))
+          .orderBy(desc(setoran.createdAt))
+
+        for (const setItem of recentSetoranList) {
+          if (!setItem.santriId || fallbackPosisiMap.has(setItem.santriId)) continue
+          const sNo = setItem.surah ? parseInt(setItem.surah, 10) : NaN
+          if (!isNaN(sNo)) {
+            fallbackPosisiMap.set(setItem.santriId, {
+              surahNomor: sNo,
+              ayat: setItem.ayatAkhir || 1,
+            })
+          }
+        }
+      }
+
       const mapped = results.map(s => {
+        const effectivePosisi = s.posisiTerakhir || fallbackPosisiMap.get(s.id) || null
         let safeJuzProgress = s.juzProgress || []
         try {
-          safeJuzProgress = kalkulasiJuzProgress(s.urutanHafalan || [], s.posisiTerakhir, s.juzUjianPending)
+          safeJuzProgress = kalkulasiJuzProgress(s.urutanHafalan || [], effectivePosisi, s.juzUjianPending)
         } catch (err) {
           console.error(`[Data Integrity Error] Gagal menghitung juzProgress untuk santri ID ${s.id}:`, err)
         }
@@ -95,7 +166,7 @@ export const getSantriList = createServerFn({ method: 'POST' }).handler(
           waliNoWa: mainWali ? mainWali.noWa : null,
           semuaWali: allWalis,
           createdAt: s.createdAt,
-          posisiTerakhir: s.posisiTerakhir,
+          posisiTerakhir: effectivePosisi,
           urutanHafalan: s.urutanHafalan,
           juzUjianPending: s.juzUjianPending,
           tahapSantri: s.tahapSantri,
@@ -107,7 +178,13 @@ export const getSantriList = createServerFn({ method: 'POST' }).handler(
         }
       })
 
-      return success(mapped, 'Berhasil mengambil daftar santri')
+      return success({
+        items: mapped,
+        totalCount,
+        page: fetchAll ? 1 : page,
+        totalPages,
+        pageSize: fetchAll ? mapped.length : pageSize,
+      }, 'Berhasil mengambil daftar santri')
     } catch (err) {
       return handleError(err)
     }

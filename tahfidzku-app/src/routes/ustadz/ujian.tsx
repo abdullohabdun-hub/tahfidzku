@@ -135,7 +135,7 @@ function UjianPage() {
     <div className="space-y-6 max-w-3xl">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+        <h1 className="text-lg font-bold tracking-tight text-slate-900 flex items-center gap-2">
           <GraduationCap className="w-6 h-6 text-emerald-600" /> Ujian Kenaikan
         </h1>
         <p className="text-slate-500 mt-1">Evaluasi santri untuk kenaikan Juz (Tahfidz) dan Jilid (Iqra).</p>

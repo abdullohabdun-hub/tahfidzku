@@ -10,6 +10,7 @@ import { getSurahByJuz, getAyatRangeInJuz } from '../../../lib/quranMapper'
 import { Button } from '../../../components/ui/button'
 import { RowActionsMenu } from '../../../components/shared/RowActionsMenu'
 import { PageHeader } from '../../../components/shared/PageHeader'
+import { surahByNomor } from '../../../lib/quranMapper'
 
 export const Route = createFileRoute('/admin/santri/')({
   component: DataSantriPage,
@@ -71,7 +72,7 @@ function DataSantriPage() {
       getKelasList(),
       getTenantInfo()
     ])
-    if (resSantri.success && resSantri.data) setSantri(resSantri.data)
+    if (resSantri.success && resSantri.data) setSantri(resSantri.data.items || resSantri.data)
     if (resKelas.success && resKelas.data) setKelasList(resKelas.data)
     if (resTenant.success && resTenant.data) setMinHariMasukSantri(resTenant.data.minHariMasukSantri ?? 2)
     setLoading(false)
@@ -693,12 +694,21 @@ function DataSantriPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex flex-col gap-0.5 text-xs">
-                          {s.juzProgress && s.juzProgress.length > 0 ? (
-                            <span className="font-semibold text-emerald-600">
-                              Selesai: {s.juzProgress.length} Juz ({s.juzProgress.slice().sort((a: number, b: number)=>b-a).join(', ')})
-                            </span>
-                          ) : <span className="text-slate-400 italic">Belum ada setoran</span>}
+                        <div className="flex flex-col">
+                          {(() => {
+                            const pos = s.posisiTerakhir
+                            if (!pos) return <span className="text-slate-400 italic">Belum ada setoran</span>
+                            const sNo = pos.surahNomor || (typeof pos.surah === 'number' ? pos.surah : parseInt(pos.surah, 10))
+                            const sInfo = !isNaN(sNo) ? surahByNomor[sNo] : null
+                            const sNama = pos.surahNama || (sInfo ? sInfo.nama : (typeof pos.surah === 'string' ? pos.surah : (sNo ? `Surah ${sNo}` : '')))
+                            const ayatVal = pos.ayat || pos.ayatAkhir || pos.ayatAwal || 1
+                            if (!sNama) return <span className="text-slate-400 italic">Belum ada setoran</span>
+                            return (
+                              <span className="font-semibold text-slate-800">
+                                {sNama} : {ayatVal}
+                              </span>
+                            )
+                          })()}
                           <span className="text-slate-500">
                             Batas: {s.batasHafalanJuz ? `Juz ${s.batasHafalanJuz}` : '-'}
                             {s.batasHafalanSurah && ` (${s.batasHafalanSurah} ayat ${s.batasHafalanAyat || '-'})`}

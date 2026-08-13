@@ -1,7 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { and, eq, desc, gte, inArray } from 'drizzle-orm'
 import { db } from '../db'
-import { santri, kelas, setoran, setoranIqra } from '../db/schema'
+import { santri, kelas, setoran, setoranIqra, waliSantri } from '../db/schema'
 import { getAuthSession } from '../middleware/auth.middleware'
 import { success, handleError } from '../lib/response'
 import { ForbiddenError, AuthenticationError } from '../lib/errors'
@@ -15,8 +15,9 @@ export const getSantriProfileDetail = createServerFn({ method: 'POST' })
       
       const isUstadz = session.user.role === 'ustadz'
       const isSantri = session.user.role === 'santri'
+      const isWali = session.user.role === 'wali'
 
-      if (!['admin', 'ustadz', 'santri'].includes(session.user.role)) {
+      if (!['admin', 'ustadz', 'santri', 'wali'].includes(session.user.role)) {
         throw new ForbiddenError('Akses ditolak.')
       }
 
@@ -44,6 +45,26 @@ export const getSantriProfileDetail = createServerFn({ method: 'POST' })
 
       if (isSantri && session.user.santriId !== santriId && profile.santri.id !== santriId) {
         throw new ForbiddenError('Anda hanya dapat mengakses profil milik Anda sendiri.')
+      }
+
+      if (isWali) {
+        let isAnakKandung = session.user.santriId === santriId
+        if (!isAnakKandung) {
+          const anakLink = await db.select({ santriId: waliSantri.santriId })
+            .from(waliSantri)
+            .where(
+              and(
+                eq(waliSantri.waliUserId, session.user.id),
+                eq(waliSantri.santriId, santriId),
+                eq(waliSantri.tenantId, session.user.tenantId)
+              )
+            )
+            .limit(1)
+          isAnakKandung = anakLink.length > 0
+        }
+        if (!isAnakKandung) {
+          throw new ForbiddenError('Anda hanya dapat mengakses profil data anak Anda sendiri.')
+        }
       }
 
       const isIqra = profile.santri.tahapSantri === 'iqra'
@@ -104,8 +125,28 @@ export const getSantriProfileDetail = createServerFn({ method: 'POST' })
         lastMurojaah.lastManzil = lastMurojaahList.find(s => s.jenis === 'manzil') || null
       }
 
+      const profilData = { ...profile.santri }
+      if (!profilData.posisiTerakhir && !isIqra) {
+        const [latestSetoran] = await db
+          .select({ surah: setoran.surah, ayatAkhir: setoran.ayatAkhir })
+          .from(setoran)
+          .where(and(eq(setoran.tenantId, session.user.tenantId), eq(setoran.santriId, santriId)))
+          .orderBy(desc(setoran.createdAt))
+          .limit(1)
+
+        if (latestSetoran && latestSetoran.surah) {
+          const sNo = parseInt(latestSetoran.surah, 10)
+          if (!isNaN(sNo)) {
+            profilData.posisiTerakhir = {
+              surahNomor: sNo,
+              ayat: latestSetoran.ayatAkhir || 1
+            } as any
+          }
+        }
+      }
+
       return success({
-        profil: profile.santri,
+        profil: profilData,
         kelasNama: profile.kelasNama,
         tipeKelas: profile.tipeKelas,
         distribusiSetoran,

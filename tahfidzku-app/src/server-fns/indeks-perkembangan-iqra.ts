@@ -2,10 +2,10 @@ import { createServerFn } from '@tanstack/react-start'
 import { eq, and, sql, gte, lt } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '../db'
-import { santri, kelas, setoranIqra } from '../db/schema'
+import { santri, kelas, setoranIqra, waliSantri } from '../db/schema'
 import { getAuthSession, requireRole } from '../middleware/auth.middleware'
 import { success, handleError } from '../lib/response'
-import { AuthenticationError, ValidationError } from '../lib/errors'
+import { AuthenticationError, ValidationError, ForbiddenError } from '../lib/errors'
 
 export const getIndeksPerkembanganIqra = createServerFn({ method: 'POST' })
   .validator((data: unknown) => {
@@ -22,7 +22,31 @@ export const getIndeksPerkembanganIqra = createServerFn({ method: 'POST' })
       // ── Security Guard (wajib) ──
       const session = await getAuthSession()
       if (!session) throw new AuthenticationError()
-      requireRole(session, 'admin', 'ustadz')
+      requireRole(session, 'admin', 'ustadz', 'santri', 'wali')
+
+      if (session.user.role === 'santri' && session.user.santriId !== data.santriId) {
+        throw new ForbiddenError('Anda hanya dapat melihat indeks perkembangan diri Anda sendiri')
+      }
+
+      if (session.user.role === 'wali') {
+        let isAnakKandung = session.user.santriId === data.santriId
+        if (!isAnakKandung) {
+          const anakLink = await db.select({ santriId: waliSantri.santriId })
+            .from(waliSantri)
+            .where(
+              and(
+                eq(waliSantri.waliUserId, session.user.id),
+                eq(waliSantri.santriId, data.santriId),
+                eq(waliSantri.tenantId, session.user.tenantId)
+              )
+            )
+            .limit(1)
+          isAnakKandung = anakLink.length > 0
+        }
+        if (!isAnakKandung) {
+          throw new ForbiddenError('Anda hanya dapat mengakses indeks anak Anda sendiri')
+        }
+      }
 
       const tenantId = session.user.tenantId
       const { santriId, periode } = data

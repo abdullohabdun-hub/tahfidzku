@@ -1,4 +1,4 @@
-import { pgTable, uuid, integer, boolean, text, timestamp } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, integer, boolean, text, timestamp, index } from 'drizzle-orm/pg-core'
 import { tenants } from './tenants'
 import { santri } from './santri'
 import { users } from './users'
@@ -14,4 +14,7 @@ export const ujianIqra = pgTable('ujian_iqra', {
   ujiOlehUstadzId: uuid('uji_oleh_ustadz_id').notNull().references(() => users.id),
   tanggalUjian: timestamp('tanggal_ujian', { withTimezone: true }).defaultNow().notNull(),
   attempt: integer('attempt').notNull().default(1), // Percobaan ke berapa untuk jilid ini
-});
+}, (table) => ({
+  idxUjianIqraTenantSantri: index('idx_ujian_iqra_tenant_santri').on(table.tenantId, table.santriId),
+  idxUjianIqraTenantJilid: index('idx_ujian_iqra_tenant_jilid').on(table.tenantId, table.jilidDiuji),
+}));

@@ -26,6 +26,8 @@ export interface StatCardProps {
   description?: string
   tone?: "neutral" | "warning" | "danger" | "success"
   className?: string
+  /** Compact mode: smaller fonts & icon, ideal for 3-column grids on mobile */
+  compact?: boolean
 }
 
 export function StatCard({
@@ -38,6 +40,7 @@ export function StatCard({
   description,
   tone = "neutral",
   className,
+  compact = false,
 }: StatCardProps) {
   const toneStyles = {
     neutral: {
@@ -69,6 +72,34 @@ export function StatCard({
   const selectedBadgeStyle = badgeVariant
     ? badgeVariantStyles[badgeVariant]
     : selectedTone.defaultBadge
+
+  // Compact mode: for 3-column grids on mobile
+  if (compact) {
+    return (
+      <div
+        className={cn(
+          "bg-white rounded-xl p-2.5 shadow-xs border border-slate-200/90 flex flex-col gap-1 min-w-0 transition-all duration-200 hover:border-slate-300",
+          className
+        )}
+      >
+        <div className={cn("p-1.5 rounded-lg border w-fit", selectedTone.iconBg)}>
+          <Icon className="w-3.5 h-3.5" />
+        </div>
+        <p className="text-[10px] font-medium text-slate-500 leading-tight line-clamp-2">{label}</p>
+        <p className="text-base font-bold text-slate-800 leading-tight tracking-tight">{value}</p>
+        {badge && (
+          <span
+            className={cn(
+              "text-[9px] font-semibold px-1.5 py-0.5 rounded-full border leading-none w-fit truncate max-w-full",
+              selectedBadgeStyle
+            )}
+          >
+            {badge}
+          </span>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div
@@ -103,4 +134,3 @@ export function StatCard({
     </div>
   )
 }
-

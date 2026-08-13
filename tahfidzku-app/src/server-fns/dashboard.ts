@@ -41,6 +41,32 @@ export async function getPosisiTerakhirBatch(
     }
   }
 
+  const missingIds = rows.filter(r => !r.posisiTerakhir || !r.posisiTerakhir.surahNomor || !r.posisiTerakhir.ayat).map(r => r.id)
+  if (missingIds.length > 0) {
+    const recentSetoranList = await db
+      .select({
+        santriId: setoran.santriId,
+        surah: setoran.surah,
+        ayatAkhir: setoran.ayatAkhir,
+      })
+      .from(setoran)
+      .where(and(eq(setoran.tenantId, tenantId), inArray(setoran.santriId, missingIds)))
+      .orderBy(desc(setoran.createdAt))
+
+    for (const s of recentSetoranList) {
+      if (!s.santriId || result.has(s.santriId)) continue
+      const targetSurah = s.surah ? parseInt(s.surah, 10) : NaN
+      if (!isNaN(targetSurah)) {
+        const sInfo = surahByNomor[targetSurah]
+        result.set(s.santriId, {
+          surahNomor: targetSurah,
+          surahNama: sInfo ? sInfo.nama : `Surah ${targetSurah}`,
+          ayat: s.ayatAkhir || 1,
+        })
+      }
+    }
+  }
+
   return result
 }
 
@@ -52,24 +78,6 @@ export const getAdminDashboardStats = createServerFn({ method: 'POST' }).handler
       requireRole(session, 'admin')
 
       const tenantId = session.user.tenantId
-
-      const [tenantInfo] = await db.select({ status: tenants.status, trialEndsAt: tenants.trialEndsAt }).from(tenants).where(eq(tenants.id, tenantId)).limit(1)
-
-      const santriList = await db.select({ id: santri.id }).from(santri).where(eq(santri.tenantId, tenantId))
-      const ustadzList = await db.select({ id: users.id }).from(users).where(and(eq(users.tenantId, tenantId), eq(users.role, 'ustadz')))
-      
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      
-      const setoranHariIniList = await db
-        .select({ id: setoran.id })
-        .from(setoran)
-        .where(and(eq(setoran.tenantId, tenantId), eq(setoran.tanggalSetoran, getTodayWIB())))
-
-      const setoranIqraHariIniList = await db
-        .select({ id: setoranIqra.id })
-        .from(setoranIqra)
-        .where(and(eq(setoranIqra.tenantId, tenantId), eq(setoranIqra.tanggalSetoran, getTodayWIB())))
 
       const unionQuery = sql`
         (
@@ -95,8 +103,24 @@ export const getAdminDashboardStats = createServerFn({ method: 'POST' }).handler
         )
         ORDER BY "createdAt" DESC LIMIT 5
       `;
+
+      const [
+        [tenantInfo],
+        santriList,
+        ustadzList,
+        setoranHariIniList,
+        setoranIqraHariIniList,
+        unionQueryResult
+      ] = await Promise.all([
+        db.select({ status: tenants.status, trialEndsAt: tenants.trialEndsAt }).from(tenants).where(eq(tenants.id, tenantId)).limit(1),
+        db.select({ id: santri.id }).from(santri).where(eq(santri.tenantId, tenantId)),
+        db.select({ id: users.id }).from(users).where(and(eq(users.tenantId, tenantId), eq(users.role, 'ustadz'))),
+        db.select({ id: setoran.id }).from(setoran).where(and(eq(setoran.tenantId, tenantId), eq(setoran.tanggalSetoran, getTodayWIB()))),
+        db.select({ id: setoranIqra.id }).from(setoranIqra).where(and(eq(setoranIqra.tenantId, tenantId), eq(setoranIqra.tanggalSetoran, getTodayWIB()))),
+        db.execute(unionQuery)
+      ])
       
-      const { rows } = await db.execute(unionQuery);
+      const rows = unionQueryResult.rows
       
       // format for frontend
       const formattedRecent = rows.map((r: any) => ({

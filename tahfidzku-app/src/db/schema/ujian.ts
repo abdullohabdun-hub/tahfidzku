@@ -1,7 +1,7 @@
 // src/db/schema/ujian.ts
 // Tabel ujian — catatan hasil Ujian Kenaikan Juz
 
-import { pgTable, uuid, integer, text, timestamp, pgEnum } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, integer, text, timestamp, pgEnum, index } from 'drizzle-orm/pg-core'
 import { tenants } from './tenants'
 import { santri } from './santri'
 import { users } from './users'
@@ -32,4 +32,7 @@ export const ujian = pgTable('ujian', {
   attempt:    integer('attempt').notNull().default(1), // Percobaan ke berapa untuk juz ini
 
   createdAt:  timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-})
+}, (table) => ({
+  idxUjianTenantSantri: index('idx_ujian_tenant_santri').on(table.tenantId, table.santriId),
+  idxUjianTenantJuz: index('idx_ujian_tenant_juz').on(table.tenantId, table.juz),
+}))

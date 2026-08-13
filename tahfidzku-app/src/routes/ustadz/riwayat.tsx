@@ -138,8 +138,8 @@ function UstadzRiwayatSetoran() {
             <History className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-800 tracking-tight">Riwayat Aktivitas</h1>
-            <p className="text-xs text-slate-500">Catatan kelas & santri Anda</p>
+            <h1 className="text-base font-bold text-slate-800 tracking-tight">Riwayat Aktivitas</h1>
+            <p className="text-xs text-slate-400">Catatan kelas & santri Anda</p>
           </div>
         </div>
         
@@ -182,25 +182,26 @@ function UstadzRiwayatSetoran() {
                  const isSelfReport = item.sumber === 'santri_self_report'
 
                  return (
-                   <div key={item.id} className="bg-white rounded-xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 relative overflow-hidden flex flex-col gap-3">
+                   <div key={item.id} className="bg-white rounded-xl border border-slate-100 p-4 shadow-xs hover:shadow-sm transition-all duration-150 relative overflow-hidden">
+                     {/* Badge jenis */}
                      <div className="absolute top-0 right-0 flex">
                        <div className={`text-[9px] font-bold px-2.5 py-1 rounded-bl-lg uppercase tracking-widest ${jm?.color || 'bg-slate-100 text-slate-800'}`}>
                          {jm?.label || item.jenis}
                        </div>
                        {isSelfReport && (
-                         <div className="bg-blue-100 text-blue-800 text-[9px] font-bold px-2.5 py-1 rounded-bl-lg uppercase tracking-widest flex items-center gap-1">
+                         <div className="bg-blue-100 text-blue-800 text-[9px] font-bold px-2.5 py-1 rounded-bl-lg uppercase tracking-widest">
                            SELF-REPORT
                          </div>
                        )}
                      </div>
 
-                     <div className="flex items-start justify-between mt-2">
-                       <div>
-                         <p className="text-xs font-semibold text-slate-500 flex items-center gap-1.5 mb-1">
-                            <Calendar className="w-3.5 h-3.5" />
+                     <div className="flex items-start justify-between mt-1 pr-16">
+                       <div className="min-w-0">
+                         <p className="text-[11px] font-medium text-slate-400 flex items-center gap-1 mb-0.5">
+                            <Calendar className="w-3 h-3 shrink-0" />
                             {format(parseDateString(item.tanggalSetoran), 'dd MMM yyyy', { locale: id })}
                          </p>
-                         <h3 className="font-bold text-slate-800 text-base leading-tight">
+                         <h3 className="font-semibold text-slate-800 text-sm leading-snug truncate">
                            {item.surahMeta?.label || (item.surah ? `${item.surah} ${item.ayatAwal}-${item.ayatAkhir}` : `Juz ${item.lintasJuz ? `${item.juzMulai}-${item.juzSelesai}` : (item.juzMulai || item.juz)}`)}
                          </h3>
                        </div>
@@ -208,57 +209,57 @@ function UstadzRiwayatSetoran() {
                      </div>
 
                      {item.catatan && (
-                       <div className="bg-slate-50 rounded-lg p-3 text-sm text-slate-600 border border-slate-100">
-                         <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Catatan</p>
+                       <div className="mt-2 bg-slate-50 rounded-lg px-3 py-2 text-xs text-slate-600 border border-slate-100">
+                         <span className="font-bold text-slate-400 uppercase text-[9px] mr-1">Catatan:</span>
                          {item.catatan}
                        </div>
                      )}
 
                      {item.ditinjauOlehUstadz && item.responUstadz && (
                        item.responUstadz.tipe === 'ditinjau' ? (
-                         <div className="flex items-center gap-2 mt-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg w-fit text-blue-700 text-xs font-medium">
+                         <div className="flex items-center gap-1.5 mt-2 px-2.5 py-1 bg-blue-50 border border-blue-100 rounded-lg w-fit text-blue-700 text-xs font-medium">
                            <span className="font-bold">✓</span>
                            Telah Anda pantau
                          </div>
                        ) : (
-                         <div className="bg-blue-50 rounded-lg p-3 text-sm text-blue-800 border border-blue-100 mt-1 flex items-start gap-2">
-                           <span className="text-base mt-0.5">{item.responUstadz.tipe === 'jempol' ? '👍' : '💬'}</span>
+                         <div className="bg-blue-50 rounded-lg px-3 py-2 text-xs text-blue-800 border border-blue-100 mt-2 flex items-start gap-1.5">
+                           <span className="text-sm mt-0.5">{item.responUstadz.tipe === 'jempol' ? '👍' : '💬'}</span>
                            <div>
-                             <p className="text-[10px] font-bold text-blue-500 uppercase mb-0.5">Telah Anda Respon</p>
-                             <p className="font-medium text-blue-900">{item.responUstadz.tipe === 'jempol' ? 'Mantap!' : (item.responUstadz.catatan || item.responUstadz.teks)}</p>
+                             <p className="text-[9px] font-bold text-blue-500 uppercase">Telah Anda Respon</p>
+                             <p className="font-medium text-blue-900 text-xs">{item.responUstadz.tipe === 'jempol' ? 'Mantap!' : (item.responUstadz.catatan || item.responUstadz.teks)}</p>
                            </div>
                          </div>
                        )
                      )}
 
-                     <div className="pt-2 border-t border-slate-50 flex items-center justify-between gap-2 text-sm text-slate-700">
-                        <div className="flex items-center gap-2">
-                          <User className="w-4 h-4 text-slate-400" />
+                     <div className="mt-2 pt-2 border-t border-slate-50 flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                          <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                           {item.santriId ? (
                             <Link
                               to="/ustadz/santri/$santriId"
                               params={{ santriId: item.santriId }}
-                              className="font-medium text-slate-800 hover:underline hover:text-primary transition-colors"
+                              className="font-medium text-slate-700 hover:underline hover:text-primary transition-colors truncate"
                             >
                               {item.santriNama}
                             </Link>
                           ) : (
-                            <span className="font-medium text-slate-800">{item.santriNama}</span>
+                            <span className="font-medium text-slate-700 truncate">{item.santriNama}</span>
                           )}
                         </div>
                         
                         {!isSelfReport && (
                           <button 
                             onClick={() => handleEdit(item)}
-                            className="text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 flex items-center gap-1.5 hover:bg-primary/20 transition-colors"
+                            className="text-[11px] font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-lg border border-primary/20 flex items-center gap-1 hover:bg-primary/20 transition-colors shrink-0"
                           >
-                            <Edit2 className="w-3.5 h-3.5" /> Edit
+                            <Edit2 className="w-3 h-3" /> Edit
                           </button>
                         )}
                       </div>
-                    </div>
-                  )
-               })
+                   </div>
+                 )
+              })
             )}
           </>
         )}

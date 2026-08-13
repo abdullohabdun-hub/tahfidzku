@@ -19,9 +19,10 @@ function RaporIndexPage() {
   useEffect(() => {
     async function loadData() {
       setLoading(true)
-      const res = await getSantriList()
-      if (res.success) {
-        setSantri(res.data)
+      const res = await getSantriList({ data: { fetchAll: true } })
+      if (res.success && res.data) {
+        const items = Array.isArray(res.data) ? res.data : (res.data.items || [])
+        setSantri(items)
       }
       setLoading(false)
     }

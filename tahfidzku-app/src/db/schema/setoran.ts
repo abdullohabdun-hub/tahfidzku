@@ -58,6 +58,7 @@ export const setoran = pgTable('setoran', {
 }, (table) => {
   return {
     idxSetoranSantriJenisCreated: index('idx_setoran_santri_jenis_created').on(table.santriId, table.jenis, table.createdAt),
+    idxSetoranTenantTanggal: index('idx_setoran_tenant_tanggal').on(table.tenantId, table.tanggalSetoran),
   }
 })
 

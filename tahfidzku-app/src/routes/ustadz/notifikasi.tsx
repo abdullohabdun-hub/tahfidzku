@@ -67,7 +67,7 @@ function NotifikasiPage() {
     <div className="space-y-4">
       <div className="flex justify-between items-center pb-4 border-b border-slate-200">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Notifikasi</h1>
+          <h1 className="text-lg font-bold tracking-tight text-slate-900">Notifikasi</h1>
           <p className="text-sm text-slate-500">Pemberitahuan setoran santri dan aktivitas lainnya</p>
         </div>
         <button 
